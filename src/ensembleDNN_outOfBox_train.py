@@ -14,15 +14,8 @@ from tensorflow import keras
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 import pandas as pd
-import utils
-import cv2
-from PIL import Image
-import scipy
-import scipy.misc
-import imageio
-from skimage import data, img_as_float
-from skimage import exposure
-from skimage.filters import gaussian
+from utils import util
+from utils import abstraction_box
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout
 from keras.models import Model
@@ -38,81 +31,6 @@ sep = '\\'
 if is_windows == False:
     sep = '/'
 
-                    
-def make_abstraction(data, clusters, classe):
-    data = np.asarray(data)
-
-    #doing a projection by taking just the first and the last dimension of data
-    data = data[:,[0,-1]]
-    print(data.shape)
-    dataByCluster={}
-    for c, d in zip(clusters, data):
-        #print(d)
-        try:
-            dataByCluster[c].append(d)
-        except:
-            dataByCluster.update({c:[d]})
-    #print(np.asarray(dataByCluster[0]))
-
-    array_box_by_cluster = {}
-
-    array_box_by_cluster.update({classe:[]})
-
-    for k, v in dataByCluster.items():
-        arr_intermediate = []
-        v = np.asarray(v)
-        for i in range(v.shape[1]):
-            min_i = np.amin(v[:,i])
-            max_i = np.amax(v[:,i])
-            arr_intermediate.append([min_i, max_i])
-        array_box_by_cluster[classe].append(arr_intermediate)
-
-    return array_box_by_cluster
-
-
-def get_activ_func(model, image, layerName):
-    inter_output_model = Model(inputs = model.input, outputs = model.get_layer(layerName).output) #last layer: index 7 or name 'dense'
-    return inter_output_model.predict(image)
-
-
-def contrast_normalization(image):
-    X = np.array(image)
-    
-    image_blur = cv2.GaussianBlur(image,(65,65),10)
-    # new_image = cv2.subtract(img,image_blur).astype('float32') # WRONG, the result is not stored in float32 directly
-    new_image = cv2.subtract(image,image_blur, dtype=cv2.CV_32F)
-    out = cv2.normalize(new_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-
-    #res = np.hstack((X, out)) #stacking images side-by-side
-    #imageio.imwrite('Contrast.jpg', res)
-    return out
-
-
-def image_adjustment(image):
-    p2, p98 = np.percentile(image, (2, 98))
-    img_rescale = exposure.rescale_intensity(image, in_range=(p2, p98))
-
-    #res = np.hstack((image, img_rescale)) #stacking images side-by-side
-    #imageio.imwrite('Imadjust.jpg', res)
-    return img_rescale
-
-
-def histogram_equalization(img):
-    equ =  exposure.equalize_hist(img)
-    res = np.hstack((img,equ)) #stacking images side-by-side
-    
-    #imageio.imwrite('Histeq.jpg',res)
-    return equ
-
-
-def adaptive_hist_eq(img):
-    img_adapteq = exposure.equalize_adapthist(img, clip_limit=0.3)
-
-    #res = np.hstack((img,img_adapteq)) #stacking images side-by-side
-    #imageio.imwrite('Adapthisteq.jpg',res)
-    return img_adapteq
-
-
 # Reading the input images and putting them into a numpy array
 sizeOfNeuronsToMonitor = 256
 filteringRate = 0.3 #same from the neuron pattern paper. Put 0 if you want to monitor all neurons
@@ -123,11 +41,7 @@ arrWeights = []
 arrPred = []
 arrLabel = []
 trainPath = os.getcwd()+sep+'data'+sep+'GTS_dataset'+sep
-height = 30
-width = 30
-channels = 3
-num_classes = 43
-n_inputs = height * width*channels
+
 '''
 for i in range(num_classes) :
     path = trainPath+"kaggle"+sep+"Train"+sep+str(i)+sep
@@ -166,21 +80,7 @@ print("Valid :", X_valid.shape)
 #adaptive_hist_eq(X_train[0])
 #contrast_normalization(X_train[0])
 '''
-model_name = 'GTS_model_DNN_ensemble_0.h5'
-X_train = np.array(list(map(image_adjustment, X_train)))
-X_valid = np.array(list(map(image_adjustment, X_valid)))
 
-model_name = 'GTS_model_DNN_ensemble_1.h5'
-X_train = np.array(list(map(histogram_equalization, X_train)))
-X_valid = np.array(list(map(histogram_equalization, X_valid)))
-
-model_name = 'GTS_model_DNN_ensemble_2.h5'
-X_train = np.array(list(map(adaptive_hist_eq, X_train)))
-X_valid = np.array(list(map(adaptive_hist_eq, X_valid)))
-
-model_name = 'GTS_model_DNN_ensemble_3.h5'
-X_train = np.array(list(map(contrast_normalization, X_train)))
-X_valid = np.array(list(map(contrast_normalization, X_valid)))
 
 
 #model with original data
