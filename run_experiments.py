@@ -18,9 +18,12 @@ layer_name = 'dense_1'
 models_folder = "src"+sep+"bin"+sep+"models"+sep
 monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
 
-#run experiment
+#running experiments
+#CNN with outside-of-box monitor
 count, arrFP, arrFN, arrTP, arrTN = out_of_box_test_GTRSB.run(
 	classToMonitor, layer_name, models_folder, monitors_folder, isTestOneClass, sep, script_path)
+
+#Ensemble of CNNs with outside-of-box monitor
 
 #print some info about the results
 util.print_positives_negatives(count, arrFP, arrFN, arrTP, arrTN, classToMonitor, isTestOneClass)

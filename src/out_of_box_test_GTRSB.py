@@ -4,7 +4,6 @@ import pickle
 from src.utils import util
 from src.utils import abstraction_box
 from keras.models import load_model
-from sklearn.metrics import confusion_matrix
 
 
 def run(classToMonitor, layer_name, models_folder, monitors_folder, isTestOneClass, sep, script_path):
