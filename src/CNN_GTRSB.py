@@ -42,4 +42,4 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 #training
 history = model.fit(X_train, Y_train, batch_size=batch_size, epochs=epochs, validation_data=(X_valid, Y_valid))
 #saving model
-model.save(models_folder+'CNN_model_GTSRB.h5')
+model.save(models_folder+'CNN_GTRSB.h5')

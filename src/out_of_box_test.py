@@ -38,7 +38,7 @@ loading_percentage = 0.1
 loaded = int(loading_percentage*len(y_test))
 
 # loading model and abstraction boxes
-model = load_model(models_folder+'CNN_model_GTSRB.h5')
+model = load_model(models_folder+'CNN_GTRSB.h5')
 boxes = pickle.load(open(monitors_folder+"monitor_Box_GTRSB.p", "rb")) 
 
 arrFalseNegative = {str(classToMonitor): 0}
@@ -51,7 +51,7 @@ for img, lab in zip(X_test, y_test):
     img = np.asarray([img])
     yPred = np.argmax(model.predict(img))
     arrPred.append(yPred)
-    intermediateValues = util.get_activ_func(model, img, layer_name)[0]
+    intermediateValues = util.get_activ_func(model, img, layerName=layer_name)[0]
 
     if abstraction_box.find_point(boxes, intermediateValues, yPred):
         count[0] += 1

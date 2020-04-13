@@ -24,8 +24,8 @@ if is_windows == False:
 	sep = '/'
 
 
-def get_activ_func(model, image, layerName):
-	inter_output_model = Model(inputs = model.input, outputs = model.get_layer(layerName).output) #last layer: index 7 or name 'dense'
+def get_activ_func(model, image, layerName=None, layerIndex=None):
+	inter_output_model = Model(inputs = model.input, outputs = model.get_layer(name=layerName, index=layerIndex).output) #last layer: index 7 or name 'dense'
 	return inter_output_model.predict(image)
 
 
