@@ -1,29 +1,14 @@
 import sys
 import os
 import numpy as np
-import cv2
-import dataset
-from keras.models import Model
-from keras.models import load_model
-import matplotlib.pyplot as plt
-import seaborn as sn
 import pandas as pd
-import confusion_matrix_pretty_print as cmpp
 import pickle
+from pathlib import Path
+from utils import util
+from utils import abstraction_box
+from keras.models import load_model
 from sklearn.metrics import confusion_matrix
-from PIL import Image
-import tensorflow as tf
-from tensorflow import keras
 
-
-def get_activ_func(model, image, layerName):
-    inter_output_model = Model(inputs = model.input, outputs = model.get_layer(layerName).output) #last layer: index 7 or name 'dense'
-    
-    return inter_output_model.predict(image)
-
-
-
-number_of_DNNs = 5
 
 def find_point_box_ensemble(intermediateValues_all, class_to_monitor):
     result = False
