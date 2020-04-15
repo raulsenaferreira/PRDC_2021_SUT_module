@@ -17,11 +17,14 @@ from skimage import exposure
 from skimage.filters import gaussian
 
 
-is_windows = sys.platform.startswith('win')
-sep = '\\'
+def get_separator():
+	is_windows = sys.platform.startswith('win')
+	sep = '\\'
 
-if is_windows == False:
-	sep = '/'
+	if is_windows == False:
+		sep = '/'
+
+	return sep
 
 
 def get_activ_func(model, image, layerName=None, layerIndex=None):
@@ -39,6 +42,7 @@ def loading_info(counter, loaded, loading_percentage):
 
 def load_GTRSB_dataset(trainPath, val_size):
 	# Reading the input images and putting them into a numpy array
+	sep = get_separator()
 	data=[]
 	labels=[]
 	height = 30
