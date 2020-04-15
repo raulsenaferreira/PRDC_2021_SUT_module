@@ -6,7 +6,7 @@ from src.utils import abstraction_box
 from keras.models import load_model
 
 
-def run(classToMonitor, layer_name, models_folder, monitors_folder, isTestOneClass, sep, script_path):
+def run(classToMonitor, layer_index, models_folder, monitors_folder, monitor_name, model_name, isTestOneClass, sep, script_path):
     count = [0, 0]
     arrPred = []
     num_classes = 43
@@ -20,8 +20,8 @@ def run(classToMonitor, layer_name, models_folder, monitors_folder, isTestOneCla
     loaded = int(loading_percentage*len(y_test))
 
     # loading model and abstraction boxes
-    model = load_model(models_folder+'CNN_GTRSB.h5')
-    boxes = pickle.load(open(monitors_folder+"monitor_Box_GTRSB.p", "rb")) 
+    model = load_model(models_folder+model_name)
+    boxes = pickle.load(open(monitors_folder+monitor_name, "rb")) 
 
     arrFalseNegative = {str(classToMonitor): 0}
     arrTrueNegative = {str(classToMonitor): 0}
@@ -33,21 +33,21 @@ def run(classToMonitor, layer_name, models_folder, monitors_folder, isTestOneCla
         img = np.asarray([img])
         yPred = np.argmax(model.predict(img))
         arrPred.append(yPred)
-        intermediateValues = util.get_activ_func(model, img, layerName=layer_name)[0]
+        intermediateValues = util.get_activ_func(model, img, layerIndex=layer_index)[0]
 
-        if abstraction_box.find_point(boxes, intermediateValues, yPred):
-            count[0] += 1
-            if yPred != lab:
-                arrFalseNegative[str(classToMonitor)] += 1 #False negative			
-            if yPred == lab: 
-                arrTrueNegative[str(classToMonitor)] += 1 #True negatives
-        else:
-            if yPred == classToMonitor:
+        if yPred == classToMonitor:
+            if abstraction_box.find_point(boxes, intermediateValues, yPred):
+                count[0] += 1
+                if yPred != lab:
+                    arrFalseNegative[str(classToMonitor)] += 1 #False negative			
+                if yPred == lab: 
+                    arrTrueNegative[str(classToMonitor)] += 1 #True negatives
+            else:
                 count[1] += 1
                 if yPred != lab: 
                     arrTruePositive[str(classToMonitor)] += 1 #True positives
                 if yPred == lab: 
                     arrFalsePositive[str(classToMonitor)] += 1 #False positives
-            #elif lab==classToMonitor:
-                #print("missclassification --- new pattern for class",yPred, str(lab))
-    return count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative
+        #elif lab==classToMonitor and yPred != classToMonitor:
+            #print("missclassification --- new pattern for class",yPred, str(lab))
+    return arrPred, count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative

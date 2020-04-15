@@ -50,3 +50,29 @@ def find_point(boxes, intermediateValues, class_to_monitor):
 	except:
 		result = False
 	return result
+
+
+def find_point_box_ensemble(boxes, intermediateValues_all, class_to_monitor):
+    result = False
+    for i in range(len(intermediateValues_all)):
+        data = np.asarray(intermediateValues_all[i])
+        #print(intermediateValues_all)
+        x = data[0]
+        y = data[-1]
+        #print("point:", x, y)
+        
+        try:
+            for box in boxes:
+                #B = box[0]
+                #print(box)
+                x1 = box[0][0]
+                x2 = box[0][1]
+                y1 = box[1][0]
+                y2 = box[1][1]
+                if x >= x1 and x <= x2 and y >= y1 and y <= y2: 
+                    return True
+                else : 
+                    result = False
+        except:
+            result = False
+    return result
