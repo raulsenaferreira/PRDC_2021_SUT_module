@@ -28,6 +28,7 @@ def make_abstraction(data, clusters, classe):
 		array_box_by_cluster[classe].append(arr_intermediate)
 	return array_box_by_cluster
 
+
 def find_point(boxes, intermediateValues, class_to_monitor):
 	data = np.asarray(intermediateValues)
 	#print(intermediateValues)
@@ -52,27 +53,25 @@ def find_point(boxes, intermediateValues, class_to_monitor):
 	return result
 
 
-def find_point_box_ensemble(boxes, intermediateValues_all, class_to_monitor):
+def find_point_box_ensemble(arr_boxes, intermediateValues_all):
     result = False
     for i in range(len(intermediateValues_all)):
         data = np.asarray(intermediateValues_all[i])
-        #print(intermediateValues_all)
+        boxes = arr_boxes[i]
         x = data[0]
         y = data[-1]
         #print("point:", x, y)
-        
         try:
+            #for boxes in arr_boxes:
             for box in boxes:
-                #B = box[0]
                 #print(box)
                 x1 = box[0][0]
                 x2 = box[0][1]
                 y1 = box[1][0]
                 y2 = box[1][1]
+
                 if x >= x1 and x <= x2 and y >= y1 and y <= y2: 
                     return True
-                else : 
-                    result = False
         except:
-            result = False
+            print("error @ find_point_box_ensemble function")
     return result

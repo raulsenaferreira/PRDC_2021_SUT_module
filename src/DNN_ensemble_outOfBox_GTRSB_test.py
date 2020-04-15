@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import pickle
 from src.utils import util
 from src.utils import abstraction_box
@@ -7,11 +6,10 @@ from keras.models import load_model
 
 
 def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, monitor_ensemble_prefix, model_ensemble_prefix, num_cnn, sep, script_path):
-    count = 0
-    count2 = 0
+    count = [0, 0]
     arrPred = []
     models = []
-    arrWeights = []
+    arrWeights = {}
     boxes = []
 
     arrFalseNegative = {str(classToMonitor): 0}
@@ -55,7 +53,7 @@ def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, mo
             ))
 
         if yPred == classToMonitor:
-            if abstraction_box.find_point_box_ensemble(boxes, intermediateValues_all, yPred):
+            if abstraction_box.find_point_box_ensemble(boxes, intermediateValues_all):
                 count[0] += 1
                 if yPred != lab:
                     arrFalseNegative[str(classToMonitor)] += 1 #False negative          
@@ -71,23 +69,3 @@ def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, mo
             #print("missclassification --- new pattern for class",yPred, str(lab))
 
     return arrPred, count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative
-
-
-
-
-
-
-    if isTestOneClass:
-        print("FP: {}={}, Total={}".format(classToMonitor, arrFalsePositive[str(classToMonitor)], sum(arrFalsePositive.values()))) 
-        print("FN: {}={}, Total={}".format(classToMonitor, arrFalseNegative[str(classToMonitor)], sum(arrFalseNegative.values()))) 
-        print("TP: {}={}, Total={}".format(classToMonitor, arrTruePositive[str(classToMonitor)], sum(arrTruePositive.values())))
-        print("TN: {}={}, Total={}".format(classToMonitor, arrTrueNegative[str(classToMonitor)], sum(arrTrueNegative.values())))
-
-    #CM = confusion_matrix(arrLabel, arrPred)
-    #print("confusion matrix", CM)
-
-    a = pd.crosstab(pd.Series(y_test), pd.Series(arrPred), rownames=['True'], colnames=['Predicted'], margins=True)
-    print("confusion matrix - no monitor", a)
-
-    #incrementing alpha
-    #monitor.enlargeSetByOneBitFluctuation(stopSignClass)

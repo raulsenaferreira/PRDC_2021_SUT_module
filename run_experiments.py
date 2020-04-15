@@ -1,7 +1,7 @@
 import os
 from src.utils import util
 from src import DNN_outOfBox_GTRSB_test
-#from src import DNN_ensemble_outOfBox_GTRSB_test
+from src import DNN_ensemble_outOfBox_GTRSB_test
 
 
 # ML is incorrect but monitor does not trust on it = TP
