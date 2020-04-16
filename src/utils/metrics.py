@@ -6,6 +6,9 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 
 
+Class 
+
+
 def evaluate(y_actual, y_predicted):
     return round(accuracy_score(y_actual, y_predicted), 4)*100
     
@@ -21,20 +24,20 @@ def F1(arr_y_true, arr_y_predicted, average):
 	return arrF1
 
 
-def stacked_bars(arrFP, arrFN, arrTP, arrTN):
+def stacked_bars(dic_by_method):
 	#N = 5
 	#menMeans = (20, 35, 30, 35, 27)
 	#womenMeans = (25, 32, 34, 20, 25)
 	#menStd = (2, 3, 4, 1, 2)
 	#womenStd = (3, 5, 2, 3, 3)
-	#ind = np.arange(N)    # the x locations for the groups
-	#width = 0.35       # the width of the bars: can also be len(x) sequence
+	ind = np.arange(len(dic_by_method)) # the x locations for the groups
+	width = 0.35 # the width of the bars: can also be len(x) sequence
 
-	N = 
+	for dic in dic_by_method:
+		pass
 
-	p1 = plt.bar(ind, menMeans, width, yerr=menStd)
-	p2 = plt.bar(ind, womenMeans, width,
-	             bottom=menMeans, yerr=womenStd)
+	p1 = plt.bar(ind, menMeans, width)
+	p2 = plt.bar(ind, womenMeans, width, bottom=menMeans)
 
 	plt.ylabel('Scores')
 	plt.title('Scores by group and gender')

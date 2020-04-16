@@ -33,13 +33,13 @@ def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, mo
         boxes.append(box[classToMonitor])
     
     for img, lab in zip(X_test, y_test):
-        lab = np.where(lab)[0]
         counter, loading_percentage = util.loading_info(counter, loaded, loading_percentage) #log
         img = np.asarray([img])
         #aplying ensemble
         y_all = np.vstack((
             models[0].predict(img)[0], models[1].predict(img)[0], models[2].predict(img)[0], 
-            models[3].predict(img)[0], models[4].predict(img)[0]
+            #models[3].predict(img)[0], 
+            models[4].predict(img)[0]
             ))
         
         y_all = np.average(y_all, axis=0)
@@ -56,7 +56,8 @@ def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, mo
             if abstraction_box.find_point_box_ensemble(boxes, intermediateValues_all):
                 count[0] += 1
                 if yPred != lab:
-                    arrFalseNegative[str(classToMonitor)] += 1 #False negative          
+                    arrFalseNegative[str(classToMonitor)] += 1 #False negative  
+                    #print("False negative !!\n\n")        
                 if yPred == lab: 
                     arrTrueNegative[str(classToMonitor)] += 1 #True negatives
             else:
@@ -65,7 +66,14 @@ def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, mo
                     arrTruePositive[str(classToMonitor)] += 1 #True positives
                 if yPred == lab: 
                     arrFalsePositive[str(classToMonitor)] += 1 #False positives
+                    #print("False positive !!\n\n")
         #elif lab==classToMonitor and yPred != classToMonitor:
             #print("missclassification --- new pattern for class",yPred, str(lab))
-
+    '''
+    from tensorflow.keras.utils import to_categorical
+    y_test = to_categorical(y_test, 43)
+    for i in range(len(models)):
+        scores = models[i].evaluate(X_test, y_test)
+        print("Scores from DNN ({}) --- loss: {} accuracy: {}".format(i, scores[0], scores[1]))
+    '''
     return arrPred, count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative

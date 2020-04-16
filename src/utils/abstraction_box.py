@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 def make_abstraction(data, clusters, classe):
@@ -56,22 +57,29 @@ def find_point(boxes, intermediateValues, class_to_monitor):
 def find_point_box_ensemble(arr_boxes, intermediateValues_all):
     result = False
     for i in range(len(intermediateValues_all)):
-        data = np.asarray(intermediateValues_all[i])
-        boxes = arr_boxes[i]
-        x = data[0]
-        y = data[-1]
-        #print("point:", x, y)
-        try:
-            #for boxes in arr_boxes:
-            for box in boxes:
-                #print(box)
-                x1 = box[0][0]
-                x2 = box[0][1]
-                y1 = box[1][0]
-                y2 = box[1][1]
+    	#print(i)
+    	if i != 3: #CNN 3 with problem
+	        data = np.asarray(intermediateValues_all[i])
+	        boxes = arr_boxes[i]
+	        x = data[0]
+	        y = data[-1]
+	        #print("point:", x, y)
+	        try:
+	            for box in boxes:
+	                x1 = box[0][0]
+	                x2 = box[0][1]
+	                y1 = box[1][0]
+	                y2 = box[1][1]
 
-                if x >= x1 and x <= x2 and y >= y1 and y <= y2: 
-                    return True
-        except:
-            print("error @ find_point_box_ensemble function")
+	                if x >= x1 and x <= x2 and y >= y1 and y <= y2:
+	                	#print("similarity between 0 and 1", cosine_similarity(intermediateValues_all[0].reshape(1, -1), intermediateValues_all[1].reshape(1, -1)))
+	                	#print("similarity between 0 and 2", cosine_similarity(intermediateValues_all[0].reshape(1, -1), intermediateValues_all[2].reshape(1, -1)))
+	                	#print("similarity between 0 and 4", cosine_similarity(intermediateValues_all[0].reshape(1, -1), intermediateValues_all[4].reshape(1, -1)))
+	                	#print("similarity between 1 and 2", cosine_similarity(intermediateValues_all[1].reshape(1, -1), intermediateValues_all[2].reshape(1, -1)))
+	                	#print("similarity between 1 and 4", cosine_similarity(intermediateValues_all[1].reshape(1, -1), intermediateValues_all[4].reshape(1, -1)))
+	                	#print("similarity between 2 and 4", cosine_similarity(intermediateValues_all[2].reshape(1, -1), intermediateValues_all[4].reshape(1, -1)))
+
+	                	return True
+	        except:
+	            print("error @ find_point_box_ensemble function")
     return result
