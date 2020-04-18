@@ -9,7 +9,6 @@ from keras.models import load_model
 def run(classToMonitor, layer_index, models_folder, monitors_folder, monitor_name, model_name, isTestOneClass, sep, script_path):
     count = [0, 0]
     arrPred = []
-    num_classes = 43
     testPath = str(script_path)+sep+'data'+sep+'GTS_dataset'+sep+"kaggle"+sep
     #loading test set
     X_test, y_test = util.load_GTRSB_csv(testPath, "Test.csv")

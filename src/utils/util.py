@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
+import keras
 from keras.models import Model
 from PIL import Image
 import scipy
@@ -15,6 +16,8 @@ import imageio
 from skimage import data, img_as_float
 from skimage import exposure
 from skimage.filters import gaussian
+from keras.datasets import mnist
+import keras.backend as K
 
 
 def get_separator():
@@ -40,14 +43,44 @@ def loading_info(counter, loaded, loading_percentage):
 	return counter, loading_percentage
 
 
-def load_GTRSB_dataset(trainPath, val_size):
+def load_mnist(onehotencoder=True):
+	num_classes = 10
+	# input image dimensions
+	img_rows, img_cols = 28, 28
+
+	# the data, split between train and test sets
+	(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+	if K.image_data_format() == 'channels_first':
+	    x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
+	    x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
+	    input_shape = (1, img_rows, img_cols)
+	else:
+	    x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
+	    x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
+	    input_shape = (img_rows, img_cols, 1)
+
+	x_train = x_train.astype('float32')
+	x_test = x_test.astype('float32')
+	x_train /= 255
+	x_test /= 255
+	print('x_train shape:', x_train.shape)
+	print(x_train.shape[0], 'train samples')
+	print(x_test.shape[0], 'test samples')
+
+	# convert class vectors to binary class matrices
+	if onehotencoder:
+		y_train = keras.utils.to_categorical(y_train, num_classes)
+		y_test = keras.utils.to_categorical(y_test, num_classes)
+
+	return x_train, y_train, x_test, y_test, input_shape
+
+
+def load_GTRSB_dataset(height, width, channels, trainPath, val_size, onehotencoder=True):
 	# Reading the input images and putting them into a numpy array
 	sep = get_separator()
 	data=[]
 	labels=[]
-	height = 30
-	width = 30
-	channels = 3
 	num_classes = 43
 	n_inputs = height * width*channels
 
@@ -77,19 +110,18 @@ def load_GTRSB_dataset(trainPath, val_size):
 	y_train=y_train[s]
 	# Split Data
 	X_train,X_valid,Y_train,Y_valid = train_test_split(x_train,y_train,test_size = val_size,random_state=0)
-	#Using one hote encoding for the train and validation labels
-	Y_train = to_categorical(Y_train, num_classes)
-	Y_valid = to_categorical(Y_valid, num_classes)
+	
+	if onehotencoder:
+		#Using one hote encoding for the train and validation labels
+		Y_train = to_categorical(Y_train, num_classes)
+		Y_valid = to_categorical(Y_valid, num_classes)
 	print("Training set shape :", X_train.shape)
 	print("Validation set shape :", X_valid.shape)
 	
 	return X_train,X_valid,Y_train,Y_valid
 
 
-def load_GTRSB_csv(testPath, filename):
-	height = 30
-	width = 30
-	channels = 3
+def load_GTRSB_csv(height, width, channels, testPath, filename):
 	n_inputs = height * width*channels
 	y_test=pd.read_csv(testPath+filename)
 	labels=y_test['Path'].values
