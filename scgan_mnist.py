@@ -8,14 +8,16 @@ from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.convolutional import UpSampling2D, Conv2D, Conv2DTranspose
 from keras.models import Sequential, Model
 from tensorflow.keras.optimizers import Adam, RMSprop
+#from keras.optimizers import Adam, RMSprop
 from keras import losses
 from keras.callbacks import TensorBoard
 from keras.utils import to_categorical
+import keras.backend as K
 import scipy
 import logging
 import matplotlib.pyplot as plt
 import os
-
+from src.utils import util
 import numpy as np
 
 from src.utils import scgan_utils
@@ -290,4 +292,9 @@ class ALOCC_Model():
         """
         os.makedirs(self.checkpoint_dir, exist_ok=True)
         model_name = 'ALOCC_Model_{}.h5'.format(step)
-        self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, model_name))    
+        self.adversarial_model.save_weights(os.path.join(self.checkpoint_dir, model_name))
+
+
+if __name__ == '__main__':
+    model = ALOCC_Model(dataset_name='mnist', input_height=28,input_width=28)
+    model.train(epochs=5, batch_size=128, sample_interval=500)
