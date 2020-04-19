@@ -1,20 +1,17 @@
-import sys
-import os
 from src.utils import util
-from src import DNN_outOfBox_GTRSB_monitor
-from src import DNN_outOfBox_MNIST_monitor
-from src import DNN_ensemble_outOfBox_GTRSB_monitor
-from src import SCGAN_MNIST_monitor
+from src.GTRSB_experiments import DNN_outOfBox_GTRSB_monitor
+from src.GTRSB_experiments import DNN_outOfBox_MNIST_monitor
+from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_monitor
+from src.MNIST_experiments import SCGAN_MNIST_monitor
 
 
+#general settings
 sep = util.get_separator()
-script_path = os.getcwd()
-
-classToMonitor = 7
+models_folder = "src"+sep+"bin"+sep+"models"+sep
 validation_size = 0.3
+classToMonitor = 7
 K = 3
 layer_name = 'dense_1'
-
 models_folder = "src"+sep+"bin"+sep+"models"+sep
 monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
 
@@ -36,13 +33,12 @@ monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
 #model_name = 'DNN_MNIST.h5'
 #success = DNN_outOfBox_MNIST_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K)
 
-#monitoring one classe in the MNIST dataset using a SCGAN:
-#DCGAN with MNIST dataset
-epochs=5
-batch_size=128
-sample_interval=500
-monitors_folder_checkpoint = monitors_folder+sep+'SCGAN_checkpoint'
-monitor_name = 'SCGAN_MNIST_'
-monitor = SCGAN_MNIST_monitor.ALOCC_Model(input_height=28,input_width=28)
-X_train, y_train, _, _, _ = util.load_mnist(onehotencoder=False)
-monitor.train(X_train, y_train, classToMonitor, epochs, batch_size, sample_interval, monitors_folder_checkpoint, monitor_name)
+#monitoring one classe in the MNIST dataset using a DCGAN:
+#epochs=5
+#batch_size=128
+#sample_interval=500
+#monitors_folder_checkpoint = monitors_folder+sep+'SCGAN_checkpoint'
+#monitor_name = 'SCGAN_MNIST_'
+#monitor = SCGAN_MNIST_monitor.ALOCC_Model(input_height=28,input_width=28)
+#X_train, y_train, _, _, _ = util.load_mnist(onehotencoder=False)
+#monitor.train(X_train, y_train, classToMonitor, epochs, batch_size, sample_interval, monitors_folder_checkpoint, monitor_name)

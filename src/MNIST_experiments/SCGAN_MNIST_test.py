@@ -3,7 +3,7 @@ from keras import backend as K
 import numpy as np
 import matplotlib.pyplot as plt
 from src.utils import util
-from src import SCGAN_MNIST_monitor
+from src.MNIST_experiments import SCGAN_MNIST_monitor
 from keras.models import load_model
 
 
@@ -76,26 +76,3 @@ def run(classToMonitor, models_folder, monitors_folder, model_name, monitor_name
             #print("missclassification --- new pattern for class",yPred, str(lab))
     
     return arrPred, count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative
-
-
-    '''
-    
-    fig= plt.figure(figsize=(8, 8))
-    columns = 1
-    rows = 2
-    fig.add_subplot(rows, columns, 1)
-    input_image = data.reshape((28, 28))
-    reconstructed_image = model_predicts[0].reshape((28, 28))
-    plt.title('Input')
-    plt.imshow(input_image, label='Input')
-    fig.add_subplot(rows, columns, 2)
-    plt.title('Reconstruction')
-    plt.imshow(reconstructed_image, label='Reconstructed')
-    plt.show()
-    # Compute the mean binary_crossentropy loss of reconstructed image.
-    y_true = K.variable(reconstructed_image)
-    y_pred = K.variable(input_image)
-    error = K.eval(binary_crossentropy(y_true, y_pred)).mean()
-    print('Reconstruction loss:', error)
-    print('Discriminator Output:', model_predicts[1][0][0])
-    '''

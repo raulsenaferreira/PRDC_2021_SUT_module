@@ -1,8 +1,8 @@
 import os
-from src import DNN_outOfBox_GTRSB_test
-from src import DNN_ensemble_outOfBox_GTRSB_test
-from src import DNN_outOfBox_MNIST_test
-from src import SCGAN_MNIST_test
+from src.GTRSB_experiments import DNN_outOfBox_GTRSB_test
+from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_test
+from src.MNIST_experiments import DNN_outOfBox_MNIST_test
+from src.MNIST_experiments import SCGAN_MNIST_test
 import matplotlib.pyplot as plt
 import numpy as np
 import sys

@@ -1,21 +1,26 @@
-import os
 from src.utils import util
-from src import DNN_GTRSB_model
-from src import DNN_ensemble_GTRSB_model
-from src import DNN_MNIST_model
-from src import SCGAN_MNIST_model
+from src.GTRSB_experiments import DNN_GTRSB_model
+from src.GTRSB_experiments import DNN_ensemble_GTRSB_model
+from src.MNIST_experiments import DNN_MNIST_model
 
 
+#general settings
 sep = util.get_separator()
-script_path = os.getcwd()
-epochs = 10
-batch_size = 32
-validation_size = 0.3
 models_folder = "src"+sep+"bin"+sep+"models"+sep
+validation_size = 0.3
+
+#German traffic sign dataset
+trainPath = 'data'+sep+'GTS_dataset'+sep+"kaggle"+sep+"Train"+sep
+num_classes = 43
+is_classification = True
+height = 28
+width = 28
+channels = 3
 
 #LeNet with GTRSB dataset
 #model_name = 'DNN_GTRSB.h5'
-#history = DNN_GTRSB_model.run(validation_size, batch_size, models_folder, epochs, model_name, sep, script_path)
+#history = DNN_GTRSB_model.run(height, width, channels, trainPath, validation_size, models_folder, 
+#	model_name, is_classification, num_classes)
 
 #Ensemble of LeNet with GTRSB dataset
 #model_name_prefix = 'DNN_ensemble_GTRSB_'
