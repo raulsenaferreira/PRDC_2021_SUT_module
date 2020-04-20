@@ -1,6 +1,7 @@
 from src.utils import util
 from src.GTRSB_experiments import DNN_outOfBox_GTRSB_monitor
-from src.GTRSB_experiments import DNN_outOfBox_MNIST_monitor
+from src.GTRSB_experiments import DNN_outOfBox_dimReduc_monitor
+from src.MNIST_experiments import DNN_outOfBox_MNIST_monitor
 from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_monitor
 from src.MNIST_experiments import SCGAN_MNIST_monitor
 
@@ -15,12 +16,13 @@ layer_name = 'dense_1'
 models_folder = "src"+sep+"bin"+sep+"models"+sep
 monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
 
+
 #monitoring one class in the GTRSB dataset using outside of box
 #monitor_name = "monitor_Box_GTRSB.p"
 #model_name = 'DNN_GTRSB.h5'
-#success = DNN_outOfBox_GTRSB_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, script_path, sep)
+#success = DNN_outOfBox_GTRSB_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, sep)
 
-#monitoring ensemble of CNNs
+#monitoring ensemble of CNNs in the GTRSB using outside of box
 #layer_index = 8
 #monitors_ensemble_folder = monitors_folder+"outOfBox_ensembleDNN"+sep
 #monitor_ensemble_prefix = "monitor_Box_DNN_"
@@ -42,3 +44,9 @@ monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
 #monitor = SCGAN_MNIST_monitor.ALOCC_Model(input_height=28,input_width=28)
 #X_train, y_train, _, _, _ = util.load_mnist(onehotencoder=False)
 #monitor.train(X_train, y_train, classToMonitor, epochs, batch_size, sample_interval, monitors_folder_checkpoint, monitor_name)
+
+#monitoring one class in the GTRSB dataset using outside of box and dimensionality reduction
+#model_name = 'DNN_GTRSB.h5'
+#dim_reduc_method = 'isomap'
+#monitor_name = "monitor_Box_"+dim_reduc_method+"_GTRSB.p"
+#success = DNN_outOfBox_dimReduc_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, dim_reduc_method, sep)

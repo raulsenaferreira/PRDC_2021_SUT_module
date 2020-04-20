@@ -1,16 +1,17 @@
 import numpy as np
 import pickle
 from sklearn.cluster import KMeans
+from sklearn import manifold
 from src.utils import util
 from src.utils import abstraction_box
 from keras.models import load_model
 
 
-def run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, sep):
+def run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, dim_reduc_method, sep):
 	arrWeights = []
 	trainPath = 'data'+sep+'GTS_dataset'+sep+"kaggle"+sep+"Train"+sep
 	#loading German traffic sign dataset
-	_, X_valid, _, Y_valid = util.load_GTRSB_dataset(28,28,3,trainPath, validation_size)
+	_, X_valid, _, Y_valid = util.load_GTRSB_dataset(28, 28, 3, trainPath, validation_size)
 
 	#comment these 3 lines and the line with "log" if you want turn off notification about loaded data 
 	counter = 0
@@ -30,8 +31,14 @@ def run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name
 			arrWeights.append(util.get_activ_func(model, img, layerName=layer_name)[0])
 
 	clusters = KMeans(n_clusters=K, random_state=0).fit_predict(arrWeights)
+
 	print("making boxes...")
-	boxes = abstraction_box.make_abstraction(arrWeights, clusters, classToMonitor)
+	if dim_reduc_method=='isomap':
+		isomap = manifold.Isomap(n_components=2)
+		boxes = abstraction_box.make_abstraction(arrWeights, clusters, classToMonitor, isomap, dim_reduc_method, monitors_folder)
+	else:
+		boxes = abstraction_box.make_abstraction(arrWeights, clusters, classToMonitor)
+	
 	print("Saving boxes in a file...")
 	pickle.dump(boxes, open( monitors_folder+monitor_name, "wb" ))
 

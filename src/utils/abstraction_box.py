@@ -1,12 +1,23 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+import pickle
 
 
-def make_abstraction(data, clusters, classe):
+def make_abstraction(data, clusters, classe, dim_reduc_obj=None, dim_reduc_method='', monitors_folder=None):
 	data = np.asarray(data)
-	#doing a projection by taking just the first and the last dimension of data
-	data = data[:,[0,-1]]
+	
+	if dim_reduc_obj==None:
+		#doing a projection by taking just the first and the last dimension of data
+		data = data[:,[0,-1]]
+	else:
+		#using a dimensionality reduction function
+		method = dim_reduc_obj.fit(data)
+		print("Saving trained dim reduc method")
+		pickle.dump(method, open(monitors_folder+dim_reduc_method+'_trained.p', "wb"))
+		data = method.transform(data)
+
 	print(data.shape)
+
 	dataByCluster={}
 
 	for c, d in zip(clusters, data):
@@ -30,9 +41,15 @@ def make_abstraction(data, clusters, classe):
 	return array_box_by_cluster
 
 
-def find_point(boxes, intermediateValues, class_to_monitor):
+def find_point(boxes, intermediateValues, class_to_monitor, dim_reduc_obj=None):
 	data = np.asarray(intermediateValues)
 	#print(intermediateValues)
+	
+	if dim_reduc_obj!=None:
+		#using a dimensionality reduction function
+		data = dim_reduc_obj.transform(data.reshape(1, -1))[0]
+		
+	#print(data)
 	x = data[0]
 	y = data[-1]
 	#print("point:", x, y)
@@ -47,10 +64,9 @@ def find_point(boxes, intermediateValues, class_to_monitor):
 			y2 = box[1][1]
 			if x >= x1 and x <= x2 and y >= y1 and y <= y2: 
 				return True
-			else : 
-				result = False
 	except:
-		result = False
+		pass
+		#print("error @ find_point function")
 	return result
 
 
