@@ -18,7 +18,7 @@ def F1(y_true, y_pred):
 	return f1_score(y_true, y_pred, average=None)
 
 
-def stacked_bars(dic_by_method):
+def plot_pos_neg_rate_stacked_bars(scores):
 	#N = 5
 	#menMeans = (20, 35, 30, 35, 27)
 	#womenMeans = (25, 32, 34, 20, 25)
@@ -31,7 +31,7 @@ def stacked_bars(dic_by_method):
 		pass
 
 	p1 = plt.bar(ind, menMeans, width)
-	p2 = plt.bar(ind, womenMeans, width, bottom=menMeans)
+	p2 = plt.bar(ind, womenMeans, width)
 
 	plt.ylabel('Scores')
 	plt.title('Scores by group and gender')
