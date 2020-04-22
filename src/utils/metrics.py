@@ -6,22 +6,16 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 
 
-Class 
+def save_results(results, file_name, sep):
+	np.savetxt(file_name, [p for p in results], delimiter=sep, fmt='%s')
 
 
 def evaluate(y_actual, y_predicted):
     return round(accuracy_score(y_actual, y_predicted), 4)*100
     
 
-def F1(arr_y_true, arr_y_predicted, average):
-	arrF1 = []
-	m = min(len(arr_y_true), len(arr_y_predicted))
-
-	for y_true, y_pred in zip(arr_y_true, arr_y_predicted):
-		y_true, y_pred = y_true[:m], y_pred[:m]
-		arrF1.append(f1_score(y_true, y_pred, average=average))
-
-	return arrF1
+def F1(y_true, y_pred):
+	return f1_score(y_true, y_pred, average=None)
 
 
 def stacked_bars(dic_by_method):

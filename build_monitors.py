@@ -4,6 +4,7 @@ from src.GTRSB_experiments import DNN_outOfBox_dimReduc_monitor
 from src.MNIST_experiments import DNN_outOfBox_MNIST_monitor
 from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_monitor
 from src.MNIST_experiments import SCGAN_MNIST_monitor
+from src.MNIST_experiments import DNN_outOfBox_dimReduc_MNIST_monitor
 
 
 #general settings
@@ -50,3 +51,9 @@ monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
 #dim_reduc_method = 'isomap'
 #monitor_name = "monitor_Box_"+dim_reduc_method+"_GTRSB.p"
 #success = DNN_outOfBox_dimReduc_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, dim_reduc_method, sep)
+
+#monitoring one class in the MNIST dataset using outside of box and dimensionality reduction
+model_name = 'DNN_MNIST.h5'
+dim_reduc_method = 'isomap'
+monitor_name = "monitor_Box_"+dim_reduc_method+"_MNIST.p"
+success = DNN_outOfBox_dimReduc_MNIST_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, dim_reduc_method, sep)

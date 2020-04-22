@@ -49,4 +49,4 @@ def run(classToMonitor, layer_name, models_folder, monitors_folder, monitor_name
                     arrFalsePositive[str(classToMonitor)] += 1 #False positives
         #elif lab==classToMonitor and yPred != classToMonitor:
             #print("missclassification --- new pattern for class",yPred, str(lab))
-    return arrPred, count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative
+    return arrPred, y_test, count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative

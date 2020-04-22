@@ -142,14 +142,15 @@ def load_GTRSB_csv(height, width, channels, testPath, filename):
 	return X_test, y_test
 
 
-def print_positives_negatives(count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative, classToMonitor, isTestOneClass=True):
+def print_positives_negatives(arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative, classToMonitor, isTestOneClass=True):
 	if isTestOneClass:
-		print("FP: {}={}, Total={}".format(classToMonitor, arrFalsePositive[str(classToMonitor)], sum(arrFalsePositive.values()))) 
-		print("FN: {}={}, Total={}".format(classToMonitor, arrFalseNegative[str(classToMonitor)], sum(arrFalseNegative.values()))) 
-		print("TP: {}={}, Total={}".format(classToMonitor, arrTruePositive[str(classToMonitor)], sum(arrTruePositive.values())))
-		print("TN: {}={}, Total={}".format(classToMonitor, arrTrueNegative[str(classToMonitor)], sum(arrTrueNegative.values())))
-		print("Similar patterns (FN + TN): ", count[0])
-		print("Raised alarms (FP + TP): ", count[1])
+		print("Monitored class:", classToMonitor)
+		print("FP: {}".format(arrFalsePositive[str(classToMonitor)]))
+		print("FN: {}".format(arrFalseNegative[str(classToMonitor)])) 
+		print("TP: {}".format(arrTruePositive[str(classToMonitor)]))
+		print("TN: {}".format(arrTrueNegative[str(classToMonitor)]))
+		print("Similar patterns (FN + TN): ", sum(arrFalseNegative.values()) + sum(arrTrueNegative.values()))
+		print("Raised alarms (FP + TP): ", sum(arrFalsePositive.values()) + sum(arrTruePositive.values()))
 
 
 #image pre-processing methods

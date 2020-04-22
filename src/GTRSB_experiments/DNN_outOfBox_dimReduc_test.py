@@ -1,3 +1,5 @@
+import os
+import psutil
 import numpy as np
 import pandas as pd
 import pickle
@@ -34,6 +36,9 @@ def run(classToMonitor, layer_index, models_folder, monitors_folder, monitor_nam
     arrTruePositive = {str(classToMonitor): 0}
 
     for img, lab in zip(X_test, y_test):
+        #memory
+        process = psutil.Process(os.getpid())
+
         counter, loading_percentage = util.loading_info(counter, loaded, loading_percentage) #log
         img = np.asarray([img])
         yPred = np.argmax(model.predict(img))
@@ -58,6 +63,7 @@ def run(classToMonitor, layer_index, models_folder, monitors_folder, monitor_nam
                     arrTruePositive[str(classToMonitor)] += 1 #True positives
                 if yPred == lab: 
                     arrFalsePositive[str(classToMonitor)] += 1 #False positives
+        memory = process.memory_info().rss / 1024 / 1024
         #elif lab==classToMonitor and yPred != classToMonitor:
             #print("missclassification --- new pattern for class",yPred, str(lab))
-    return arrPred, count, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative
+    return arrPred, y_test, memory, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative
