@@ -7,17 +7,18 @@ import numpy as np
 
 def run(repetition, classToMonitor, layer_index, layer_name, models_folder, monitors_folder, isTestOneClass, sep):
 	dim_reduc_method = 'isomap'
-	avg_acc = ['CNN_OOB_'+dim_reduc_method] #accuracy
-	avg_cf = ['CNN_OOB_'+dim_reduc_method] #confusion matrix
-	avg_time = ['CNN_OOB_'+dim_reduc_method] #time
-	avg_memory = ['CNN_OOB_'+dim_reduc_method] #memory
-	avg_F1 = ['CNN_OOB_'+dim_reduc_method] #memory
+	avg_acc = ['CNN+OOB+'+dim_reduc_method] #accuracy
+	avg_cf = ['CNN+OOB+'+dim_reduc_method] #confusion matrix
+	avg_time = ['CNN+OOB+'+dim_reduc_method] #time
+	avg_memory = ['CNN+OOB+'+dim_reduc_method] #memory
+	avg_F1 = ['CNN+OOB+'+dim_reduc_method] #memory
 
 	acc = []
 	t = []
 	cf = [[],[],[],[]]
 	mem = []
 	f1 = []
+	datasets = []
 
 	monitor_name = "monitor_Box_"+dim_reduc_method+"_MNIST.p"
 	model_name = 'DNN_MNIST.h5'
@@ -45,7 +46,7 @@ def run(repetition, classToMonitor, layer_index, layer_name, models_folder, moni
 	avg_memory.append(np.mean(mem))
 	avg_F1.append(np.mean(f1))
 	avg_cf.append([np.mean(cf[0]), np.mean(cf[1]), np.mean(cf[2]), np.mean(cf[3])])
-	
+	datasets.append('MNIST')
 
 	acc = []
 	t = []
@@ -79,6 +80,6 @@ def run(repetition, classToMonitor, layer_index, layer_name, models_folder, moni
 	avg_memory.append(np.mean(mem))
 	avg_F1.append(np.mean(f1))
 	avg_cf.append([np.mean(cf[0]), np.mean(cf[1]), np.mean(cf[2]), np.mean(cf[3])])
+	datasets.append('GTSRB')
 
-
-	return avg_acc, avg_time, avg_cf, avg_memory, avg_F1
+	return avg_acc, avg_time, avg_cf, avg_memory, avg_F1, datasets

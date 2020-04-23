@@ -17,7 +17,7 @@ if __name__ == "__main__":
 	experiments_pool = []
 
 	sep = util.get_separator()
-	datasets = ['Dataset', 'MNIST', 'GTRSB']
+	datasets = ['MNIST', 'GTRSB']
 	classToMonitor = 7
 	repetitions = 1
 
@@ -34,7 +34,9 @@ if __name__ == "__main__":
 	monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
 	trainPath = 'data'+sep+'GTS_dataset'+sep+"kaggle"+sep+"Train"+sep
 	csvs_folder_path = 'results'+sep+'csv'+sep
-
+	img_folder_path = 'results'+sep+'img'+sep
+	
+	img_name = 'all_images.pdf'
 	acc_file_name = 'accuracies.csv'
 	cf_file_name = 'positive_negative_rates.csv'
 	time_file_name = 'time.csv'
@@ -60,16 +62,13 @@ if __name__ == "__main__":
 			layer_index, layer_name, models_folder, monitors_folder, isTestOneClass, sep]))
 		
 		for experiment in experiments_pool:
-			avg_acc, avg_time, avg_cf, avg_mem, avg_f1 = experiment.get(timeout=1200)
-			accuracies.append(avg_acc)
-			confusion_matrices.append(avg_time)
-			proc_times.append(avg_cf)
-			memories.append(avg_mem)
-			f1s.append(avg_f1)
+			avg_acc, avg_time, avg_cf, avg_mem, avg_f1, datasets = experiment.get(timeout=1200)
 
-		#acc_cnn_oob, time_cnn_oob, cf_cnn_oob, mem_cnn_oob, f1_cnn_oob = experiment_1.get(timeout=1200)
-		#acc_cnn_nl_oob, time_cnn_nl_oob, cf_cnn_nl_oob, mem_cnn_nl_oob, f1_cnn_nl_oob = experiment_2.get(timeout=1200)
-		
+			accuracies.append(avg_acc)
+			confusion_matrices.append(avg_cf)
+			proc_times.append(avg_time)
+			memories.append(avg_mem)
+			f1s.append(avg_f1)		
 	else:
 		#Serial version for the experiments
 		#Experiment 1: CNN with outside-of-box monitor
@@ -112,3 +111,5 @@ if __name__ == "__main__":
 	metrics.save_results(f1s, csvs_folder_path+f1_file_name, ',')
 
 	# Figures
+	#print('confusion_matrices', confusion_matrices)
+	metrics.plot_pos_neg_rate_stacked_bars(confusion_matrices, datasets, img_folder_path+img_name)

@@ -6,17 +6,18 @@ import numpy as np
 
 
 def run(repetition, classToMonitor, layer_name, models_folder, monitors_folder, isTestOneClass, sep):
-	avg_acc = ['CNN_OOB'] #accuracy
-	avg_cf = ['CNN_OOB'] #confusion matrix
-	avg_time = ['CNN_OOB'] #time
-	avg_memory = ['CNN_OOB'] #memory
-	avg_F1 = ['CNN_OOB'] #memory
+	avg_acc = ['CNN+OOB'] #accuracy
+	avg_cf = ['CNN+OOB'] #confusion matrix
+	avg_time = ['CNN+OOB'] #time
+	avg_memory = ['CNN+OOB'] #memory
+	avg_F1 = ['CNN+OOB'] #memory
 
 	acc = []
 	t = []
 	cf = [[],[],[],[]]
 	mem = []
 	f1 = []
+	datasets = []
 	
 	for i in range(repetition):
 		print("MNIST experiment {} of {} ...".format(i+1, repetition))
@@ -44,8 +45,8 @@ def run(repetition, classToMonitor, layer_name, models_folder, monitors_folder, 
 	avg_memory.append(np.mean(mem))
 	avg_F1.append(np.mean(f1))
 	avg_cf.append([np.mean(cf[0]), np.mean(cf[1]), np.mean(cf[2]), np.mean(cf[3])])
+	datasets.append('MNIST')
 	
-
 	acc = []
 	t = []
 	cf = [[],[],[],[]]
@@ -77,6 +78,6 @@ def run(repetition, classToMonitor, layer_name, models_folder, monitors_folder, 
 	avg_memory.append(np.mean(mem))
 	avg_F1.append(np.mean(f1))
 	avg_cf.append([np.mean(cf[0]), np.mean(cf[1]), np.mean(cf[2]), np.mean(cf[3])])
+	datasets.append('GTSRB')
 
-
-	return avg_acc, avg_time, avg_cf, avg_memory, avg_F1
+	return avg_acc, avg_time, avg_cf, avg_memory, avg_F1, datasets
