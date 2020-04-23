@@ -14,7 +14,7 @@ def run(classToMonitor, layer_name, models_folder, monitors_folder, monitor_name
     has_known_pattern = None
 
     #loading test set
-    _, _, X_test, y_test, _ = util.load_mnist(onehotencoder=False)
+    _, _, _, _, X_test, y_test, _ = util.load_mnist(onehotencoder=False)
 
     #3 variables for log (optional)
     counter = 0

@@ -11,7 +11,7 @@ def run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name
 	arrWeights = []
 
 	#loading test set
-	X_train, y_train, _, _, _ = util.load_mnist()
+	X_train, y_train, _, _, _, _, _ = util.load_mnist()
 
 	#comment these 3 lines and the line with "log" if you want turn off notification about loaded data 
 	counter = 0

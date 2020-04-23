@@ -15,7 +15,7 @@ class CNN:
 		self.input_shape = input_shape
 	
 
-	def train(self, x_train, y_train, x_test, y_test, epochs, batch_size):
+	def train(self, x_train, y_train, x_valid, y_valid, epochs, batch_size, keras_pre_processing=False, train_iterator=None):
 		model = Sequential()
 		model.add(Conv2D(32, kernel_size=(3, 3),
 		                 activation='relu',
@@ -32,6 +32,11 @@ class CNN:
 		history = model.compile(loss=keras.losses.categorical_crossentropy,
 		              optimizer=keras.optimizers.Adadelta(),
 		              metrics=['accuracy'])
-		model.fit(x_train, y_train, batch_size=batch_size,	epochs=epochs, verbose=1,validation_data=(x_test, y_test))
+
+		if keras_pre_processing and train_iterator!=None:
+			model.fit_generator(train_iterator, steps_per_epoch=len(train_iterator), epochs=epochs)
+		else:
+			model.fit(x_train.reshape(len(x_train), 28, 28, 1), y_train, batch_size=batch_size, epochs=epochs, verbose=1,
+				validation_data=(x_valid.reshape(len(x_valid), 28, 28, 1), y_valid))
 
 		return model, history

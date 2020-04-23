@@ -18,6 +18,7 @@ from skimage import exposure
 from skimage.filters import gaussian
 from keras.datasets import mnist
 import keras.backend as K
+from keras.preprocessing.image import ImageDataGenerator
 
 
 def get_separator():
@@ -64,6 +65,10 @@ def load_mnist(onehotencoder=True):
 	x_test = x_test.astype('float32')
 	x_train /= 255
 	x_test /= 255
+
+	x_train, x_valid = train_test_split(x_train, shuffle=False)
+	y_train, y_valid = train_test_split(y_train, shuffle=False)
+
 	print('x_train shape:', x_train.shape)
 	print(x_train.shape[0], 'train samples')
 	print(x_test.shape[0], 'test samples')
@@ -71,9 +76,10 @@ def load_mnist(onehotencoder=True):
 	# convert class vectors to binary class matrices
 	if onehotencoder:
 		y_train = keras.utils.to_categorical(y_train, num_classes)
+		y_valid = keras.utils.to_categorical(y_valid, num_classes)
 		y_test = keras.utils.to_categorical(y_test, num_classes)
 
-	return x_train, y_train, x_test, y_test, input_shape
+	return x_train, y_train, x_valid, y_valid, x_test, y_test, input_shape
 
 
 def load_GTRSB_dataset(height, width, channels, trainPath, val_size, onehotencoder=True):
@@ -186,3 +192,16 @@ def adaptive_hist_eq(img):
     #res = np.hstack((img,img_adapteq)) #stacking images side-by-side
     #imageio.imwrite('Adapthisteq.jpg',res)
     return img_adapteq
+
+
+def rescale(trainX, trainY, model, epochs, batch_size):
+	datagen = ImageDataGenerator(rescale=1.0/255.0)
+	train_iterator = datagen.flow(trainX, trainY, batch_size=batch_size)
+	return train_iterator
+
+
+def std_normalization(trainX, trainY, model, epochs, batch_size):
+	datagen = ImageDataGenerator(featurewise_center=True, featurewise_std_normalization=True)
+	datagen.fit(trainX)
+	train_iterator = datagen.flow(trainX, trainY, batch_size=batch_size)
+	return train_iterator

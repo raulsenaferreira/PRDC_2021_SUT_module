@@ -3,8 +3,9 @@ from src.GTRSB_experiments import DNN_outOfBox_GTRSB_monitor
 from src.GTRSB_experiments import DNN_outOfBox_dimReduc_monitor
 from src.MNIST_experiments import DNN_outOfBox_MNIST_monitor
 from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_monitor
-from src.MNIST_experiments import SCGAN_MNIST_monitor
+#from src.MNIST_experiments import SCGAN_MNIST_monitor
 from src.MNIST_experiments import DNN_outOfBox_dimReduc_MNIST_monitor
+from src.MNIST_experiments import DNN_ensemble_outOfBox_MNIST_monitor
 
 
 #general settings
@@ -53,7 +54,15 @@ monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
 #success = DNN_outOfBox_dimReduc_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, dim_reduc_method, sep)
 
 #monitoring one class in the MNIST dataset using outside of box and dimensionality reduction
-model_name = 'DNN_MNIST.h5'
-dim_reduc_method = 'isomap'
-monitor_name = "monitor_Box_"+dim_reduc_method+"_MNIST.p"
-success = DNN_outOfBox_dimReduc_MNIST_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, dim_reduc_method, sep)
+#model_name = 'DNN_MNIST.h5'
+#dim_reduc_method = 'isomap'
+#monitor_name = "monitor_Box_"+dim_reduc_method+"_MNIST.p"
+#success = DNN_outOfBox_dimReduc_MNIST_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, dim_reduc_method, sep)
+
+
+#monitoring ensemble of CNNs in the MNIST using outside of box
+monitors_ensemble_folder = monitors_folder+"outOfBox_ensembleDNN"+sep
+monitor_ensemble_prefix = "monitor_Box_DNN_MNIST"
+model_ensemble_prefix = 'DNN_ensemble_MNIST_'
+num_cnn = 3
+DNN_ensemble_outOfBox_MNIST_monitor.run(classToMonitor, layer_name, models_folder, monitors_ensemble_folder, monitor_ensemble_prefix, model_ensemble_prefix, num_cnn, validation_size, K)

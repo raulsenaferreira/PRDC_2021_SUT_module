@@ -97,5 +97,6 @@ def find_point_box_ensemble(arr_boxes, intermediateValues_all):
 
 	                	return True
 	        except:
-	            print("error @ find_point_box_ensemble function")
+	        	pass
+	            #print("error @ find_point_box_ensemble function")
     return result

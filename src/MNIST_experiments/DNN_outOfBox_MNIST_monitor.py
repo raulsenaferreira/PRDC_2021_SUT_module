@@ -9,7 +9,7 @@ from keras.models import load_model
 def run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K):
 	arrWeights = []
 	#loading MNIST sign dataset
-	_, _, X_valid, Y_valid, _ = util.load_mnist()
+	_, _, X_valid, Y_valid, _, _, _ = util.load_mnist()
 
 	#comment these 3 lines and the line with "log" if you want turn off notification about loaded data 
 	counter = 0
