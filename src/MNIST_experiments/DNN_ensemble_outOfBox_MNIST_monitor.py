@@ -6,7 +6,7 @@ from src.utils import abstraction_box
 from keras.models import load_model
 
 
-def run(classToMonitor, layer_name, models_folder, monitors_ensemble_folder, monitor_ensemble_prefix, model_ensemble_prefix, num_cnn, validation_size, K):
+def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, monitor_ensemble_prefix, model_ensemble_prefix, num_cnn, validation_size, K):
     models = []
     arrWeights = {}
     _, _, X_valid, Y_valid, _, _, _ = util.load_mnist()
@@ -33,7 +33,7 @@ def run(classToMonitor, layer_name, models_folder, monitors_ensemble_folder, mon
         
         if yPred == lab and yPred==classToMonitor:
             for i in range(num_cnn):
-                arrWeights[i].append(util.get_activ_func(models[i], img, layerName=layer_name)[0])
+                arrWeights[i].append(util.get_activ_func(models[i], img, layerIndex=layer_index)[0])
                 
     print("making boxes and saving in a file...")
     for i in range(num_cnn):

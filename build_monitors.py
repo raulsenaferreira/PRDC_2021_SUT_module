@@ -17,7 +17,7 @@ K = 3
 layer_name = 'dense_1'
 models_folder = "src"+sep+"bin"+sep+"models"+sep
 monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
-
+layer_index = -2
 
 #monitoring one class in the GTRSB dataset using outside of box
 #monitor_name = "monitor_Box_GTRSB.p"
@@ -65,4 +65,4 @@ monitors_ensemble_folder = monitors_folder+"outOfBox_ensembleDNN"+sep
 monitor_ensemble_prefix = "monitor_Box_DNN_MNIST"
 model_ensemble_prefix = 'DNN_ensemble_MNIST_'
 num_cnn = 3
-DNN_ensemble_outOfBox_MNIST_monitor.run(classToMonitor, layer_name, models_folder, monitors_ensemble_folder, monitor_ensemble_prefix, model_ensemble_prefix, num_cnn, validation_size, K)
+DNN_ensemble_outOfBox_MNIST_monitor.run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, monitor_ensemble_prefix, model_ensemble_prefix, num_cnn, validation_size, K)
