@@ -8,9 +8,7 @@ from keras.models import load_model
 
 def run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, sep):
 	arrWeights = []
-	trainPath = 'data'+sep+'GTS_dataset'+sep+"kaggle"+sep+"Train"+sep
-	#loading German traffic sign dataset
-	_, X_valid, _, Y_valid = util.load_GTRSB_dataset(28,28,3,trainPath, validation_size)
+	
 
 	#comment these 3 lines and the line with "log" if you want turn off notification about loaded data 
 	counter = 0

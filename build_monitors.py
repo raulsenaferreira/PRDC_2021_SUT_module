@@ -17,7 +17,7 @@ K = 3
 layer_name = 'dense_1'
 models_folder = "src"+sep+"bin"+sep+"models"+sep
 monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
-layer_index = -2
+layer_index = -2 #last hidden layer
 
 #monitoring one class in the GTRSB dataset using outside of box
 #monitor_name = "monitor_Box_GTRSB.p"

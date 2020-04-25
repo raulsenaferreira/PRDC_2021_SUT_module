@@ -11,7 +11,7 @@ def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, mo
     arrWeights = {}
     trainPath = str(script_path)+sep+'data'+sep+'GTS_dataset'+sep+"kaggle"+sep+"Train"+sep
     #loading German traffic sign dataset
-    _, X_valid, _, Y_valid = util.load_GTRSB_dataset(trainPath, validation_size)
+    _, X_valid, _, Y_valid = util.load_GTRSB_dataset(28,28,3,trainPath, validation_size)
 
     #comment these 3 lines and the line with "log" if you want turn off notification about loaded data 
     counter = 0

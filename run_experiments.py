@@ -1,11 +1,18 @@
 from src.GTRSB_experiments import DNN_outOfBox_dimReduc_test
 from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_test
-from src.MNIST_experiments import SCGAN_MNIST_test
+from src.GTRSB_experiments import DNN_outOfBox_GTRSB_test
+#from src.MNIST_experiments import SCGAN_MNIST_test
+from src.MNIST_experiments import dnn_oob_tester
+from src.utils import abstraction_box
 from src.utils import util
 from src.utils import metrics
-from src import cnn_oob_experiments
+from src import dnn_oob_evaluator
 from src import cnn_nl_oob_experiments
-from multiprocessing import Pool
+#from multiprocessing import Pool
+from pathos.multiprocessing import ProcessingPool as Pool
+from src.Classes.builder import ModelBuilder
+from src.Classes.dataset import Dataset
+from src.Classes.monitor import Monitor
 
 
 # ML is incorrect but monitor does not trust on it = TP
@@ -15,34 +22,42 @@ from multiprocessing import Pool
 if __name__ == "__main__":
 	parallel_execution = True
 	experiments_pool = []
-
 	sep = util.get_separator()
-	datasets = ['MNIST', 'GTRSB']
-	classToMonitor = 7
 	repetitions = 1
-
-	isTestOneClass = True
-	layer_name = 'dense_1'
-	layer_index = 8
-	num_classes = 43
-	input_width = 28
-	input_height = 28
-	channels = 3
-	input_shape = (input_height,input_width, channels)
-
-	models_folder = "src"+sep+"bin"+sep+"models"+sep
-	monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
-	trainPath = 'data'+sep+'GTS_dataset'+sep+"kaggle"+sep+"Train"+sep
-	csvs_folder_path = 'results'+sep+'csv'+sep
-	img_folder_path = 'results'+sep+'img'+sep
+	experiment_acronym = 'CNN+OOB'
+	dataset_names = ['MNIST', 'GTSRB']
 	
+	#models
+	dnn_mnist = ModelBuilder()
+	dnn_mnist.model_name = 'DNN_MNIST.h5'
+	dnn_mnist.exec = dnn_oob_tester
+	dnn_gtsrb = ModelBuilder()
+	dnn_gtsrb.model_name = 'DNN_GTRSB.h5'
+	dnn_gtsrb.exec = dnn_oob_tester
+
+	modelsObj = [dnn_mnist, dnn_gtsrb]
+	
+	#datasets
+	mnistObj = Dataset(dataset_names[0]) 
+	gtsrbObj = Dataset(dataset_names[1]) 
+	datasetObjs = [mnistObj, gtsrbObj]
+	
+	#monitors
+	monitorObjMNIST = Monitor("monitor_Box_MNIST.p", 7, 'dense_1', -2)
+	monitorObjMNIST.method = abstraction_box.find_point
+	monitorObjGTSRB = Monitor("monitor_Box_GTRSB.p", 7, 'dense_1', -2)
+	monitorObjGTSRB.method = abstraction_box.find_point
+	monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
+
+	# specific variables for this results
 	img_name = 'all_images.pdf'
 	acc_file_name = 'accuracies.csv'
 	cf_file_name = 'positive_negative_rates.csv'
 	time_file_name = 'time.csv'
 	mem_file_name = 'memory.csv'
 	f1_file_name = 'f1.csv'
-
+	csvs_folder_path = 'results'+sep+'csv'+sep
+	img_folder_path = 'results'+sep+'img'+sep
 	accuracies = []
 	confusion_matrices = []
 	proc_times = []
@@ -52,17 +67,17 @@ if __name__ == "__main__":
 	if parallel_execution:
 		#Parallelizing the experiments (optional): one experiment per Core
 		pool = Pool()
-
+		#cnn_oob_experiments.run(repetitions, experiment_acronym, modelsObj, datasetObjs, monitorsObj)
 		#Experiment 1: CNN with outside-of-box monitor
-		experiments_pool.append(pool.apply_async(cnn_oob_experiments.run, [repetitions, classToMonitor, 
-					layer_name, models_folder, monitors_folder, isTestOneClass, sep]))  
-		
+		experiments_pool.append(pool.apipe(dnn_oob_evaluator.evaluate, 
+			repetitions, experiment_acronym, modelsObj, datasetObjs, monitorsObj))  
+		'''
 		#Experiment 2: CNN with outside-of-box monitor with non-linear dimensionality reduction
 		experiments_pool.append(pool.apply_async(cnn_nl_oob_experiments.run, [repetitions, classToMonitor, 
 			layer_index, layer_name, models_folder, monitors_folder, isTestOneClass, sep]))
-		
+		'''
 		for experiment in experiments_pool:
-			avg_acc, avg_time, avg_cf, avg_mem, avg_f1, datasets = experiment.get(timeout=1200)
+			avg_acc, avg_time, avg_cf, avg_mem, avg_f1 = experiment.get(timeout=1200)
 
 			accuracies.append(avg_acc)
 			confusion_matrices.append(avg_cf)
@@ -112,4 +127,4 @@ if __name__ == "__main__":
 
 	# Figures
 	#print('confusion_matrices', confusion_matrices)
-	metrics.plot_pos_neg_rate_stacked_bars(confusion_matrices, datasets, img_folder_path+img_name)
+	metrics.plot_pos_neg_rate_stacked_bars(confusion_matrices, dataset_names, img_folder_path+img_name)

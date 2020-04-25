@@ -9,7 +9,7 @@ from keras.models import load_model
 def run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, monitor_ensemble_prefix, model_ensemble_prefix, num_cnn, validation_size, K):
     models = []
     arrWeights = {}
-    _, _, X_valid, Y_valid, _, _, _ = util.load_mnist()
+    
 
     #comment these 3 lines and the line with "log" if you want turn off notification about loaded data 
     counter = 0

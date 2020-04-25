@@ -9,9 +9,7 @@ from keras.models import load_model
 def run(classToMonitor, layer_name, models_folder, monitors_folder, monitor_name, model_name, isTestOneClass, sep):
     count = [0, 0]
     arrPred = []
-    testPath = 'data'+sep+'GTS_dataset'+sep+"kaggle"+sep
-    #loading test set
-    X_test, y_test = util.load_GTRSB_csv(28,28,3,testPath, "Test.csv")
+    
 
     #3 variables for log (optional)
     counter = 0
