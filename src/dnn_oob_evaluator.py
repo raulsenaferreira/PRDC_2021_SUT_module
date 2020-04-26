@@ -10,7 +10,6 @@ def evaluate(repetitions, experiment_acronym, modelsObj, datasetObjs, monitorsOb
 	avg_memory = [experiment_acronym] #memory
 	avg_F1 = [experiment_acronym] #memory
 	
-	
 	for dataset, model, monitor in zip(datasetObjs, modelsObj, monitorsObj):
 		acc = []
 		t = []
@@ -45,38 +44,4 @@ def evaluate(repetitions, experiment_acronym, modelsObj, datasetObjs, monitorsOb
 		avg_F1.append(np.mean(f1))
 		avg_cf.append([np.mean(cf[0]), np.mean(cf[1]), np.mean(cf[2]), np.mean(cf[3])])
 
-		'''
-		acc = []
-		t = []
-		cf = [[],[],[],[]]
-		mem = []
-		f1 = []
-
-		for i in range(repetitions):
-			print("GTRSB experiment {} of {} ...".format(i+1, repetitions))
-			model_name = 'DNN_GTRSB.h5'
-			monitor_name = "monitor_Box_GTRSB.p"
-
-			ini = timer()
-			arrPred, arrLabel, count, arrFP, arrFN, arrTP, arrTN = DNN_outOfBox_GTRSB_test.run(
-				expObj.classToMonitor, expObj.layer_name, expObj.models_folder, expObj.monitors_folder, monitor_name, model_name, 
-				expObj.isTestOneClass, sep)
-			end = timer()
-
-			acc.append(metrics.evaluate(arrLabel, arrPred))
-			t.append(end-ini)
-			mem.append(memory)
-			f1.append(metrics.F1(arrLabel, arrPred))
-			cf[0].append(arrFP[str(expObj.classToMonitor)])
-			cf[1].append(arrFN[str(expObj.classToMonitor)])
-			cf[2].append(arrTP[str(expObj.classToMonitor)])
-			cf[3].append(arrTN[str(expObj.classToMonitor)])
-
-		avg_acc.append(np.mean(acc))
-		avg_time.append(np.mean(t))
-		avg_memory.append(np.mean(mem))
-		avg_F1.append(np.mean(f1))
-		avg_cf.append([np.mean(cf[0]), np.mean(cf[1]), np.mean(cf[2]), np.mean(cf[3])])
-		datasets.append('GTSRB')
-		'''
 	return avg_acc, avg_time, avg_cf, avg_memory, avg_F1
