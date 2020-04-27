@@ -10,3 +10,4 @@ class ModelBuilder:
 		self.isTestOneClass = True
 		self.models_folder = "src"+self.sep+"bin"+self.sep+"models"+self.sep
 		self.models_name = None
+		self.num_cnn = 0 #used for ensembles

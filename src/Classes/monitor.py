@@ -11,4 +11,5 @@ class Monitor:
 		self.layer_name = '' #optional
 		self.layer_index = layer_index
 		self.method = ''
+		self.dim_reduc_method = None
 		self.monitors_folder="src"+self.sep+"bin"+self.sep+"monitors"+self.sep

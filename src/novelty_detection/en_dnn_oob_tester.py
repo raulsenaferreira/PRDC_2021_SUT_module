@@ -9,36 +9,53 @@ from keras.models import load_model
 
 def run(X_test, y_test, model_build, monitor):
     arrPred = []
+    models = []
+    arrWeights = {}
+    boxes = []
     #3 variables for log (optional)
     counter = 0
     loading_percentage = 0.1
     loaded = int(loading_percentage*len(y_test))
 
-    classToMonitor = str(monitor.classToMonitor)
+    classToMonitor = monitor.classToMonitor
     arrFalseNegative = {classToMonitor: 0}
     arrTrueNegative = {classToMonitor: 0}
     arrFalsePositive = {classToMonitor: 0}
     arrTruePositive = {classToMonitor: 0}
 
-    # loading model and abstraction boxes
-    model = load_model(model_build.models_folder+model_build.model_name)
-    boxes = pickle.load(open(monitor.monitors_folder+monitor.monitor_name, "rb"))
+    # loading CNN trained with pre-processed images and preparing to store their weights
+    for i in range(model_build.num_cnn):
+        models.append(load_model(model_build.models_folder+model_build.model_name+str(i)+'.h5'))
+        arrWeights.update({i: []})
+        box = pickle.load(open(monitor.monitors_folder+monitor.monitor_name+str(i)+".p", "rb"))
+        boxes.append(box[classToMonitor])
 
+    dim_reduc_obj = None
+    
+    if monitor.dim_reduc_method != None:
+        dim_reduc_obj = pickle.load(open(monitor.monitors_folder+monitor.dim_reduc_method, "rb"))
+    
     #memory
     process = psutil.Process(os.getpid())
 
     for img, lab in zip(X_test, y_test):
         #counter, loading_percentage = util.loading_info(counter, loaded, loading_percentage) #log
         img = np.asarray([img])
-        yPred = np.argmax(model.predict(img))
+        sequence_models = (models[i].predict(img)[0] for i in range(model_build.num_cnn))
+        #aplying ensemble
+        y_all = np.vstack(sequence_models)
+        
+        y_all = np.average(y_all, axis=0)
+        yPred = np.argmax(y_all)
         arrPred.append(yPred)
-        intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
+        seq_interm_vals = (util.get_activ_func(models[i], img, layerIndex=monitor.layer_index)[0] for i in range(model_build.num_cnn))
+        intermediateValues_all = np.vstack(seq_interm_vals)
 
-        if yPred == monitor.classToMonitor:
-            if monitor.method(boxes, intermediateValues, yPred):
+        if yPred == classToMonitor:
+            if monitor.method(boxes, intermediateValues_all, dim_reduc_obj):
                 
                 if yPred != lab:
-                    arrFalseNegative[classToMonitor] += 1 #False negative			
+                    arrFalseNegative[classToMonitor] += 1 #False negative           
                 if yPred == lab: 
                     arrTrueNegative[classToMonitor] += 1 #True negatives
             else:
