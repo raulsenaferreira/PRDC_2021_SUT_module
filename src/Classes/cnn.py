@@ -6,20 +6,19 @@ from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
 
 
-class CNN:
+class DNN:
 	"""docstring for CNN"""
-	def __init__(self, is_classification, num_classes, input_shape):
-		super(CNN, self).__init__()
-		self.is_classification = is_classification
+	def __init__(self, num_classes):
+		super(DNN, self).__init__()
 		self.num_classes = num_classes	
-		self.input_shape = input_shape
 	
 
-	def train(self, x_train, y_train, x_valid, y_valid, epochs, batch_size, keras_pre_processing=False, train_iterator=None):
+	def train(self, x_train, y_train, x_valid, y_valid, batch_size, epochs, keras_pre_processing=False, train_iterator=None):
+		# CNN
 		model = Sequential()
 		model.add(Conv2D(32, kernel_size=(3, 3),
 		                 activation='relu',
-		                 input_shape=self.input_shape))
+		                 input_shape=x_train.shape[1:]))
 		model.add(Conv2D(64, (3, 3), activation='relu'))
 		model.add(MaxPooling2D(pool_size=(2, 2)))
 		model.add(Dropout(0.25))

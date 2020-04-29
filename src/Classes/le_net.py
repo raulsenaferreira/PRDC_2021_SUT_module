@@ -2,14 +2,14 @@ from keras.models import Sequential
 from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout
 from keras.models import Model
 
-class LeNet:
+class DNN:
 	"""docstring for LeNet"""
-	def __init__(self, is_classification, num_classes):
-		super(LeNet, self).__init__()
-		self.is_classification = is_classification
+	def __init__(self, num_classes):
+		super(DNN, self).__init__()
 		self.num_classes = num_classes
 		
-	def train(self, X_train, X_valid, Y_train, Y_valid, batch_size, epochs):
+	def train(self, X_train, Y_train, X_valid, Y_valid, batch_size, epochs):
+		# LeNet
 		model = Sequential()
 		model.add(Conv2D(filters=32, kernel_size=(5,5), activation='relu', input_shape=X_train.shape[1:]))
 		model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
@@ -24,11 +24,7 @@ class LeNet:
 		model.add(Dense(self.num_classes, activation='softmax'))
 
 		#Compilation of the model
-		if self.is_classification:
-			model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-		else:
-			#changing here for regression properties
-			model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+		model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 		#training
 		history = model.fit(X_train, Y_train, batch_size=batch_size, epochs=epochs, validation_data=(X_valid, Y_valid))

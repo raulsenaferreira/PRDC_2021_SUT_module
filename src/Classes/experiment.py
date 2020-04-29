@@ -10,3 +10,4 @@ class Experiment:
 		self.monitors = []
 		self.models = []
 		self.datasets = []
+		self.tester = None

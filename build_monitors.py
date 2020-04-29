@@ -1,4 +1,6 @@
 from src.utils import util
+from src.novelty_detection import config as config_ND
+
 from src.GTRSB_experiments import DNN_outOfBox_GTRSB_monitor
 from src.GTRSB_experiments import DNN_outOfBox_dimReduc_monitor
 from src.MNIST_experiments import DNN_outOfBox_MNIST_monitor
@@ -10,19 +12,26 @@ from src.MNIST_experiments import DNN_ensemble_outOfBox_MNIST_monitor
 
 #general settings
 sep = util.get_separator()
-models_folder = "src"+sep+"bin"+sep+"models"+sep
-validation_size = 0.3
-classToMonitor = 7
+#datasets
+mnist = 1
+gtsrb = 2
+cifar = 3
+
+#Building monitors for Novelty Detection
+validation_size = config_ND.load_var_dict('validation_size')
+classToMonitor = config_ND.load_var_dict('classToMonitor')
+layer_index = config_ND.load_var_dict('layerToMonitor')
+
+
+
 K = 3
-layer_name = 'dense_1'
-models_folder = "src"+sep+"bin"+sep+"models"+sep
-monitors_folder = "src"+sep+"bin"+sep+"monitors"+sep
-layer_index = -2 #last hidden layer
+
 
 #monitoring one class in the GTRSB dataset using outside of box
-#monitor_name = "monitor_Box_GTRSB.p"
-#model_name = 'DNN_GTRSB.h5'
-#success = DNN_outOfBox_GTRSB_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, sep)
+monitor_name = "monitor_Box_GTRSB.p"
+model_name = 'DNN_GTRSB.h5'
+success = DNN_outOfBox_GTRSB_monitor.run(
+	classToMonitor, config_ND.load_var_dict('monitors_folder'), monitor_name, models_folder, model_name, layer_name, validation_size, K, sep)
 
 #monitoring ensemble of CNNs in the GTRSB using outside of box
 #layer_index = 8

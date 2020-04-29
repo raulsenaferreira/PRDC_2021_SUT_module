@@ -7,7 +7,9 @@ class ModelBuilder:
 		super(ModelBuilder, self).__init__()
 		self.sep = util.get_separator()
 		self.exec = None
-		self.isTestOneClass = True
-		self.models_folder = "src"+self.sep+"bin"+self.sep+"models"+self.sep
+		model.algorithm = le_net
+		model.runner
+		self.batch_size = 0
+		self.epochs = 0
 		self.models_name = None
 		self.num_cnn = 0 #used for ensembles

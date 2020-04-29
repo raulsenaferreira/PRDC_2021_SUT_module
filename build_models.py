@@ -1,46 +1,57 @@
 from src.utils import util
-from src.GTRSB_experiments import DNN_GTRSB_model
-from src.GTRSB_experiments import DNN_ensemble_GTRSB_model
-from src.MNIST_experiments import DNN_MNIST_model
-from src.MNIST_experiments import DNN_ensemble_MNIST_model
-from multiprocessing import Pool
+from pathos.multiprocessing import ProcessingPool as Pool
+from src.novelty_detection import config as config_ND
+from src.Classes.dataset import Dataset
+from src.Classes.model_builder import ModelBuilder
 
 
 if __name__ == "__main__":
-	parallel_execution = False
-	experiments_pool = []
+	dataset_names = ['MNIST', 'GTSRB']
+	models_pool = []
+	timeout = 1000
 
 	#general settings
 	sep = util.get_separator()
-	models_folder = "src"+sep+"bin"+sep+"models"+sep
-	validation_size = 0.3
+	models_folder = config_ND.load_var_dict('models_folder')
+	validation_size = config_ND.load_var_dict('validation_size')
+	parallel_execution = False
 
-	#German traffic sign dataset
-	trainPath = 'data'+sep+'GTS_dataset'+sep+"kaggle"+sep+"Train"+sep
-	num_classes = 43
-	is_classification = True
-	height = 28
-	width = 28
-	channels = 3
-	#MNIST
-	batch_size = 128
-	epochs = 12
-	#GTSRB
-	epochs_2 = 10
-	batch_size_2 = 32
+	#datasets
+	mnistObj = Dataset(dataset_names[0])
+	mnistObj.validation_size = validation_size
+	gtsrbObj = Dataset(dataset_names[1])
+	gtsrbObj.validation_size = validation_size
 
-	#model 1
-	model_name = 'DNN_MNIST.h5'
-	#Model 2
-	model_name_2 = 'DNN_GTRSB.h5'
-	#Model 3
-	model_name_prefix = 'DNN_ensemble_MNIST_'
-	#Model 4
-	model_name_prefix_2 = 'DNN_ensemble_GTRSB_'
+	#Model 1: CNN with MNIST dataset
+	model = load_model_settings(1)
+	model.dataset = mnistObj
+	models_pool.append(model) 
+	#Model 2: LeNet with GTRSB dataset
+	model = load_model_settings(2)
+	model.dataset = gtsrbObj
+	models_pool.append(model) 
+	#Model 3: Ensemble of CNN with MNIST dataset
+	#model = load_model_settings(3)
+	#model.dataset = mnistObj
+	#models_pool.append(model)
+	#Model 4: Ensemble of LeNet with GTRSB dataset
+	#model = load_model_settings(4)
+	#model.dataset = gtsrbObj
+	#models_pool.append(model)
 
 	if parallel_execution:
 		#Parallelizing the experiments (optional): one experiment per Core
 		pool = Pool()
+		processes_pool = []
+
+		for model in models_pool:
+			processes_pool.append(pool.apipe(model.runner.run, model)) 
+		
+		for process in processes_pool:
+			history = process.get(timeout=timeout)
+			
+
+		'''
 		timeout = 0
 
 		#Model 1: CNN with MNIST dataset
@@ -82,4 +93,4 @@ if __name__ == "__main__":
 		#DNN_ensemble_GTRSB_model.run(validation_size, batch_size_2, models_folder, epochs_2, model_name_prefix_2, sep, script_path)
 
 		#Model 5: ALOCC model with MNIST
-		
+		'''

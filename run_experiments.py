@@ -44,15 +44,15 @@ if __name__ == "__main__":
 	memories = []
 	f1s = []
 
-	experiment = config_ND.load_experiment(1)
+	experiment = config_ND.load_experiment_settings(1)
 	experiment.datasets = datasetObjs
 	#experiments_pool.append(experiment)
 
-	experiment = config_ND.load_experiment(2)
+	experiment = config_ND.load_experiment_settings(2)
 	experiment.datasets = datasetObjs
 	#experiments_pool.append(experiment)
 
-	experiment = config_ND.load_experiment(3)
+	experiment = config_ND.load_experiment_settings(3)
 	experiment.datasets = datasetObjs
 	experiments_pool.append(experiment)
 
