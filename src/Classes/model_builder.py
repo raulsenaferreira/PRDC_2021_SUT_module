@@ -7,8 +7,8 @@ class ModelBuilder:
 		super(ModelBuilder, self).__init__()
 		self.sep = util.get_separator()
 		self.exec = None
-		model.algorithm = le_net
-		model.runner
+		self.algorithm = None
+		self.runner = None
 		self.batch_size = 0
 		self.epochs = 0
 		self.models_name = None

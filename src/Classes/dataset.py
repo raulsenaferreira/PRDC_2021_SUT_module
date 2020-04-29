@@ -1,3 +1,4 @@
+import os
 from src.utils import util
 import keras
 from keras.datasets import mnist
@@ -47,8 +48,10 @@ class Dataset:
 		x_train /= 255
 		x_test /= 255
 
-		x_train, x_valid = train_test_split(x_train, test_size=self.validation_size, shuffle=False)
-		y_train, y_valid = train_test_split(y_train, test_size=self.validation_size, shuffle=False)
+		x_train, x_valid, y_train, y_valid = train_test_split(x_train,y_train,test_size = self.validation_size)
+
+		#x_train, x_valid = train_test_split(x_train, test_size=self.validation_size, shuffle=False)
+		#y_train, y_valid = train_test_split(y_train, test_size=self.validation_size, shuffle=False)
 
 		print('x_train shape:', x_train.shape)
 		print(x_train.shape[0], 'train samples')
@@ -65,7 +68,6 @@ class Dataset:
 
 	def load_GTRSB_dataset(self, onehotencoder=True):
 		# Reading the input images and putting them into a numpy array
-		sep = get_separator()
 		data=[]
 		labels=[]
 		
@@ -96,7 +98,7 @@ class Dataset:
 		x_train=x_train[s]
 		y_train=y_train[s]
 		# Split Data
-		X_train,X_valid,Y_train,Y_valid = train_test_split(x_train,y_train,test_size = self.validation_size,random_state=0)
+		X_train,X_valid,Y_train,Y_valid = train_test_split(x_train,y_train,test_size = self.validation_size)
 		
 		if onehotencoder:
 			#Using one hote encoding for the train and validation labels
@@ -135,7 +137,7 @@ class Dataset:
 			self.num_classes = 10
 			self.channels = 1
 			if mode == 'train':
-				X_train, Y_train, X_valid, Y_valid, _, _, _ = self.load_mnist(self.validation_size)
+				X_train, Y_train, X_valid, Y_valid, _, _, _ = self.load_mnist()
 				data = X_train, Y_train, X_valid, Y_valid
 			else:
 				_, _, _, _, X_test, y_test, _ = self.load_mnist(onehotencoder=False)
@@ -145,8 +147,9 @@ class Dataset:
 			self.num_classes = 43
 			self.channels = 3
 			if mode == 'train':
-				self.trainPath = 'data'+sep+'GTS_dataset'+sep+"kaggle"+sep+"Train"+sep
-				X_train, X_valid, Y_train, Y_valid = self.load_GTRSB_dataset(self.validation_size)
+				self.trainPath = 'data'+self.sep+'GTS_dataset'+self.sep+"kaggle"+self.sep+"Train"+self.sep
+				X_train, X_valid, Y_train, Y_valid = self.load_GTRSB_dataset()
+				data = X_train, Y_train, X_valid, Y_valid
 			else:
 				self.testPath = 'data'+self.sep+'GTS_dataset'+self.sep+"kaggle"+self.sep
 				X_test, y_test = self.load_GTRSB_csv("Test.csv")

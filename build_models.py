@@ -1,6 +1,6 @@
 from src.utils import util
 from pathos.multiprocessing import ProcessingPool as Pool
-from src.novelty_detection import config as config_ND
+from src import model_config as config
 from src.Classes.dataset import Dataset
 from src.Classes.model_builder import ModelBuilder
 
@@ -12,9 +12,8 @@ if __name__ == "__main__":
 
 	#general settings
 	sep = util.get_separator()
-	models_folder = config_ND.load_var_dict('models_folder')
-	validation_size = config_ND.load_var_dict('validation_size')
-	parallel_execution = False
+	validation_size = config.load_var_dict('validation_size')
+	parallel_execution = True
 
 	#datasets
 	mnistObj = Dataset(dataset_names[0])
@@ -23,11 +22,11 @@ if __name__ == "__main__":
 	gtsrbObj.validation_size = validation_size
 
 	#Model 1: CNN with MNIST dataset
-	model = load_model_settings(1)
+	model = config.load_model_settings(1)
 	model.dataset = mnistObj
-	models_pool.append(model) 
+	#models_pool.append(model) 
 	#Model 2: LeNet with GTRSB dataset
-	model = load_model_settings(2)
+	model = config.load_model_settings(2)
 	model.dataset = gtsrbObj
 	models_pool.append(model) 
 	#Model 3: Ensemble of CNN with MNIST dataset

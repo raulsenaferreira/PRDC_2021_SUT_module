@@ -154,12 +154,11 @@ def load_var_dict(key):
 
 	Example for the monitor name for the experiment 1 + dataset 1 --> "e1_d1_mn"
 	'''
+	var_dict = {}
 	classToMonitor = 7
 	var_dict['classToMonitor'] = classToMonitor
 	layerToMonitor = -2
 	var_dict['layerToMonitor'] = layerToMonitor
-	validation_size = 0.3
-	var_dict['validation_size'] = validation_size
 
 	var_dict['monitors_folder'] = "src"+sep+"novelty_detection"+sep+"bin"+sep+"monitors"+sep
 

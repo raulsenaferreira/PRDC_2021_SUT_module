@@ -1,13 +1,14 @@
 from src.Classes.model_builder import ModelBuilder
-from src.GTRSB_experiments import DNN_GTRSB_model
-from src.GTRSB_experiments import DNN_ensemble_GTRSB_model
 from src.MNIST_experiments import dnn_simple_model
-from src.MNIST_experiments import DNN_ensemble_MNIST_model
-from src.ML_algorithms import cnn
-from src.ML_algorithms import le_net
+from src.Classes import cnn
+from src.Classes import le_net
+from src.utils import util
+
+sep = util.get_separator()
 
 def load_model_settings(model_number):
 	model = ModelBuilder()
+	model.models_folder = load_var_dict('models_folder')
 
 	if model_number == 1:
 		model.model_name = load_var_dict("m1_d1_name")
@@ -39,13 +40,16 @@ def load_model_settings(model_number):
 
 
 def load_var_dict(key):
+	var_dict = {}
+
+	var_dict['validation_size'] = 0.3
 	var_dict['models_folder'] = "src"+sep+"bin"+sep+"models"+sep
 	var_dict['m1_d1_name'] = 'DNN_MNIST.h5'
 	var_dict['m1_d1_batch'] = 128
 	var_dict['m1_d1_epoch'] = 12
-	var_dict['m1_d1_name'] = 'DNN_GTRSB.h5'
-	var_dict['m1_d2_batch'] = 10
-	var_dict['m1_d2_epoch'] = 32
+	var_dict['m1_d2_name'] = 'DNN_GTRSB.h5'
+	var_dict['m1_d2_batch'] = 32
+	var_dict['m1_d2_epoch'] = 10
 	var_dict['m2_d1_name'] = 'DNN_ensemble_MNIST_'
 	var_dict['m2_d2_name'] = 'DNN_ensemble_GTRSB_'
 
