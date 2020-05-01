@@ -24,6 +24,10 @@ def get_separator():
 	return sep
 
 
+def is_monitored_prediction(yPred, label, classToMonitor):
+	return yPred == label and yPred==classToMonitor
+
+
 def get_activ_func(model, image, layerIndex):
 	inter_output_model = Model(inputs = model.input, outputs = model.get_layer(index=layerIndex).output) #last layer: index 7 or name 'dense'
 	return inter_output_model.predict(image)

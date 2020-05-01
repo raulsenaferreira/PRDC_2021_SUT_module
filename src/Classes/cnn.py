@@ -4,9 +4,9 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
+from src.Classes.classifier_impl import *
 
-
-class DNN:
+class DNN(Classifier_interface):
 	"""docstring for CNN"""
 	def __init__(self, num_classes):
 		super(DNN, self).__init__()

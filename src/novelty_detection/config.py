@@ -5,6 +5,7 @@ from src.novelty_detection import dnn_oob_evaluator
 from src.novelty_detection import dnn_oob_tester
 from src.novelty_detection import en_dnn_oob_tester
 from src.novelty_detection.utils import abstraction_box
+from src.MNIST_experiments import act_func_based_monitor
 from src.utils import util
 
 
@@ -22,7 +23,14 @@ def load_file_names():
 	return compiled_img_name, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name
 
 
-def load_monitor_settings(monitor_number):
+def load_settings(monitor_acronym):
+	monitor = None
+	monitors_folder = load_var('monitors_folder')
+	if monitor_acronym == 'oob':
+		monitor = Monitor(load_var("e1_d1_mn"), load_var("classToMonitor"), load_var("layerToMonitor"))
+		monitor.method = abstraction_box.make_abstraction
+		monitor.trainer = act_func_based_monitor
+		monitor.monitors_folder = monitors_folder
 
 	return monitor
 
@@ -41,6 +49,7 @@ def load_experiment_settings(experiment_number):
 		#monitors
 		monitorObjMNIST = Monitor(load_var_dict["e1_d1_mn"], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
 		monitorObjMNIST.method = abstraction_box.find_point
+
 		monitorObjGTSRB = Monitor(load_var_dict["e1_d2_mn"], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
 		monitorObjGTSRB.method = abstraction_box.find_point
 		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
@@ -141,7 +150,7 @@ def load_experiment_settings(experiment_number):
 		return experiment
 
 
-def load_var_dict(key):
+def load_var(key):
 	''' 
 	Change here the values of the variables if you want to change:
 	1) the DNN layer and/or class monitored by the runtime monitor 

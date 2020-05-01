@@ -11,5 +11,6 @@ class Monitor:
 		self.layer_name = '' #optional
 		self.layer_index = layer_index
 		self.method = ''
+		self.trainer = None
 		self.dim_reduc_method = None
 		self.monitors_folder=""

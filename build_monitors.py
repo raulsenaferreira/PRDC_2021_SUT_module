@@ -1,37 +1,62 @@
 from src.utils import util
+from src import model_config as model_cfg
 from src.novelty_detection import config as config_ND
-
+from pathos.multiprocessing import ProcessingPool as Pool
+from src.Classes.dataset import Dataset
 from src.GTRSB_experiments import DNN_outOfBox_GTRSB_monitor
 from src.GTRSB_experiments import DNN_outOfBox_dimReduc_monitor
-from src.MNIST_experiments import DNN_outOfBox_MNIST_monitor
 from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_monitor
 #from src.MNIST_experiments import SCGAN_MNIST_monitor
 from src.MNIST_experiments import DNN_outOfBox_dimReduc_MNIST_monitor
 from src.MNIST_experiments import DNN_ensemble_outOfBox_MNIST_monitor
 
 
-#general settings
-sep = util.get_separator()
-#datasets
-mnist = 1
-gtsrb = 2
-cifar = 3
+if __name__ == "__main__":
+	dataset_names = ['MNIST', 'GTSRB']
+	monitors_pool = []
+	models_pool = []
+	timeout = 1000
 
-#Building monitors for Novelty Detection
-validation_size = config_ND.load_var_dict('validation_size')
-classToMonitor = config_ND.load_var_dict('classToMonitor')
-layer_index = config_ND.load_var_dict('layerToMonitor')
+	#general settings
+	sep = util.get_separator()
+	validation_size = model_cfg.load_var('validation_size')
+	parallel_execution = True
 
+	#datasets
+	mnistObj = Dataset(dataset_names[0])
+	mnistObj.validation_size = validation_size
+	gtsrbObj = Dataset(dataset_names[1])
+	gtsrbObj.validation_size = validation_size
 
+	#Building monitors for Novelty Detection
 
-K = 3
+	# 1: Train a monitor with outside-of-box method to inspect the CNN decision over the MNIST dataset
+	# Outside-of-box monitor 
+	monitor = config_ND.load_settings('oob')
+	monitor.dataset = mnistObj
+	monitors_pool.append(monitor)
 
+	# CNN model trained on the MNIST dataset
+	model = model_cfg.load_settings('cnn_mnist')
+	models_pool.append(model)
 
-#monitoring one class in the GTRSB dataset using outside of box
-monitor_name = "monitor_Box_GTRSB.p"
-model_name = 'DNN_GTRSB.h5'
-success = DNN_outOfBox_GTRSB_monitor.run(
-	classToMonitor, config_ND.load_var_dict('monitors_folder'), monitor_name, models_folder, model_name, layer_name, validation_size, K, sep)
+	if parallel_execution:
+		#Parallelizing the experiments (optional): one experiment per Core
+		pool = Pool()
+		processes_pool = []
+
+		for monitor, model in zip(monitors_pool, models_pool):
+			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model)) 
+		
+		for process in processes_pool:
+			history = process.get(timeout=timeout)
+
+	#K = 3
+	#monitoring one class in the GTRSB dataset using outside of box
+	#monitor_name = "monitor_Box_GTRSB.p"
+	#model_name = 'DNN_GTRSB.h5'
+	#success = DNN_outOfBox_GTRSB_monitor.run(
+	#	classToMonitor, config_ND.load_var_dict('monitors_folder'), monitor_name, models_folder, model_name, layer_name, validation_size, K, sep)
 
 #monitoring ensemble of CNNs in the GTRSB using outside of box
 #layer_index = 8
@@ -68,10 +93,11 @@ success = DNN_outOfBox_GTRSB_monitor.run(
 #monitor_name = "monitor_Box_"+dim_reduc_method+"_MNIST.p"
 #success = DNN_outOfBox_dimReduc_MNIST_monitor.run(classToMonitor, monitors_folder, monitor_name, models_folder, model_name, layer_name, validation_size, K, dim_reduc_method, sep)
 
-
+'''
 #monitoring ensemble of CNNs in the MNIST using outside of box
 monitors_ensemble_folder = monitors_folder+"outOfBox_ensembleDNN"+sep
 monitor_ensemble_prefix = "monitor_Box_DNN_MNIST"
 model_ensemble_prefix = 'DNN_ensemble_MNIST_'
 num_cnn = 3
 DNN_ensemble_outOfBox_MNIST_monitor.run(classToMonitor, layer_index, models_folder, monitors_ensemble_folder, monitor_ensemble_prefix, model_ensemble_prefix, num_cnn, validation_size, K)
+'''

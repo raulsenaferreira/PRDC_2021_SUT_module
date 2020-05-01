@@ -1,9 +1,10 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import pickle
+from sklearn.cluster import KMeans
 
 
-def make_abstraction(data, clusters, classe, dim_reduc_obj=None, dim_reduc_method='', monitors_folder=None):
+def make_abstraction(data, K, classe, dim_reduc_obj=None, dim_reduc_method='', monitors_folder=None):
 	data = np.asarray(data)
 	
 	if dim_reduc_obj==None:
@@ -19,6 +20,9 @@ def make_abstraction(data, clusters, classe, dim_reduc_obj=None, dim_reduc_metho
 	print(data.shape)
 
 	dataByCluster={}
+	clusters = KMeans(n_clusters=K).fit_predict(data)
+	
+	print("making boxes...")
 
 	for c, d in zip(clusters, data):
 		try:
@@ -38,6 +42,7 @@ def make_abstraction(data, clusters, classe, dim_reduc_obj=None, dim_reduc_metho
 			max_i = np.amax(v[:,i])
 			arr_intermediate.append([min_i, max_i])
 		array_box_by_cluster[classe].append(arr_intermediate)
+
 	return array_box_by_cluster
 
 

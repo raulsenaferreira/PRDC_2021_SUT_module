@@ -1,6 +1,6 @@
 from src.utils import util
 from pathos.multiprocessing import ProcessingPool as Pool
-from src import model_config as config
+from src import model_config as model_cfg
 from src.Classes.dataset import Dataset
 from src.Classes.model_builder import ModelBuilder
 
@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
 	#general settings
 	sep = util.get_separator()
-	validation_size = config.load_var_dict('validation_size')
+	validation_size = model_cfg.load_var('validation_size')
 	parallel_execution = True
 
 	#datasets
@@ -22,15 +22,17 @@ if __name__ == "__main__":
 	gtsrbObj.validation_size = validation_size
 
 	#Model 1: CNN with MNIST dataset
-	model = config.load_model_settings(1)
+	model = model_cfg.load_settings('cnn_mnist')
 	model.dataset = mnistObj
-	#models_pool.append(model) 
-	#Model 2: LeNet with GTRSB dataset
-	model = config.load_model_settings(2)
-	model.dataset = gtsrbObj
 	models_pool.append(model) 
+	
+	#Model 2: LeNet with GTRSB dataset
+	model = model_cfg.load_settings(2)
+	model.dataset = gtsrbObj
+	#models_pool.append(model) 
+	
 	#Model 3: Ensemble of CNN with MNIST dataset
-	#model = load_model_settings(3)
+	#model = model_cfg.load_settings(3)
 	#model.dataset = mnistObj
 	#models_pool.append(model)
 	#Model 4: Ensemble of LeNet with GTRSB dataset
