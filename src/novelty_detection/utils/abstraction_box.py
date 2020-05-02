@@ -4,7 +4,7 @@ import pickle
 from sklearn.cluster import KMeans
 
 
-def make_abstraction(data, K, classe, dim_reduc_obj=None, dim_reduc_method='', monitors_folder=None):
+def make_abstraction(data, K, classe, dim_reduc_obj=None, dim_reduc_method='', monitors_folder='', save=False):
 	data = np.asarray(data)
 	
 	if dim_reduc_obj==None:
@@ -13,9 +13,10 @@ def make_abstraction(data, K, classe, dim_reduc_obj=None, dim_reduc_method='', m
 	else:
 		#using a dimensionality reduction function
 		method = dim_reduc_obj.fit(data)
-		print("Saving trained dim reduc method")
-		pickle.dump(method, open(monitors_folder+dim_reduc_method+'_trained.p', "wb"))
 		data = method.transform(data)
+		if save:
+			print("Saving trained dim reduc method")
+			pickle.dump(method, open(monitors_folder+dim_reduc_method+'_trained.p', "wb"))
 
 	print(data.shape)
 

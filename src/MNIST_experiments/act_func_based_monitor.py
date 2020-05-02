@@ -32,4 +32,4 @@ def run(monitor, model_obj):
 	print("Saving monitor in", file)
 	pickle.dump(trained_monitor, open( file, "wb" ))
 
-	return True
+	return trained_monitor

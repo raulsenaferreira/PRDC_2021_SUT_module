@@ -40,8 +40,9 @@ if __name__ == "__main__":
 	model = model_cfg.load_settings('cnn_mnist')
 	models_pool.append(model)
 
+	#Parallelizing the experiments (optional): one experiment per Core
 	if parallel_execution:
-		#Parallelizing the experiments (optional): one experiment per Core
+		
 		pool = Pool()
 		processes_pool = []
 
@@ -49,7 +50,7 @@ if __name__ == "__main__":
 			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model)) 
 		
 		for process in processes_pool:
-			history = process.get(timeout=timeout)
+			trained_monitor = process.get(timeout=timeout)
 
 	#K = 3
 	#monitoring one class in the GTRSB dataset using outside of box

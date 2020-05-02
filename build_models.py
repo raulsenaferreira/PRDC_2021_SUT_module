@@ -1,8 +1,6 @@
-from src.utils import util
 from pathos.multiprocessing import ProcessingPool as Pool
 from src import model_config as model_cfg
 from src.Classes.dataset import Dataset
-from src.Classes.model_builder import ModelBuilder
 
 
 if __name__ == "__main__":
@@ -11,7 +9,6 @@ if __name__ == "__main__":
 	timeout = 1000
 
 	#general settings
-	sep = util.get_separator()
 	validation_size = model_cfg.load_var('validation_size')
 	parallel_execution = True
 
@@ -22,14 +19,14 @@ if __name__ == "__main__":
 	gtsrbObj.validation_size = validation_size
 
 	#Model 1: CNN with MNIST dataset
-	model = model_cfg.load_settings('cnn_mnist')
-	model.dataset = mnistObj
-	models_pool.append(model) 
+	model_builder = model_cfg.load_settings('cnn_mnist')
+	model_builder.dataset = mnistObj
+	models_pool.append(model_builder) 
 	
 	#Model 2: LeNet with GTRSB dataset
-	model = model_cfg.load_settings(2)
-	model.dataset = gtsrbObj
-	#models_pool.append(model) 
+	model_builder = model_cfg.load_settings(2)
+	model_builder.dataset = gtsrbObj
+	#models_pool.append(model_builder) 
 	
 	#Model 3: Ensemble of CNN with MNIST dataset
 	#model = model_cfg.load_settings(3)
@@ -45,8 +42,8 @@ if __name__ == "__main__":
 		pool = Pool()
 		processes_pool = []
 
-		for model in models_pool:
-			processes_pool.append(pool.apipe(model.runner.run, model)) 
+		for model_builder in models_pool:
+			processes_pool.append(pool.apipe(model_builder.runner.run, model_builder)) 
 		
 		for process in processes_pool:
 			history = process.get(timeout=timeout)
