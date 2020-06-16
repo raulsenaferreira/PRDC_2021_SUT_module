@@ -29,7 +29,7 @@ if __name__ == "__main__":
 	
 	csvs_folder_path = 'results'+sep+'csv'+sep
 	img_folder_path = 'results'+sep+'img'+sep
-	experiment_type = ['novelty_detection', 'distributional_shift', 'adversarial_attack']
+	experiment_type = ['novelty_detection', 'outlier_detection', 'distributional_shift', 'adversarial_attack']
 
 	#datasets
 	mnistObj = Dataset(dataset_names[0]) 

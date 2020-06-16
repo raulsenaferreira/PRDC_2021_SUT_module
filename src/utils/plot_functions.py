@@ -302,3 +302,17 @@ def plotBars4(baseline, listOfAccuracies, listOfMethods):
     plt.xticks(rotation=90)
     plt.grid()
     plt.show()
+
+
+def plot_images(temporal_data, temporal_labels, num_row, num_col, mode=None):
+
+    fig, axes = plt.subplots(num_row, num_col, figsize=(1.5*num_col,2*num_row))
+    
+    for i in range(num_row*num_col):
+        ax = axes[i//num_col, i%num_col]            
+        ax.imshow(np.squeeze(temporal_data[i]), cmap='gray')
+        ax.set_title('{}'.format(temporal_labels[i]))
+        ax.set_axis_off()
+
+    plt.tight_layout(pad=3.0)
+    plt.show()
