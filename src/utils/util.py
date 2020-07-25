@@ -36,7 +36,7 @@ def get_activ_func(model, image, layerIndex):
 def loading_info(counter, loaded, loading_percentage):
 	counter+=1
 	if counter % loaded == 0:
-		print("{} % loaded".format(int(loading_percentage*100)))
+		print("{} % processed".format(int(loading_percentage*100)))
 		loading_percentage+=0.1
 	return counter, loading_percentage
 

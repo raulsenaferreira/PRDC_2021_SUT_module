@@ -3,14 +3,14 @@ from time import perf_counter as timer
 import numpy as np
 
 
-def evaluate(repetitions, experiment_acronym, modelsObj, datasetObjs, monitorsObj):
-	avg_acc = [experiment_acronym] #accuracy
-	avg_cf = [experiment_acronym] #confusion matrix
-	avg_time = [experiment_acronym] #time
-	avg_memory = [experiment_acronym] #memory
-	avg_F1 = [experiment_acronym] #memory
+def evaluate(repetitions, experiment):
+	avg_acc = [experiment.acronym] #accuracy
+	avg_cf = [experiment.acronym] #confusion matrix
+	avg_time = [experiment.acronym] #time
+	avg_memory = [experiment.acronym] #memory
+	avg_F1 = [experiment.acronym] #memory
 	
-	for dataset, model, monitor in zip(datasetObjs, modelsObj, monitorsObj):
+	for dataset, model, monitor in zip(experiment.datasets, experiment.models, experiment.monitors):
 		acc = []
 		t = []
 		cf = [[],[],[],[]]
@@ -23,8 +23,8 @@ def evaluate(repetitions, experiment_acronym, modelsObj, datasetObjs, monitorsOb
 			X_test, y_test = dataset.load_dataset(mode='test')
 
 			ini = timer()
-			arrPred, arrLabel, memory, arrFP, arrFN, arrTP, arrTN = model.exec.run(
-				X_test, y_test, model, monitor)
+			arrPred, arrLabel, memory, arrFP, arrFN, arrTP, arrTN = experiment.tester.run(
+				X_test, y_test, model.binary, monitor)
 			end = timer()
 
 			acc.append(metrics.evaluate(arrLabel, arrPred))

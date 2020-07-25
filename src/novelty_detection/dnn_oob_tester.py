@@ -3,10 +3,9 @@ import numpy as np
 import pickle
 import psutil
 from src.utils import util
-from keras.models import load_model
 
 
-def run(X_test, y_test, model_build, monitor):
+def run(X_test, y_test, model, monitor):
     arrPred = []
     #3 variables for log (optional)
     counter = 0
@@ -19,8 +18,7 @@ def run(X_test, y_test, model_build, monitor):
     arrFalsePositive = {classToMonitor: 0}
     arrTruePositive = {classToMonitor: 0}
 
-    # loading model and abstraction boxes
-    model = load_model(model_build.models_folder+model_build.model_name)
+    # loading abstraction boxes
     boxes = pickle.load(open(monitor.monitors_folder+monitor.monitor_name, "rb"))
     dim_reduc_obj = None
     
@@ -30,7 +28,7 @@ def run(X_test, y_test, model_build, monitor):
     process = psutil.Process(os.getpid())
 
     for img, lab in zip(X_test, y_test):
-        #counter, loading_percentage = util.loading_info(counter, loaded, loading_percentage) #log
+        counter, loading_percentage = util.loading_info(counter, loaded, loading_percentage) #log
         img = np.asarray([img])
         yPred = np.argmax(model.predict(img))
         arrPred.append(yPred)

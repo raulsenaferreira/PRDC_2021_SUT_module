@@ -18,7 +18,7 @@ from src.Classes.dataset import Dataset
 
 if __name__ == "__main__":
 	
-	#global settings
+	## global settings
 	experiments_pool = []
 	sep = util.get_separator()
 	repetitions = 1
@@ -29,8 +29,10 @@ if __name__ == "__main__":
 	
 	csvs_folder_path = 'results'+sep+'csv'+sep
 	img_folder_path = 'results'+sep+'img'+sep
+
 	experiment_type = ['novelty_detection', 'outlier_detection', 'distributional_shift', 'adversarial_attack']
 
+	## loading experiments and datasets
 	#datasets
 	mnistObj = Dataset(dataset_names[0]) 
 	gtsrbObj = Dataset(dataset_names[1]) 
@@ -44,17 +46,19 @@ if __name__ == "__main__":
 	memories = []
 	f1s = []
 
-	experiment = config_ND.load_experiment_settings(1)
-	experiment.datasets = datasetObjs
-	#experiments_pool.append(experiment)
-
-	experiment = config_ND.load_experiment_settings(2)
-	experiment.datasets = datasetObjs
-	#experiments_pool.append(experiment)
-
-	experiment = config_ND.load_experiment_settings(3)
+	#Experiment 1: DNN with outside-of-box monitor
+	experiment = config_ND.load_experiment_settings(1, len(datasetObjs))
 	experiment.datasets = datasetObjs
 	experiments_pool.append(experiment)
+
+	#Experiment 2: same of 1 but using isomap instead of 2D projection
+	experiment = config_ND.load_experiment_settings(2, len(datasetObjs))
+	experiment.datasets = datasetObjs
+	experiments_pool.append(experiment)
+
+	#experiment = config_ND.load_experiment_settings(3, len(datasetObjs))
+	#experiment.datasets = datasetObjs
+	#experiments_pool.append(experiment)
 
 	#Running experiments: parallel or not
 	if parallel_execution:
@@ -78,7 +82,7 @@ if __name__ == "__main__":
 		#Serial version for the experiments
 		for experiment in experiments_pool:
 			avg_acc, avg_time, avg_cf, avg_mem, avg_f1 = experiment.evaluator.evaluate(
-				repetitions, experiment.acronym, experiment.models, experiment.datasets, experiment.monitors) 
+				repetitions, experiment) 
 			
 			accuracies.append(avg_acc)
 			confusion_matrices.append(avg_time)

@@ -6,10 +6,10 @@ class ModelBuilder:
 	def __init__(self):
 		super(ModelBuilder, self).__init__()
 		self.sep = util.get_separator()
-		self.exec = None
+		self.binary = None
 		self.algorithm = None
-		self.runner = None
 		self.batch_size = 0
 		self.epochs = 0
-		self.models_name = None
+		self.model_name = None
 		self.num_cnn = 0 #used for ensembles
+		self.models_folder = "src"+self.sep+"bin"+self.sep+"models"+self.sep

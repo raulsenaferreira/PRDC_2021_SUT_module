@@ -1,4 +1,5 @@
 from src import model_config
+from src.Classes.model_builder import ModelBuilder
 from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
 from src.novelty_detection import dnn_oob_evaluator
@@ -7,12 +8,12 @@ from src.novelty_detection import en_dnn_oob_tester
 from src.novelty_detection.utils import abstraction_box
 from src.MNIST_experiments import act_func_based_monitor
 from src.utils import util
+from keras.models import load_model
 
 
 sep = util.get_separator()
 
-def load_file_names():
-	experiment_type = 'novelty_detection'
+def load_file_names(experiment_type):
 	compiled_img_name = experiment_type+sep+'all_images.pdf'
 	acc_file_name = experiment_type+sep+'accuracies.csv'
 	cf_file_name = experiment_type+sep+'positive_negative_rates.csv'
@@ -35,64 +36,44 @@ def load_settings(monitor_acronym):
 	return monitor
 
 
-def load_experiment_settings(experiment_number):
-		
+def load_experiment_settings(experiment_number, num_datasets):
+	'''
+	Meaning of keys:
+	e => experiment number (1 = outside-of-box paper; 2 = outside-of-box using isomap instead of 2D projection; 
+	     3 = outside-of-box with ensemble of DNN; 4 = same of 3 but using isomap strategy;
+	     5 = same of 2 but using DBSCAN instead of KNN; 6 = same of 2 but clustering without dimension reduction;
+	     7 = same of 5 but clustering without dimension reduction; 
+	     8 = using the derivative of activation functions instead of raw values)
+	d = dataset number (1=MNIST; 2=GTSRB; 3=CIFAR-10;)
+	mn = monitor; md = model; dr = dimensionality reduction method;
+	'''
+
+	models = []
+	monitors = []
+
+	for i in range(num_datasets):
+		#models
+		model = ModelBuilder()
+		model_file_name = load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_md')
+		model.binary = load_model(model.models_folder+model_file_name)
+		models.append(model)
+		#monitors
+		monitor = Monitor("novelty_detection", load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_mn'), 
+			load_var("classToMonitor"), load_var("layerToMonitor"))
+		monitor.method = abstraction_box.find_point
+		monitors.append(monitor)
+
 	if experiment_number == 1:
-		#Experiment 1: DNN with outside-of-box monitor
 		experiment = Experiment('DNN+OB')
 
-		#models
-		dnn_mnist = model_config.load_model_settings(1)
-		dnn_gtsrb = model_config.load_model_settings(2)
-		modelsObj = [dnn_mnist, dnn_gtsrb]
-		
-		#monitors
-		monitorObjMNIST = Monitor(load_var_dict["e1_d1_mn"], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjMNIST.method = abstraction_box.find_point
-
-		monitorObjGTSRB = Monitor(load_var_dict["e1_d2_mn"], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjGTSRB.method = abstraction_box.find_point
-		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-		
-		#building the class experiment 1
-		experiment.models = modelsObj
-		experiment.monitors = monitorsObj
-		experiment.tester = dnn_oob_tester
-		experiment.evaluator = dnn_oob_evaluator
-
-		return experiment
-
 	elif experiment_number == 2:
-		#Experiment 2: DNN with outside-of-box monitor using non-linear dimensionality reduction
 		experiment = Experiment('DNN+OB+NL')
-		#using the same ML models from the Experiment 1
-		dnn_mnist = ModelBuilder()
-		dnn_mnist.model_name = load_var_dict["e2_d1_md"]
 		
-		dnn_gtsrb = ModelBuilder()
-		dnn_gtsrb.model_name = var_dict['e2_d2_md']
-
-		modelsObj = [dnn_mnist, dnn_gtsrb]
-		
-		#monitors
-		monitorObjMNIST = Monitor(var_dict['e2_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjMNIST.method = abstraction_box.find_point
-		monitorObjMNIST.dim_reduc_method = var_dict['e2_d1_dr']
-		monitorObjGTSRB = Monitor(var_dict['e2_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjGTSRB.method = abstraction_box.find_point
-		monitorObjGTSRB.dim_reduc_method = var_dict['e2_d2_dr']
-		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-		
-		#building the class experiment 2
-		experiment.models = modelsObj
-		experiment.monitors = monitorsObj
-		experiment.evaluator = dnn_oob_evaluator
-		experiment.tester = dnn_oob_tester
-
-		return experiment
+		for monitor in monitors:
+			monitor.dim_reduc_method = load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_dr')
 
 	elif experiment_number == 3:
-		#Experiment 3: Ensemble of DNN with outside-of-box monitor
+		#Experiment 3: Same of 1 but using Ensemble of DNN
 		experiment = Experiment('ENSBL+OB')
 		#models
 		dnn_mnist = ModelBuilder()
@@ -149,6 +130,14 @@ def load_experiment_settings(experiment_number):
 
 		return experiment
 
+	#building the class experiment
+	experiment.models = models
+	experiment.monitors = monitors
+	experiment.tester = dnn_oob_tester
+	experiment.evaluator = dnn_oob_evaluator
+
+	return experiment
+
 
 def load_var(key):
 	''' 
@@ -168,8 +157,6 @@ def load_var(key):
 	var_dict['classToMonitor'] = classToMonitor
 	layerToMonitor = -2
 	var_dict['layerToMonitor'] = layerToMonitor
-
-	var_dict['monitors_folder'] = "src"+sep+"novelty_detection"+sep+"bin"+sep+"monitors"+sep
 
 	var_dict['m1_d1_name'] = 'DNN_MNIST.h5'
 	var_dict['m1_d1_batch'] = 128
