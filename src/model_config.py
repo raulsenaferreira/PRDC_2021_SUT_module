@@ -1,5 +1,5 @@
 from src.Classes.model_builder import ModelBuilder
-from src.MNIST_experiments import dnn_simple_model
+from src.Classes import dnn_simple_model
 from src.Classes import cnn
 from src.Classes import le_net
 from src.utils import util

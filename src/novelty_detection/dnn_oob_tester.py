@@ -12,14 +12,21 @@ def run(X_test, y_test, model, monitor):
     loading_percentage = 0.1
     loaded = int(loading_percentage*len(y_test))
 
-    classToMonitor = str(monitor.classToMonitor)
+    classToMonitor = monitor.classToMonitor
     arrFalseNegative = {classToMonitor: 0}
     arrTrueNegative = {classToMonitor: 0}
     arrFalsePositive = {classToMonitor: 0}
     arrTruePositive = {classToMonitor: 0}
 
     # loading abstraction boxes
-    boxes = pickle.load(open(monitor.monitors_folder+monitor.monitor_name, "rb"))
+    boxes=""
+    try:
+        monitor_path = monitor.monitors_folder+monitor.monitor_name+str(classToMonitor)+".p"
+        boxes = pickle.load(open(monitor_path, "rb"))
+    except:
+        print("Error while trying to open {} monitor!!!".format(monitor_path))
+        return "","","","","","",""
+
     dim_reduc_obj = None
     
     if monitor.dim_reduc_method != None:
@@ -34,7 +41,7 @@ def run(X_test, y_test, model, monitor):
         arrPred.append(yPred)
         intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
 
-        if yPred == monitor.classToMonitor:
+        if yPred == classToMonitor:
             if monitor.method(boxes, intermediateValues, yPred, dim_reduc_obj):
                 
                 if yPred != lab:

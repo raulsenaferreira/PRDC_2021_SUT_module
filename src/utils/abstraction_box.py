@@ -3,31 +3,32 @@ from sklearn.metrics.pairwise import cosine_similarity
 import pickle
 
 
-def make_abstraction(data, clusters, classe, dim_reduc_obj=None, dim_reduc_method='', monitors_folder=None):
+def make_abstraction(data, monitor):
 	data = np.asarray(data)
 	
-	if dim_reduc_obj==None:
+	if monitor.dim_reduc_method==None:
 		#doing a projection by taking just the first and the last dimension of data
 		data = data[:,[0,-1]]
 	else:
 		#using a dimensionality reduction function
-		method = dim_reduc_obj.fit(data)
-		print("Saving trained dim reduc method")
-		pickle.dump(method, open(monitors_folder+dim_reduc_method+'_trained.p', "wb"))
+		method = monitor.dim_reduc_method.fit(data)
+		file = monitor.monitors_folder + monitor.dim_reduc_filename_prefix
+		print("Saving trained dim reduc method in", file)
+		pickle.dump(method, open(file, "wb"))
 		data = method.transform(data)
 
 	print(data.shape)
 
 	dataByCluster={}
 
-	for c, d in zip(clusters, data):
+	for c, d in zip(monitor.n_clusters, data):
 		try:
 			dataByCluster[c].append(d)
 		except:
 			dataByCluster.update({c:[d]})
 
 	array_box_by_cluster = {}
-	array_box_by_cluster.update({classe:[]})
+	array_box_by_cluster.update({monitor.class_to_monitor:[]})
 
 	for k, v in dataByCluster.items():
 		arr_intermediate = []
@@ -37,7 +38,7 @@ def make_abstraction(data, clusters, classe, dim_reduc_obj=None, dim_reduc_metho
 			min_i = np.amin(v[:,i])
 			max_i = np.amax(v[:,i])
 			arr_intermediate.append([min_i, max_i])
-		array_box_by_cluster[classe].append(arr_intermediate)
+		array_box_by_cluster[monitor.class_to_monitor].append(arr_intermediate)
 	return array_box_by_cluster
 
 

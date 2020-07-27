@@ -4,24 +4,25 @@ import pickle
 from sklearn.cluster import KMeans
 
 
-def make_abstraction(data, K, classe, dim_reduc_obj=None, dim_reduc_method='', monitors_folder='', save=False):
+
+def make_abstraction(data, monitor):
 	data = np.asarray(data)
 	
-	if dim_reduc_obj==None:
+	if monitor.dim_reduc_method==None:
 		#doing a projection by taking just the first and the last dimension of data
 		data = data[:,[0,-1]]
 	else:
 		#using a dimensionality reduction function
-		method = dim_reduc_obj.fit(data)
+		method = monitor.dim_reduc_method.fit(data)
+		file = monitor.monitors_folder + monitor.dim_reduc_filename_prefix
+		print("Saving trained dim reduc method in", file)
+		pickle.dump(method, open(file, "wb"))
 		data = method.transform(data)
-		if save:
-			print("Saving trained dim reduc method")
-			pickle.dump(method, open(monitors_folder+dim_reduc_method+'_trained.p', "wb"))
 
 	print(data.shape)
 
 	dataByCluster={}
-	clusters = KMeans(n_clusters=K).fit_predict(data)
+	clusters = KMeans(n_clusters=monitor.n_clusters).fit_predict(data)
 	
 	print("making boxes...")
 
@@ -32,7 +33,7 @@ def make_abstraction(data, K, classe, dim_reduc_obj=None, dim_reduc_method='', m
 			dataByCluster.update({c:[d]})
 
 	array_box_by_cluster = {}
-	array_box_by_cluster.update({classe:[]})
+	array_box_by_cluster.update({monitor.class_to_monitor:[]})
 
 	for k, v in dataByCluster.items():
 		arr_intermediate = []
@@ -42,7 +43,7 @@ def make_abstraction(data, K, classe, dim_reduc_obj=None, dim_reduc_method='', m
 			min_i = np.amin(v[:,i])
 			max_i = np.amax(v[:,i])
 			arr_intermediate.append([min_i, max_i])
-		array_box_by_cluster[classe].append(arr_intermediate)
+		array_box_by_cluster[monitor.class_to_monitor].append(arr_intermediate)
 
 	return array_box_by_cluster
 

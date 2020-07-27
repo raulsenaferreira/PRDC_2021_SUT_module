@@ -1,57 +1,76 @@
 from src.utils import util
 from src import model_config as model_cfg
+from src.Classes.model_builder import ModelBuilder
+from src.Classes.monitor import Monitor
 from src.novelty_detection import config as config_ND
 from pathos.multiprocessing import ProcessingPool as Pool
 from src.Classes.dataset import Dataset
-from src.GTRSB_experiments import DNN_outOfBox_GTRSB_monitor
-from src.GTRSB_experiments import DNN_outOfBox_dimReduc_monitor
-from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_monitor
-#from src.MNIST_experiments import SCGAN_MNIST_monitor
-from src.MNIST_experiments import DNN_outOfBox_dimReduc_MNIST_monitor
-from src.MNIST_experiments import DNN_ensemble_outOfBox_MNIST_monitor
+from src.novelty_detection.utils import abstraction_box
+from src.Classes import act_func_based_monitor
+from keras.models import load_model
+from sklearn import manifold
 
 
 if __name__ == "__main__":
-	dataset_names = ['MNIST', 'GTSRB']
-	monitors_pool = []
-	models_pool = []
-	timeout = 1000
-
 	#general settings
 	sep = util.get_separator()
-	validation_size = model_cfg.load_var('validation_size')
-	parallel_execution = True
+	parallel_execution = False
+	timeout = 1000
 
-	#datasets
-	mnistObj = Dataset(dataset_names[0])
-	mnistObj.validation_size = validation_size
-	gtsrbObj = Dataset(dataset_names[1])
-	gtsrbObj.validation_size = validation_size
+	experiment_type = 'novelty_detection'
+	dataset_names = config_ND.load_vars(experiment_type, 'dataset_names')
+	validation_size = config_ND.load_vars(experiment_type, 'validation_size')
+	model_names = config_ND.load_vars(experiment_type, 'model_names')
+	monitor_names = config_ND.load_vars(experiment_type, 'monitor_names')
+	classes_to_monitor = config_ND.load_vars(experiment_type, 'classes_to_monitor')
+	n_clusters_oob = 3 #fixo por enquanto, tranformar em array depois
+	n_components_isomap = 2 #fixo por enquanto, tranformar em array depois
+	
+	for model_name, dataset_name, class_to_monitor in zip(model_names, dataset_names, classes_to_monitor):
+		monitors = []
+		# loading dataset
+		dataset = Dataset(dataset_name)
+		dataset.validation_size = validation_size
 
-	#Building monitors for Novelty Detection
+		# loading model
+		model = ModelBuilder()
+		#print(model.models_folder+model_name+'_'+dataset_name+'.h5')
+		model = load_model(model.models_folder+model_name+'_'+dataset_name+'.h5')
 
-	# 1: Train a monitor with outside-of-box method to inspect the CNN decision over the MNIST dataset
-	# Outside-of-box monitor 
-	monitor = config_ND.load_settings('oob')
-	monitor.dataset = mnistObj
-	monitors_pool.append(monitor)
+		#Building monitors for Novelty Detection
+		for monitor_name in monitor_names:
+			monitor = None
+			monitor_filename_prefix = model_name+'_'+dataset_name+'_'+monitor_name
+			monitor = Monitor(monitor_name, experiment_type, monitor_filename_prefix)
+			monitor.class_to_monitor = class_to_monitor
 
-	# CNN model trained on the MNIST dataset
-	model = model_cfg.load_settings('cnn_mnist')
-	models_pool.append(model)
+			if 'oob' in monitor_name:
+				monitor.trainer = act_func_based_monitor
+				monitor.method = abstraction_box.make_abstraction
+				monitor.n_clusters = n_clusters_oob
+				monitor.dim_reduc_method = None
+			if 'isomap' in monitor_name:
+				monitor.dim_reduc_method = manifold.Isomap(n_components = n_components_isomap)
+				monitor.dim_reduc_filename_prefix = 'isomap_' + str(n_components_isomap) + '_components_' + dataset_name + '_class_' + str(monitor.class_to_monitor) + '.p'
 
-	#Parallelizing the experiments (optional): one experiment per Core
-	if parallel_execution:
-		
-		pool = Pool()
-		processes_pool = []
+			monitors.append(monitor)
 
-		for monitor, model in zip(monitors_pool, models_pool):
-			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model)) 
-		
-		for process in processes_pool:
-			trained_monitor = process.get(timeout=timeout)
+		#Parallelizing the experiments (optional): one experiment per Core
+		if parallel_execution:
+			pool = Pool()
+			processes_pool = []
 
+			#pool.apipe(monitor.trainer.run, monitor, model)
+			#process.get(timeout=timeout)
+
+			for monitor in monitors:
+				processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model, dataset)) 
+			
+			for process in processes_pool:
+				trained_monitor = process.get(timeout=timeout)
+		else:
+			for monitor in monitors:
+				trained_monitor = monitor.trainer.run(monitor, model, dataset)
 	#K = 3
 	#monitoring one class in the GTRSB dataset using outside of box
 	#monitor_name = "monitor_Box_GTRSB.p"

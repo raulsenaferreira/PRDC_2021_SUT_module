@@ -6,9 +6,8 @@ from src.novelty_detection import dnn_oob_evaluator
 from src.novelty_detection import dnn_oob_tester
 from src.novelty_detection import en_dnn_oob_tester
 from src.novelty_detection.utils import abstraction_box
-from src.MNIST_experiments import act_func_based_monitor
+from src.Classes import act_func_based_monitor
 from src.utils import util
-from keras.models import load_model
 
 
 sep = util.get_separator()
@@ -24,57 +23,41 @@ def load_file_names(experiment_type):
 	return compiled_img_name, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name
 
 
-def load_settings(monitor_acronym):
+def load_settings(monitor_acronym, dataset):
 	monitor = None
-	monitors_folder = load_var('monitors_folder')
+	if dataset == 'MNIST':
+		monitor = Monitor('novelty_detection', load_var("e1_d1_mn"))
+	elif dataset == 'GTSRB':
+		monitor = Monitor('novelty_detection', load_var("e1_d2_mn"))
+	
 	if monitor_acronym == 'oob':
-		monitor = Monitor(load_var("e1_d1_mn"), load_var("classToMonitor"), load_var("layerToMonitor"))
-		monitor.method = abstraction_box.make_abstraction
 		monitor.trainer = act_func_based_monitor
-		monitor.monitors_folder = monitors_folder
+		monitor.method = abstraction_box.make_abstraction
+		monitor.n_clusters = 3
+		
+	elif monitor_acronym == 'oob_isomap':
+		monitor.trainer = act_func_based_monitor
+		monitor.method = abstraction_box.make_abstraction
+		monitor.n_clusters = 3
+		monitor.dim_reduc_method = 'isomap'
+		monitor.file_dim_reduc_method = monitor.dim_reduc_method+'_'+dataset
+		monitor.n_components = 2
 
 	return monitor
 
 
-def load_experiment_settings(experiment_number, num_datasets):
+def load_experiment_settings(experiment_number, num_datasets, classesToMonitor):
+
 	'''
-	Meaning of keys:
-	e => experiment number (1 = outside-of-box paper; 2 = outside-of-box using isomap instead of 2D projection; 
-	     3 = outside-of-box with ensemble of DNN; 4 = same of 3 but using isomap strategy;
-	     5 = same of 2 but using DBSCAN instead of KNN; 6 = same of 2 but clustering without dimension reduction;
-	     7 = same of 5 but clustering without dimension reduction; 
-	     8 = using the derivative of activation functions instead of raw values)
-	d = dataset number (1=MNIST; 2=GTSRB; 3=CIFAR-10;)
-	mn = monitor; md = model; dr = dimensionality reduction method;
-	'''
-
-	models = []
-	monitors = []
-
-	for i in range(num_datasets):
-		#models
-		model = ModelBuilder()
-		model_file_name = load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_md')
-		model.binary = load_model(model.models_folder+model_file_name)
-		models.append(model)
-		#monitors
-		monitor = Monitor("novelty_detection", load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_mn'), 
-			load_var("classToMonitor"), load_var("layerToMonitor"))
-		monitor.method = abstraction_box.find_point
-		monitors.append(monitor)
-
-	if experiment_number == 1:
-		experiment = Experiment('DNN+OB')
-
 	elif experiment_number == 2:
-		experiment = Experiment('DNN+OB+NL')
+		experiment = Experiment('DNN_OOB_NL')
 		
 		for monitor in monitors:
 			monitor.dim_reduc_method = load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_dr')
 
 	elif experiment_number == 3:
 		#Experiment 3: Same of 1 but using Ensemble of DNN
-		experiment = Experiment('ENSBL+OB')
+		experiment = Experiment('ENSBL_OOB')
 		#models
 		dnn_mnist = ModelBuilder()
 		dnn_mnist.model_name = var_dict['e3_d1_md']
@@ -137,60 +120,32 @@ def load_experiment_settings(experiment_number, num_datasets):
 	experiment.evaluator = dnn_oob_evaluator
 
 	return experiment
-
-
-def load_var(key):
-	''' 
-	Change here the values of the variables if you want to change:
-	1) the DNN layer and/or class monitored by the runtime monitor 
-	2) the name of the generated files
-
-	Logic for global variable mapping (variables that are used for build model/monitor files and to rn tests)
-	e1 = Experiment 1 (order of the experiments in this code)
-	d1 = dataset 1 (MNIST = 1; GTSRB = 2; CIFAR-10 = 3 ...)
-	mn = monitor; md = model; dr = dimensionality reduction
-
-	Example for the monitor name for the experiment 1 + dataset 1 --> "e1_d1_mn"
 	'''
+	pass
+
+
+def load_vars(experiment_type, key):
 	var_dict = {}
-	classToMonitor = 7
-	var_dict['classToMonitor'] = classToMonitor
-	layerToMonitor = -2
-	var_dict['layerToMonitor'] = layerToMonitor
 
-	var_dict['m1_d1_name'] = 'DNN_MNIST.h5'
-	var_dict['m1_d1_batch'] = 128
-	var_dict['m1_d1_epoch'] = 12
-	var_dict['m1_d1_name'] = 'DNN_GTRSB.h5'
-	var_dict['m1_d2_batch'] = 10
-	var_dict['m1_d2_epoch'] = 32
-	var_dict['m2_d1_name'] = 'DNN_ensemble_MNIST_'
-	var_dict['m2_d2_name'] = 'DNN_ensemble_GTRSB_'
-
-	var_dict['e1_d1_md'] = 'DNN_MNIST.h5'
-	var_dict['e1_d2_md'] = 'DNN_GTRSB.h5'
-	var_dict['e1_d1_mn'] = "outOfBox_MNIST_class_{}.p".format(classToMonitor)
-	var_dict['e1_d2_mn'] = "outOfBox_GTRSB_class_{}.p".format(classToMonitor)
+	var_dict['dataset_names'] = ['MNIST', 'GTSRB']
+	var_dict['validation_size'] = 0.3
 	
-	var_dict['e2_d1_md'] = 'DNN_MNIST.h5'
-	var_dict['e2_d2_md'] = 'DNN_GTRSB.h5'
-	var_dict['e2_d1_mn'] = "outOfBox_isomap_MNIST_class_{}.p".format(classToMonitor)
-	var_dict['e2_d2_mn'] = "outOfBox_isomap_GTRSB_class_{}.p".format(classToMonitor)
-	var_dict['e2_d1_dr'] = 'isomap_MNIST_trained_class_{}.p'.format(classToMonitor)
-	var_dict['e2_d2_dr'] = 'isomap_GTSRB_trained_class_{}.p'.format(classToMonitor)
+	var_dict['model_names'] = ['leNet', 'leNet']	
+	var_dict['batch_numbers'] = [128, 10]
+	var_dict['epoch_numbers'] = [12, 32]
+	
+	# monitors
+	if experiment_type == 'novelty_detection':
+		var_dict['monitor_names'] = ['oob', 'oob_isomap']
+		var_dict['classes_to_monitor'] = [1, 7]
 
-	var_dict['e3_d1_md'] = 'DNN_ensemble_MNIST_'
-	var_dict['e3_d2_md'] = 'DNN_ensemble_GTRSB_'
-	var_dict['e3_d1_mn'] = "outOfBox_MNIST_class_{}.p".format(classToMonitor)
-	var_dict['e3_d2_mn'] = "outOfBox_GTRSB_class_{}.p".format(classToMonitor)
-	var_dict['e3_folder'] = 'outOfBox_ensembleDNN'
-
-	var_dict['e4_d1_md'] = 'DNN_ensemble_MNIST_'
-	var_dict['e4_d2_md'] = 'DNN_ensemble_GTRSB_'
-	var_dict['e4_d1_mn'] = "outOfBox_isomap_MNIST_class_{}.p".format(classToMonitor)
-	var_dict['e4_d2_mn'] = "outOfBox_isomap_GTRSB_class_{}.p".format(classToMonitor)
-	var_dict['e4_d1_dr'] = 'isomap_MNIST_trained_class_{}.p'.format(classToMonitor)
-	var_dict['e4_d2_dr'] = 'isomap_GTSRB_trained_class_{}.p'.format(classToMonitor)
-	var_dict['e4_folder'] = 'outOfBox_NL_ensembleDNN'
+	var_dict['lenet_gtsrb_monitor_oob'] = "oob_GTSRB_class_"
+	var_dict['cnn_mnist_monitor_oob_isomap'] = "oob_isomap_MNIST_class_"
+	var_dict['lenet_gtsrb_monitor_oob_isomap'] = "oob_isomap_GTSRB_class_"
+	var_dict['cnn_mnist_monitor_oob_isomap_trained'] = 'isomap_MNIST_trained_class_'
+	var_dict['lenet_gtsrb_monitor_oob_isomap_trained'] = 'isomap_GTSRB_trained_class_'
+	# folders
+	var_dict['e3_folder'] = 'oob_ensembleDNN'
+	var_dict['e4_folder'] = 'oob_NL_ensembleDNN'
 
 	return var_dict[key]

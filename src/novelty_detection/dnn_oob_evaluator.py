@@ -4,22 +4,26 @@ import numpy as np
 
 
 def evaluate(repetitions, experiment):
-	avg_acc = [experiment.acronym] #accuracy
-	avg_cf = [experiment.acronym] #confusion matrix
-	avg_time = [experiment.acronym] #time
-	avg_memory = [experiment.acronym] #memory
-	avg_F1 = [experiment.acronym] #memory
+	avg_acc = [experiment.name] #accuracy
+	avg_cf = [experiment.name] #confusion matrix
+	avg_time = [experiment.name] #time
+	avg_memory = [experiment.name] #memory
+	avg_F1 = [experiment.name] #memory
 	
-	for dataset, model, monitor in zip(experiment.datasets, experiment.models, experiment.monitors):
+	dataset = experiment.dataset
+	model = experiment.model
+	
+	for monitor in experiment.monitors:
 		acc = []
 		t = []
 		cf = [[],[],[],[]]
 		mem = []
 		f1 = []
-		datasets = []
+
+		classToMonitor = monitor.classToMonitor
 		
 		for i in range(repetitions):
-			print("{} experiment {} of {} ...".format(dataset.dataset_name, i+1, repetitions))
+			print("{}: {} of {} ...".format(experiment.name, i+1, repetitions))
 			X_test, y_test = dataset.load_dataset(mode='test')
 
 			ini = timer()
@@ -32,7 +36,6 @@ def evaluate(repetitions, experiment):
 			mem.append(memory)
 			f1.append(metrics.F1(arrLabel, arrPred))
 
-			classToMonitor = str(monitor.classToMonitor)
 			cf[0].append(arrFP[classToMonitor])
 			cf[1].append(arrFN[classToMonitor])
 			cf[2].append(arrTP[classToMonitor])
