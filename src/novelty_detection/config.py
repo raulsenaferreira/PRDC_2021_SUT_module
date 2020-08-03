@@ -2,25 +2,25 @@ from src import model_config
 from src.Classes.model_builder import ModelBuilder
 from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
-from src.novelty_detection import dnn_oob_evaluator
-from src.novelty_detection import dnn_oob_tester
-from src.novelty_detection import en_dnn_oob_tester
-from src.novelty_detection.utils import abstraction_box
-from src.Classes import act_func_based_monitor
+from src.novelty_detection.evaluators import dnn_oob_evaluator
+from src.novelty_detection.testers import dnn_oob_tester
+from src.novelty_detection.testers import en_dnn_oob_tester
+from src.novelty_detection.methods import abstraction_box
+from src.novelty_detection.methods import act_func_based_monitor
 from src.utils import util
 
 
 sep = util.get_separator()
 
-def load_file_names(experiment_type):
-	compiled_img_name = experiment_type+sep+'all_images.pdf'
-	acc_file_name = experiment_type+sep+'accuracies.csv'
-	cf_file_name = experiment_type+sep+'positive_negative_rates.csv'
-	time_file_name = experiment_type+sep+'time.csv'
-	mem_file_name = experiment_type+sep+'memory.csv'
-	f1_file_name = experiment_type+sep+'f1.csv'
+def load_file_names():
+	index_file =  'index_mapping_results.csv'
+	acc_file_name = 'accuracies.csv'
+	cf_file_name = 'positive_negative_rates.csv'
+	time_file_name = 'time.csv'
+	mem_file_name = 'memory.csv'
+	f1_file_name = 'f1.csv'
 
-	return compiled_img_name, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name
+	return [index_file, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name]
 
 
 def load_settings(monitor_acronym, dataset):
@@ -123,6 +123,15 @@ def load_experiment_settings(experiment_number, num_datasets, classesToMonitor):
 	'''
 	pass
 
+'''
+**OK** 1 = outside-of-box paper; 2 = outside-of-box using isomap instead of 2D projection;
+
+**testing** 3 = outside-of-box with ensemble of DNN; 4 = same of 3 but using isomap strategy;
+
+5 = same of 2 but using DBSCAN instead of KNN; 6 = same of 2 but clustering without dimension reduction;
+7 = same of 5 but clustering without dimension reduction; 
+8 = using the derivative of activation functions instead of raw values
+'''
 
 def load_vars(experiment_type, key):
 	var_dict = {}
@@ -136,7 +145,7 @@ def load_vars(experiment_type, key):
 	
 	# monitors
 	if experiment_type == 'novelty_detection':
-		var_dict['monitor_names'] = ['oob', 'oob_isomap']
+		var_dict['monitor_names'] = ['oob', 'oob_isomap']#'oob_gradient'
 		var_dict['classes_to_monitor'] = [1, 7]
 
 	var_dict['lenet_gtsrb_monitor_oob'] = "oob_GTSRB_class_"

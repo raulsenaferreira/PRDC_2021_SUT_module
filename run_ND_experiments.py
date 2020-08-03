@@ -1,30 +1,29 @@
-#from src.GTRSB_experiments import DNN_outOfBox_dimReduc_test
-#from src.GTRSB_experiments import DNN_ensemble_outOfBox_GTRSB_test
-#from src.GTRSB_experiments import DNN_outOfBox_GTRSB_test
-#from src.MNIST_experiments import SCGAN_MNIST_test
+import os
 from src import model_config
 from src.Classes.model_builder import ModelBuilder
 from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
-from src.novelty_detection import dnn_oob_evaluator
-from src.novelty_detection import dnn_oob_tester
-from src.novelty_detection import en_dnn_oob_tester
-from src.novelty_detection.utils import abstraction_box
-from src.Classes import act_func_based_monitor
+from src.novelty_detection.evaluators import dnn_oob_evaluator
+from src.novelty_detection.testers import dnn_oob_tester
+from src.novelty_detection.testers import en_dnn_oob_tester
+from src.novelty_detection.methods import abstraction_box
+from src.novelty_detection.methods import act_func_based_monitor
 from src.utils import util
 from src.utils import metrics
-#from src import cnn_nl_oob_experiments
 from pathos.multiprocessing import ProcessingPool as Pool
 from src.novelty_detection import config as config_ND
 from src.Classes.dataset import Dataset
 from keras.models import load_model
+from sklearn import manifold
+import pickle
 
+
+sep = util.get_separator()
 
 # ML is incorrect but monitor does not trust on it = TP
 # ML is correct but monitor does not trust on it = FP
 # ML is incorrect and monitor trust on it = FN
 # ML is correct and monitor trust on it = TN
-
 
 '''
 1 = outside-of-box paper; 2 = outside-of-box using isomap instead of 2D projection; 
@@ -34,52 +33,53 @@ from keras.models import load_model
 8 = using the derivative of activation functions instead of raw values)
 '''
 
+def save_results(experiment, arr_readouts, plot=False):
+	filenames = config_ND.load_file_names()
+	csvs_folder_path = 'results'+sep+'csv'+sep+experiment.experiment_type+sep+experiment.name+sep
+	img_folder_path = 'results'+sep+'img'+sep+experiment.experiment_type+sep+experiment.name+sep
+
+	metrics.save_results(arr_readouts, csvs_folder_path, filenames, ',')
+	
+	if plot:
+		os.makedirs(img_folder_path, exist_ok=True)
+		metrics.plot_pos_neg_rate_stacked_bars(experiment.name, arr_readouts, img_folder_path+'all_images.pdf')
+
 
 if __name__ == "__main__":
-	
-	## global settings
-	experiment_type = 'novelty_detection'
+	## settings
 	experiments_pool = []
-	sep = util.get_separator()
-	repetitions = 1
-	model_names = ['leNet', 'leNet']
-	dataset_names = ['MNIST', 'GTSRB']
-	#each indice corresponds a dataset, each value corresponds a class to monitor in this dataset
-	classesToMonitor = [1, 7] 
-	monitor_names = ['oob', 'oob_isomap']
-	
-	parallel_execution = False
-	timeout = 900 * len(dataset_names) #suggesting 15 min for performing parallel experiment on each dataset
-	
-	csvs_folder_path = 'results'+sep+'csv'+sep
-	img_folder_path = 'results'+sep+'img'+sep
 
-	# variables regarding the results for Novelty-Detection runtime-monitoring experiments
-	compiled_img_name, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name = config_ND.load_file_names(experiment_type)
-	accuracies = []
-	confusion_matrices = []
-	proc_times = []
-	memories = []
-	f1s = []
+	# variables regarding Novelty-Detection runtime-monitoring experiments
+	experiment_type = 'novelty_detection'
+	dataset_names = config_ND.load_vars(experiment_type, 'dataset_names')
+	validation_size = config_ND.load_vars(experiment_type, 'validation_size')
+	model_names = config_ND.load_vars(experiment_type, 'model_names')
+	monitor_names = config_ND.load_vars(experiment_type, 'monitor_names')
+	classes_to_monitor = config_ND.load_vars(experiment_type, 'classes_to_monitor')
+	n_components_isomap = 2 #fixo por enquanto, tranformar em array depois
+
+	# other settings
+	parallel_execution = True
+	timeout = 900 * len(dataset_names) #suggesting 15 min for performing parallel experiment on each dataset
+	repetitions = 1
+	perc_of_data = 0.01 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	## loading experiments
-	for model_name, dataset_name, classToMonitor in zip(model_names, dataset_names, classesToMonitor):
+	for model_name, dataset_name, class_to_monitor in zip(model_names, dataset_names, classes_to_monitor):
 		monitors = []
-
 		# loading dataset
 		dataset = Dataset(dataset_name)
 
 		# loading model
 		model = ModelBuilder()
-		model_file_name = config_ND.load_novelty_detection_vars(model_name+'_model')
-		model.binary = load_model(model.models_folder+model_file_name)
+		#print(model.models_folder+model_name+'_'+dataset_name+'.h5')
+		model = load_model(model.models_folder+model_name+'_'+dataset_name+'.h5')
 
 		# *** Inicio funcao que contem a logica de criacao dos monitores
 		# loading monitors
 		for monitor_name in monitor_names:
-			monitor_file_name = model_name+'_monitor_'+monitor_name
-			monitor = Monitor(experiment_type, config_ND.load_novelty_detection_vars(monitor_file_name))
-			monitor.classToMonitor = classToMonitor
+			monitor = Monitor(monitor_name, experiment_type)
+			monitor.class_to_monitor = class_to_monitor
 			
 			## diferent way for inspecting a decision, if ensemble or standalone model
 			if 'ensemble' in model_name:
@@ -88,15 +88,15 @@ if __name__ == "__main__":
 				monitor.method = abstraction_box.find_point
 
 			if 'isomap' in monitor_name:
-				monitor.dim_reduc_method = monitor_file_name+"_trained"
-			else:
-				monitor.dim_reduc_method = None
+				file_isomap = 'isomap_' + str(n_components_isomap) + '_components_' + dataset_name + '_class_' + str(monitor.class_to_monitor) + '.p'
+				monitor.dim_reduc_method = pickle.load(open(monitor.monitors_folder+file_isomap, "rb"))
 		# *** Fim funcao que contem a logica de criacao dos monitores
 
 			monitors.append(monitor)
 
 		# creating an instance of an experiment
-		experiment = Experiment(model_name+'_experiments')
+		experiment = Experiment(model_name+'_'+dataset_name+'_experiments')
+		experiment.experiment_type = experiment_type
 		experiment.dataset = dataset
 		experiment.model = model
 		experiment.monitors = monitors
@@ -118,27 +118,16 @@ if __name__ == "__main__":
 		processes_pool = []
 
 		for experiment in experiments_pool:
-			processes_pool.append(pool.apipe(experiment.evaluator.evaluate, 
-				repetitions, experiment.name, experiment.models, experiment.datasets, experiment.monitors))  
+			processes_pool.append(pool.apipe(experiment.evaluator.evaluate, repetitions, experiment, perc_of_data))  
 		
 		for process in processes_pool:
-			avg_acc, avg_time, avg_cf, avg_mem, avg_f1 = process.get(timeout=timeout)
-
-			accuracies.append(avg_acc)
-			confusion_matrices.append(avg_cf)
-			proc_times.append(avg_time)
-			memories.append(avg_mem)
-			f1s.append(avg_f1)		
+			arr_readouts = process.get(timeout=timeout)	
+			save_results(experiment, arr_readouts, plot=True)
 	else:
 		#Serial version for the experiments
 		for experiment in experiments_pool:
-			avg_acc, avg_time, avg_cf, avg_mem, avg_f1 = experiment.evaluator.evaluate(repetitions, experiment) 
-			
-			accuracies.append(avg_acc)
-			confusion_matrices.append(avg_time)
-			proc_times.append(avg_cf)
-			memories.append(avg_mem)
-			f1s.append(avg_f1)
+			arr_readouts = experiment.evaluator.evaluate(repetitions, experiment, perc_of_data) 
+			save_results(experiment, arr_readouts, plot=True)
 
 		#Experiment 4 SCGAN with MNIST for novelty/OOD detection
 		#model_name = 'DNN_MNIST.h5'
@@ -146,12 +135,3 @@ if __name__ == "__main__":
 		#monitors_folder = monitors_folder+'SCGAN_checkpoint'+sep
 		#arrPred, count, arrFP, arrFN, arrTP, arrTN = SCGAN_MNIST_test.run(classToMonitor, models_folder, 
 		#	monitors_folder, model_name, monitor_name)
-
-	# CSVs
-	metrics.save_results(accuracies, csvs_folder_path+acc_file_name, ',')
-	metrics.save_results(confusion_matrices, csvs_folder_path+cf_file_name, ',')
-	metrics.save_results(proc_times, csvs_folder_path+time_file_name, ',')
-	metrics.save_results(memories, csvs_folder_path+mem_file_name, ',')
-	metrics.save_results(f1s, csvs_folder_path+f1_file_name, ',')
-	# Figures
-	metrics.plot_pos_neg_rate_stacked_bars(confusion_matrices, dataset_names, img_folder_path+compiled_img_name)

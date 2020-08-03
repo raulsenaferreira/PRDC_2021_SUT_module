@@ -1,3 +1,4 @@
+import os
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import matthews_corrcoef
 from sklearn.metrics import f1_score
@@ -7,10 +8,31 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.metrics import roc_auc_score
+from src.utils import util
 
 
-def save_results(results, file_name, sep):
-	np.savetxt(file_name, [p for p in results], delimiter=sep, fmt='%s')
+sep = util.get_separator()
+
+def save_results(arr_readouts, csvs_folder_path, filenames, delimiter):
+	[index_file, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name] = filenames
+	index_results = []
+	results = [[], [], [], [], []]
+	# CSVs
+	for readout in arr_readouts:
+		index_results.append(readout.name)
+		results[0].append(readout.avg_acc) 
+		results[1].append(readout.avg_time) 
+		results[2].append(readout.avg_memory)
+		results[3].append(readout.avg_F1)
+		results[4].append(readout.avg_cf)
+
+	os.makedirs(csvs_folder_path, exist_ok=True)
+	np.savetxt(csvs_folder_path+index_file, [p for p in index_results], delimiter=delimiter, fmt='%s')	
+	np.savetxt(csvs_folder_path+acc_file_name, [p for p in results[0]], delimiter=delimiter, fmt='%s')
+	np.savetxt(csvs_folder_path+time_file_name, [p for p in results[1]], delimiter=delimiter, fmt='%s')
+	np.savetxt(csvs_folder_path+mem_file_name, [p for p in results[2]], delimiter=delimiter, fmt='%s')
+	np.savetxt(csvs_folder_path+f1_file_name, [p for p in results[3]], delimiter=delimiter, fmt='%s')
+	np.savetxt(csvs_folder_path+cf_file_name, [p for p in results[4]], delimiter=delimiter, fmt='%s')
 
 
 def evaluate(y_actual, y_predicted):
@@ -42,47 +64,50 @@ def plot_false_decisions_legend():
 	plt.show()
 
 
-def plot_pos_neg_rate_stacked_bars(confusion_matrices, datasets, fig_path):
+def plot_pos_neg_rate_stacked_bars(experiment_name, arr_readouts, fig_path):
 	figures = []
-	for i in range(len(datasets)):
-		x = []
-		y_fp = [] 
-		y_fn = [] 
-		y_tp = [] 
-		y_tn = []
+	x = []
+	y_fp = [] 
+	y_fn = [] 
+	y_tp = [] 
+	y_tn = []
 
-		for cf in confusion_matrices:
-			x.append(cf[0])
-			y_fp.append(cf[i+1][0])
-			y_fn.append(cf[i+1][1])
-			y_tp.append(cf[i+1][2])
-			y_tn.append(cf[i+1][3])
-
-		xticks = [i for i in range(len(x))]
+	for readout in arr_readouts:	
+		x.append(readout.name)
+		fp, fn, tp, tn = readout.avg_cf
 		
-		fig = plt.figure()
-		ax = fig.add_subplot()
-		width = 0.2
-		blue = [0, .4, .6]
-		yellow = [1, 0.65, 0.25]
-		red = [1, 0, 0]
-		ax.bar(x, y_tp, color=blue, edgecolor="white", width=width)
-		sums = y_tp
-		ax.bar(x, y_fn, bottom=sums, color='yellow', edgecolor="white", hatch="x", width=width)
-		sums =[_x + _y for _x, _y in zip(sums, y_fn)]
-		ax.bar(x, y_fp, bottom=sums, color=red, edgecolor='white', hatch=".", width=width)
-		sums = [_x + _y for _x, _y in zip(sums, y_fp)]
-		ax.bar(x, y_tn, bottom=sums, color=[0, 0.2, 0.1], edgecolor='white', hatch="*", width=width)
+		y_fp.append(fp)
+		y_fn.append(fn)
+		y_tp.append(tp)
+		y_tn.append(tn)
 
-		ax.set_xlabel("Methods")
-		ax.set_ylabel("Percentage")
-		ax.set_ylim([0, 100])
-		ax.xaxis.set_ticks(xticks, x)
-		
-		fig.suptitle(datasets[i])
-		ax.figure.canvas.set_window_title(datasets[i])
-		figures.append(fig)
-		plt.show()
+	xticks = [i for i in range(len(x))]
+	
+	fig = plt.figure()
+	ax = fig.add_subplot()
+	width = 0.2
+	blue = [0, .4, .6]
+	yellow = [1, 0.65, 0.25]
+	red = [1, 0, 0]
+	ax.bar(x, y_tp, color=blue, edgecolor="white", width=width, label='True positive')
+	sums = y_tp
+	ax.bar(x, y_fn, bottom=sums, color=yellow, edgecolor="white", hatch="x", width=width, label='False negative')
+	sums =[_x + _y for _x, _y in zip(sums, y_fn)]
+	ax.bar(x, y_fp, bottom=sums, color=red, edgecolor='white', hatch=".", width=width, label='False positive')
+	sums = [_x + _y for _x, _y in zip(sums, y_fp)]
+	ax.bar(x, y_tn, bottom=sums, color=[0, 0.2, 0.1], edgecolor='white', hatch="*", width=width, label='True negative')
+
+	ax.set_xlabel("Methods")
+	ax.set_ylabel("Percentage")
+	ax.set_ylim([0, 100])
+	ax.xaxis.set_ticks(xticks, x)
+	ax.legend()
+	#ax.annotate('{}'.format(height))
+	
+	fig.suptitle(experiment_name)
+	ax.figure.canvas.set_window_title(experiment_name)
+	figures.append(fig)
+	plt.show()
 
 	multipage(fig_path, figures, dpi=250)
 
