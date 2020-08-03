@@ -1,2 +1,6 @@
 data/
-src/bin/monitors/
+src/novelty_detection/bin
+src/distributional_shift/bin
+src/adversarial_attack/bin
+src/OLD
+src/OLD_2
