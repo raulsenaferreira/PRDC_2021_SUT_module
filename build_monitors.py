@@ -13,6 +13,8 @@ if __name__ == "__main__":
 	sep = util.get_separator()
 	parallel_execution = True
 	timeout = 1000
+	arr_n_components_isomap = [2, 3, 5, 10]
+	arr_n_clusters_oob = [2, 3, 4, 5]
 
 	experiment_type = 'novelty_detection'
 	dataset_names = config_ND.load_vars(experiment_type, 'dataset_names')
@@ -20,7 +22,7 @@ if __name__ == "__main__":
 	model_names = config_ND.load_vars(experiment_type, 'model_names')
 	monitor_names = config_ND.load_vars(experiment_type, 'monitor_names')
 	classes_to_monitor = config_ND.load_vars(experiment_type, 'classes_to_monitor')
-	perc_of_data = 0.05 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 	
 	for model_name, dataset_name, class_to_monitor in zip(model_names, dataset_names, classes_to_monitor):
 		# loading dataset
@@ -31,22 +33,26 @@ if __name__ == "__main__":
 		model = ModelBuilder()
 		model = load_model(model.models_folder+model_name+'_'+dataset_name+'.h5')
 
-		#Building monitors for Novelty Detection
-		monitors = nd_monitors.build_monitors(dataset_name, monitor_names, class_to_monitor)
+		#oob_ablation_study(n_components_isomap)
+		for n_components_isomap in arr_n_components_isomap:
 
-		#Parallelizing the experiments (optional): one experiment per Core
-		if parallel_execution:
-			pool = Pool()
-			processes_pool = []
+			#Building monitors for Novelty Detection
+			monitors = nd_monitors.build_monitors(dataset_name, monitor_names, class_to_monitor,
+			 n_components_isomap=n_components_isomap)
 
-			for monitor in monitors:
-				processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model, dataset, perc_of_data)) 
-			
-			for process in processes_pool:
-				trained_monitor = process.get(timeout=timeout)
-		else:
-			for monitor in monitors:
-				trained_monitor = monitor.trainer.run(monitor, model, dataset, perc_of_data)
+			#Parallelizing the experiments (optional): one experiment per Core
+			if parallel_execution:
+				pool = Pool()
+				processes_pool = []
+
+				for monitor in monitors:
+					processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model, dataset, perc_of_data)) 
+				
+				for process in processes_pool:
+					trained_monitor = process.get(timeout=timeout)
+			else:
+				for monitor in monitors:
+					trained_monitor = monitor.trainer.run(monitor, model, dataset, perc_of_data)
 	
 #monitoring ensemble of CNNs in the GTRSB using outside of box
 #layer_index = 8

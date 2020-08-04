@@ -48,6 +48,38 @@ def make_abstraction(data, monitor):
 	return array_box_by_cluster
 
 
+def make_abstraction_without_dim_reduc(data, monitor):
+	data = np.asarray(data)
+
+	print(data.shape)
+
+	dataByCluster={}
+	clusters = KMeans(n_clusters=monitor.n_clusters).fit_predict(data)
+	
+	print("making boxes without reducing dimension...")
+
+	for c, d in zip(clusters, data):
+		try:
+			dataByCluster[c].append(d)
+		except:
+			dataByCluster.update({c:[d]})
+
+	array_box_by_cluster = {}
+	array_box_by_cluster.update({monitor.class_to_monitor:[]})
+
+	for k, v in dataByCluster.items():
+		arr_intermediate = []
+		v = np.asarray(v)
+
+		for i in range(v.shape[1]):
+			min_i = np.amin(v[:,i])
+			max_i = np.amax(v[:,i])
+			arr_intermediate.append([min_i, max_i])
+		array_box_by_cluster[monitor.class_to_monitor].append(arr_intermediate)
+
+	return array_box_by_cluster
+
+
 def find_point(boxes, intermediateValues, class_to_monitor, dim_reduc_obj=None):
 	data = np.asarray(intermediateValues)
 	#print(intermediateValues)

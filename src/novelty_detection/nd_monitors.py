@@ -17,10 +17,14 @@ def build_monitors(dataset_name, monitor_names, class_to_monitor, n_clusters_oob
 			monitor.method = abstraction_box.make_abstraction
 			monitor.n_clusters = n_clusters_oob
 			monitor.dim_reduc_method = None
+		
 		if 'isomap' in monitor_name:
 			monitor.dim_reduc_method = manifold.Isomap(n_components = n_components_isomap)
 			monitor.dim_reduc_filename_prefix = 'isomap_' + str(n_components_isomap) + '_components_' + dataset_name + '_class_' + str(monitor.class_to_monitor) + '.p'
 
+		elif '' in monitor_name: 
+			pass
+			
 		monitors.append(monitor)
 
 	return monitors

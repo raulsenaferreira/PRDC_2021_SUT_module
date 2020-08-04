@@ -5,7 +5,6 @@ from keras.models import load_model
 
 
 def run(monitor, model, dataset, perc_of_data):
-	trained_monitor = ""
 	arrWeights = []
 	#loading dataset
 	_, _, x_valid, y_valid = dataset.load_dataset(mode='train')
