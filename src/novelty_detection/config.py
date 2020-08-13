@@ -46,72 +46,72 @@ def load_settings(monitor_acronym, dataset):
 	return monitor
 
 
-def load_experiment_settings(experiment_number, num_datasets, classesToMonitor):
 
-	'''
-	elif experiment_number == 2:
-		experiment = Experiment('DNN_OOB_NL')
-		
-		for monitor in monitors:
-			monitor.dim_reduc_method = load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_dr')
 
-	elif experiment_number == 3:
-		#Experiment 3: Same of 1 but using Ensemble of DNN
-		experiment = Experiment('ENSBL_OOB')
-		#models
-		dnn_mnist = ModelBuilder()
-		dnn_mnist.model_name = var_dict['e3_d1_md']
-		dnn_mnist.num_cnn = 3
-		dnn_gtsrb = ModelBuilder()
-		dnn_gtsrb.model_name = var_dict['e3_d2_md']
-		dnn_gtsrb.num_cnn = 5
-		modelsObj = [dnn_mnist, dnn_gtsrb]
-		#monitors
-		monitorObjMNIST = Monitor(var_dict['e3_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjMNIST.method = abstraction_box.find_point_box_ensemble
-		monitorObjMNIST.monitors_folder += var_dict['e3_folder'] + sep
-		monitorObjGTSRB = Monitor(var_dict['e3_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjGTSRB.method = abstraction_box.find_point_box_ensemble
-		monitorObjGTSRB.monitors_folder += var_dict['e3_folder'] + sep
-		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-		#building the class experiment 3
-		experiment.models = modelsObj
-		experiment.monitors = monitorsObj
-		experiment.evaluator = en_dnn_oob_evaluator
-		experiment.tester = en_dnn_oob_tester
+'''
+elif experiment_number == 2:
+	experiment = Experiment('DNN_OOB_NL')
+	
+	for monitor in monitors:
+		monitor.dim_reduc_method = load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_dr')
 
-		return experiment
+elif experiment_number == 3:
+	#Experiment 3: Same of 1 but using Ensemble of DNN
+	experiment = Experiment('ENSBL_OOB')
+	#models
+	dnn_mnist = ModelBuilder()
+	dnn_mnist.model_name = var_dict['e3_d1_md']
+	dnn_mnist.num_cnn = 3
+	dnn_gtsrb = ModelBuilder()
+	dnn_gtsrb.model_name = var_dict['e3_d2_md']
+	dnn_gtsrb.num_cnn = 5
+	modelsObj = [dnn_mnist, dnn_gtsrb]
+	#monitors
+	monitorObjMNIST = Monitor(var_dict['e3_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
+	monitorObjMNIST.method = abstraction_box.find_point_box_ensemble
+	monitorObjMNIST.monitors_folder += var_dict['e3_folder'] + sep
+	monitorObjGTSRB = Monitor(var_dict['e3_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
+	monitorObjGTSRB.method = abstraction_box.find_point_box_ensemble
+	monitorObjGTSRB.monitors_folder += var_dict['e3_folder'] + sep
+	monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
+	#building the class experiment 3
+	experiment.models = modelsObj
+	experiment.monitors = monitorsObj
+	experiment.evaluator = en_dnn_oob_evaluator
+	experiment.tester = en_dnn_oob_tester
 
-	elif experiment_number == 4:
-		#Experiment 4: Ensemble of DNN with outside-of-box monitor and dimensionality reduction method
-		experiment = Experiment('ENSBL+OB+NL')
-		#using the same ML models from the Experiment 3
-		dnn_mnist = ModelBuilder()
-		dnn_mnist.model_name = var_dict['e4_d1_md']
+	return experiment
 
-		dnn_gtsrb = ModelBuilder()
-		dnn_gtsrb.model_name = var_dict['e4_d2_md']
-		
-		modelsObj = [dnn_mnist, dnn_gtsrb]
-		#monitors
-		monitorObjMNIST = Monitor(var_dict['e4_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjMNIST.method = abstraction_box.find_point_box_ensemble
-		monitorObjMNIST.dim_reduc_method = var_dict['e4_d1_dr']
-		monitorObjMNIST.monitors_folder += var_dict['e4_folder'] + sep
+elif experiment_number == 4:
+	#Experiment 4: Ensemble of DNN with outside-of-box monitor and dimensionality reduction method
+	experiment = Experiment('ENSBL+OB+NL')
+	#using the same ML models from the Experiment 3
+	dnn_mnist = ModelBuilder()
+	dnn_mnist.model_name = var_dict['e4_d1_md']
 
-		monitorObjGTSRB = Monitor(var_dict['e4_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjGTSRB.method = abstraction_box.find_point_box_ensemble
-		monitorObjGTSRB.dim_reduc_method = var_dict['e4_d2_dr']
-		monitorObjGTSRB.monitors_folder += var_dict['e4_folder'] + sep
+	dnn_gtsrb = ModelBuilder()
+	dnn_gtsrb.model_name = var_dict['e4_d2_md']
+	
+	modelsObj = [dnn_mnist, dnn_gtsrb]
+	#monitors
+	monitorObjMNIST = Monitor(var_dict['e4_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
+	monitorObjMNIST.method = abstraction_box.find_point_box_ensemble
+	monitorObjMNIST.dim_reduc_method = var_dict['e4_d1_dr']
+	monitorObjMNIST.monitors_folder += var_dict['e4_folder'] + sep
 
-		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-		#building the class experiment 4
-		experiment.models = modelsObj
-		experiment.monitors = monitorsObj
-		experiment.evaluator = en_dnn_oob_evaluator
-		experiment.tester = en_dnn_oob_tester
+	monitorObjGTSRB = Monitor(var_dict['e4_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
+	monitorObjGTSRB.method = abstraction_box.find_point_box_ensemble
+	monitorObjGTSRB.dim_reduc_method = var_dict['e4_d2_dr']
+	monitorObjGTSRB.monitors_folder += var_dict['e4_folder'] + sep
 
-		return experiment
+	monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
+	#building the class experiment 4
+	experiment.models = modelsObj
+	experiment.monitors = monitorsObj
+	experiment.evaluator = en_dnn_oob_evaluator
+	experiment.tester = en_dnn_oob_tester
+
+	return experiment
 
 	#building the class experiment
 	experiment.models = models
@@ -120,8 +120,8 @@ def load_experiment_settings(experiment_number, num_datasets, classesToMonitor):
 	experiment.evaluator = dnn_oob_evaluator
 
 	return experiment
-	'''
-	pass
+'''
+
 
 '''
 **OK** 1 = outside-of-box paper; 2 = outside-of-box using isomap instead of 2D projection;
@@ -136,25 +136,14 @@ def load_experiment_settings(experiment_number, num_datasets, classesToMonitor):
 def load_vars(experiment_type, key):
 	var_dict = {}
 
-	var_dict['dataset_names'] = ['MNIST', 'GTSRB']
 	var_dict['validation_size'] = 0.3
 	
-	var_dict['model_names'] = ['leNet', 'leNet']	
+	var_dict['model_names'] = ['leNet']#, 'leNet']	
 	var_dict['batch_numbers'] = [128, 10]
 	var_dict['epoch_numbers'] = [12, 32]
 	
 	# monitors
 	if experiment_type == 'novelty_detection':
-		var_dict['monitor_names'] = ['oob', 'oob_isomap']#'oob_gradient'
-		var_dict['classes_to_monitor'] = [1, 7]
-
-	var_dict['lenet_gtsrb_monitor_oob'] = "oob_GTSRB_class_"
-	var_dict['cnn_mnist_monitor_oob_isomap'] = "oob_isomap_MNIST_class_"
-	var_dict['lenet_gtsrb_monitor_oob_isomap'] = "oob_isomap_GTSRB_class_"
-	var_dict['cnn_mnist_monitor_oob_isomap_trained'] = 'isomap_MNIST_trained_class_'
-	var_dict['lenet_gtsrb_monitor_oob_isomap_trained'] = 'isomap_GTSRB_trained_class_'
-	# folders
-	var_dict['e3_folder'] = 'oob_ensembleDNN'
-	var_dict['e4_folder'] = 'oob_NL_ensembleDNN'
+		var_dict['technique_names'] = ['oob', 'oob_isomap', 'oob_pca']#'oob_gradient'
 
 	return var_dict[key]

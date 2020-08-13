@@ -13,3 +13,4 @@ class ModelBuilder:
 		self.model_name = None
 		self.num_cnn = 0 #used for ensembles
 		self.models_folder = "src"+self.sep+"bin"+self.sep+"models"+self.sep
+		self.validation_size = 0.3

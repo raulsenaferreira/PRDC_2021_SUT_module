@@ -4,29 +4,36 @@ from src.Classes.dataset import Dataset
 
 
 if __name__ == "__main__":
-	dataset_names = ['MNIST', 'GTSRB']
+	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+
+	dataset_names = ['MNIST', 'GTSRB', 'CIFAR-10']
 	models_pool = []
 	timeout = 1000
 
 	#general settings
-	validation_size = model_cfg.load_var('validation_size')
-	parallel_execution = True
-
+	parallel_execution = False
+	'''
 	#datasets
 	mnistObj = Dataset(dataset_names[0])
-	mnistObj.validation_size = validation_size
+	
 	gtsrbObj = Dataset(dataset_names[1])
-	gtsrbObj.validation_size = validation_size
-
+	'''
+	cifarObj = Dataset(dataset_names[2])
+	'''
 	#Model 1: CNN with MNIST dataset
-	model_builder = model_cfg.load_settings('cnn_mnist')
+	model_builder = model_cfg.load_settings('lenet_mnist')
 	model_builder.dataset = mnistObj
 	models_pool.append(model_builder) 
 	
 	#Model 2: LeNet with GTRSB dataset
-	model_builder = model_cfg.load_settings(2)
+	model_builder = model_cfg.load_settings('lenet_gtsrb')
 	model_builder.dataset = gtsrbObj
-	#models_pool.append(model_builder) 
+	models_pool.append(model_builder) 
+	'''
+	#Model 3: ResNet with CIFAR-10 dataset
+	model_builder = model_cfg.load_settings('resnet_cifar10')
+	model_builder.dataset = cifarObj
+	models_pool.append(model_builder) 
 	
 	#Model 3: Ensemble of CNN with MNIST dataset
 	#model = model_cfg.load_settings(3)
@@ -41,14 +48,18 @@ if __name__ == "__main__":
 		#Parallelizing the experiments (optional): one experiment per Core
 		pool = Pool()
 		processes_pool = []
+		timeout *= len(models_pool)
 
 		for model_builder in models_pool:
-			processes_pool.append(pool.apipe(model_builder.runner.run, model_builder)) 
+			processes_pool.append(pool.apipe(model_builder.runner.run, model_builder, perc_of_data)) 
 		
 		for process in processes_pool:
 			history = process.get(timeout=timeout)
 			
-
+	else:
+		#Serial version for the experiments
+		for model_builder in models_pool:
+			history = model_builder.runner.run(model_builder, perc_of_data) 
 		'''
 		timeout = 0
 

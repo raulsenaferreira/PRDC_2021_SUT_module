@@ -2,6 +2,7 @@ import os
 from src.utils import util
 import keras
 from keras.datasets import mnist
+from keras.datasets import cifar10
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -24,10 +25,43 @@ class Dataset:
 		self.trainPath = ''
 		self.testPath = ''
 		self.validation_size = None
+		self.X = [[]]
+		self.y = []
 	
 
+	def load_cifar_10(self, subtract_pixel_mean = True, onehotencoder=True):
+		img_width, img_height, img_num_channels = 32, 32, 3
+
+		(input_train, target_train), (input_test, target_test) = cifar10.load_data()  
+		input_train = input_train.astype('float32')
+		input_test = input_test.astype('float32')
+		input_train = input_train / 255
+		input_test = input_test / 255
+
+		# Subtracting pixel mean improves accuracy
+		if subtract_pixel_mean:
+			x_train_mean = np.mean(input_train, axis=0)
+			input_train -= x_train_mean
+			input_test -= x_train_mean
+
+		x_train, x_valid, y_train, y_valid = train_test_split(input_train,target_train,test_size = self.validation_size)
+		x_test, y_test = input_test, target_test
+
+		print('x_train shape:', x_train.shape)
+		print(x_train.shape[0], 'train samples')
+		print(x_valid.shape[0], 'validation samples')
+		print(x_test.shape[0], 'test samples')
+
+		# convert class vectors to binary class matrices
+		if onehotencoder:
+			y_train = keras.utils.to_categorical(y_train, self.num_classes)
+			y_valid = keras.utils.to_categorical(y_valid, self.num_classes)
+			y_test = keras.utils.to_categorical(y_test, self.num_classes)
+
+		return x_train, y_train, x_valid, y_valid, x_test, y_test
+
+
 	def load_mnist(self, onehotencoder=True):
-		self.num_classes = 10
 		# input image dimensions
 		img_rows, img_cols, img_dim = 28, 28, 1
 
@@ -55,6 +89,7 @@ class Dataset:
 
 		print('x_train shape:', x_train.shape)
 		print(x_train.shape[0], 'train samples')
+		print(x_valid.shape[0], 'validation samples')
 		print(x_test.shape[0], 'test samples')
 
 		# convert class vectors to binary class matrices
@@ -105,6 +140,7 @@ class Dataset:
 			Y_train = to_categorical(Y_train, self.num_classes)
 			Y_valid = to_categorical(Y_valid, self.num_classes)
 		print("Training set shape :", X_train.shape)
+		print(X_valid.shape[0], 'validation samples')
 		print("Validation set shape :", X_valid.shape)
 		
 		return X_train,X_valid,Y_train,Y_valid
@@ -155,11 +191,15 @@ class Dataset:
 				X_test, y_test = self.load_GTRSB_csv("Test.csv")
 				data = X_test, y_test
 
-		elif self.dataset_name == 'cifar10':
+		elif self.dataset_name == 'CIFAR-10':
+			self.num_classes = 10
+			self.channels = 3
 			if mode == 'train':
-				pass  
+				X_train, y_train, X_valid, y_valid, _, _ = self.load_cifar_10()
+				data = X_train, y_train, X_valid, y_valid
 			else:
-				pass
+				_, _, _, _, X_test, y_test = self.load_cifar_10()
+				data = X_test, y_test
 
 		else:
 			print("Dataset not found!!")

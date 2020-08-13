@@ -1,39 +1,13 @@
+import os
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import pickle
 from sklearn.cluster import KMeans
 
 
-
-def make_abstraction(data, monitor):
-	data = np.asarray(data)
-	
-	if monitor.dim_reduc_method==None:
-		#doing a projection by taking just the first and the last dimension of data
-		data = data[:,[0,-1]]
-	else:
-		#using a dimensionality reduction function
-		method = monitor.dim_reduc_method.fit(data)
-		file = monitor.monitors_folder + monitor.dim_reduc_filename_prefix
-		print("Saving trained dim reduc method in", file)
-		pickle.dump(method, open(file, "wb"))
-		data = method.transform(data)
-
-	print(data.shape)
-
-	dataByCluster={}
-	clusters = KMeans(n_clusters=monitor.n_clusters).fit_predict(data)
-	
-	print("making boxes...")
-
-	for c, d in zip(clusters, data):
-		try:
-			dataByCluster[c].append(d)
-		except:
-			dataByCluster.update({c:[d]})
-
+def make_boxes(class_to_monitor, dataByCluster):
 	array_box_by_cluster = {}
-	array_box_by_cluster.update({monitor.class_to_monitor:[]})
+	array_box_by_cluster.update({class_to_monitor:[]})
 
 	for k, v in dataByCluster.items():
 		arr_intermediate = []
@@ -43,9 +17,42 @@ def make_abstraction(data, monitor):
 			min_i = np.amin(v[:,i])
 			max_i = np.amax(v[:,i])
 			arr_intermediate.append([min_i, max_i])
-		array_box_by_cluster[monitor.class_to_monitor].append(arr_intermediate)
+		array_box_by_cluster[class_to_monitor].append(arr_intermediate)
 
 	return array_box_by_cluster
+
+
+def make_abstraction(data, monitor):
+	data = np.asarray(data)
+	print('data.shape', data.shape)
+	
+	if monitor.dim_reduc_method==None:
+		#doing a projection by taking just the first and the last dimension of data
+		data = data[:,[0,-1]]
+	else:
+		#using a dimensionality reduction function
+		method = monitor.dim_reduc_method.fit(data)
+		file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix
+
+		os.makedirs(monitor.monitors_folder, exist_ok=True)
+		
+		print("Saving trained dim reduc method in", file_path)
+		pickle.dump(method, open(file_path, "wb"))
+
+		data = method.transform(data)
+
+	dataByCluster={}
+	clusters = KMeans(n_clusters=monitor.n_clusters).fit_predict(data)
+	
+	print("making boxes...", data.shape)
+
+	for c, d in zip(clusters, data):
+		try:
+			dataByCluster[c].append(d)
+		except:
+			dataByCluster.update({c:[d]})
+
+	return make_boxes(monitor.class_to_monitor, dataByCluster)
 
 
 def make_abstraction_without_dim_reduc(data, monitor):
@@ -80,12 +87,12 @@ def make_abstraction_without_dim_reduc(data, monitor):
 	return array_box_by_cluster
 
 
-def find_point(boxes, intermediateValues, class_to_monitor, dim_reduc_obj=None):
+def find_point(boxes, intermediateValues, class_to_monitor, dim_reduc_obj):
 	data = np.asarray(intermediateValues)
 	#print(intermediateValues)
 	
 	if dim_reduc_obj!=None:
-		data = dim_reduc_obj.transform(data.reshape(1, -1))[0]
+		data = dim_reduc_obj[class_to_monitor].transform(data.reshape(1, -1))[0]
 		
 	#print(data)
 	x = data[0]
@@ -108,7 +115,7 @@ def find_point(boxes, intermediateValues, class_to_monitor, dim_reduc_obj=None):
 	return result
 
 
-def find_point_box_ensemble(arr_boxes, intermediateValues_all, dim_reduc_obj=None):
+def find_point_box_ensemble(arr_boxes, intermediateValues_all, dim_reduc_obj):
 	result = False
 	for i in range(len(intermediateValues_all)):
 		#print(i)
