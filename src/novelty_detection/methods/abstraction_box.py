@@ -9,7 +9,7 @@ from src.utils import util
 
 sep = util.get_separator()
 
-def make_boxes(dataByCluster):
+def make_boxes_by_cluster(dataByCluster):
 	array_box_by_cluster = []
 
 	for k, v in dataByCluster.items():
@@ -25,6 +25,18 @@ def make_boxes(dataByCluster):
 		array_box_by_cluster.append(arr_boxes)
 
 	return array_box_by_cluster
+
+
+def make_boxes(data):
+	arr_boxes = []
+
+	for i in range(data.shape[1]):
+		min_i = np.amin(data[:,i])
+		max_i = np.amax(data[:,i])
+
+		arr_boxes.append([min_i, max_i])
+
+	return arr_boxes
 
 
 def make_abstraction(data, monitor, save):
@@ -46,19 +58,25 @@ def make_abstraction(data, monitor, save):
 
 		data = method.transform(data)
 
-	dataByCluster={}
-	clusters = KMeans(n_clusters=monitor.n_clusters).fit_predict(data)
 	
 	print("making boxes...", data.shape)
 
-	for c, d in zip(clusters, data):
-		try:
-			dataByCluster[c].append(d)
-		except:
-			dataByCluster.update({c:[d]})
+	dataByCluster={}
 
-	return make_boxes(dataByCluster)
+	if monitor.n_clusters > 0:
+		clusters = KMeans(n_clusters=monitor.n_clusters).fit_predict(data)
 
+		for c, d in zip(clusters, data):
+			try:
+				dataByCluster[c].append(d)
+			except:
+				dataByCluster.update({c:[d]})
+
+		return make_boxes_by_cluster(dataByCluster)
+
+	else:
+		return make_boxes(data)
+	
 
 def make_abstraction_without_dim_reduc(data, monitor, save):
 	data = np.asarray(data)
@@ -109,7 +127,7 @@ def find_point(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_
 		x = data[0]
 		y = data[-1]
 
-	#print(np.shape(boxes))
+	print(np.shape(boxes))
 
 	try:
 		for box in boxes:

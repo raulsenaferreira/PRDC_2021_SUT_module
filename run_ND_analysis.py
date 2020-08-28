@@ -64,31 +64,31 @@ def save_results(PARAMS, classes_to_monitor, experiment_type, name, technique, a
 
 
 if __name__ == "__main__":
-	# disabling tensorflow logs
-	set_tf_loglevel(logging.FATAL)
-	# re-enabling tensorflow logs
-	#set_tf_loglevel(logging.INFO)
-
-	#saving experiments in the cloud (optional)
-	neptune.init('youruser/project')
-
 	# variables regarding Novelty-Detection runtime-monitoring experiments
 	experiment_type = 'novelty_detection'
 	dataset_names = ['GTSRB'] #'MNIST', 
 	validation_size = 0.3
 	model_names = ['leNet'] #, 'leNet'
-
-	
 	num_classes_to_monitor = [43] #10, 
 	
 	PARAMS = {'arr_n_components' : [2], #, 3, 5, 10
-	 'arr_n_clusters_oob' : [3], #0, 2, 3, 4, 5
+	 'arr_n_clusters_oob' : [0], #0, 2, 3, 4, 5
 				'technique_names' : ['oob']}#'oob', 'oob_isomap', 'oob_pca'
 
 	# other settings
+	save_experiments = False
 	parallel_execution = False
 	repetitions = 1
 	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+
+	# disabling tensorflow logs
+	set_tf_loglevel(logging.FATAL)
+	# re-enabling tensorflow logs
+	#set_tf_loglevel(logging.INFO)
+
+	if save_experiments:
+		#saving experiments in the cloud (optional)
+		neptune.init('raulsenaferreira/PhD')
 
 	## loading experiments
 	for model_name, dataset_name, classes_to_monitor in zip(model_names, dataset_names, num_classes_to_monitor):
@@ -131,7 +131,7 @@ if __name__ == "__main__":
 				experiment.evaluator = dnn_oob_evaluator
 
 			#readouts = experiment.evaluator.evaluate(repetitions, experiment, parallel_execution)
-			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution) 
+			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments) 
 			#print('len(arr_readouts)', len(readouts))
 			#arr_readouts.append(readouts)
 		

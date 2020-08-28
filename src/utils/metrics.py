@@ -95,6 +95,13 @@ def plot_pos_neg_rate_stacked_bars_total(experiment_name, arr_readouts, num_clas
 		print('fn', fn)
 		print('tp', tp)
 		print('tn', tn)
+		print("monitors accuracy =",(tn+tp)/(tn+tp+fp+fn))
+		precision = tp/(tp+fp)
+		print("monitors precision =", precision)
+		recall = tp/(tp+fn)
+		print("monitors recall =", recall)
+		F1 = 2*((precision*recall)/(precision+recall))
+		print("monitors F1 score =", F1)
 
 		y_fp.append(fp)
 		y_fn.append(fn)

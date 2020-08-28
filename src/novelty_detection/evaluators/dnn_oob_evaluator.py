@@ -26,7 +26,7 @@ def save_results(experiment, arr_readouts, plot=False):
 		metrics.plot_pos_neg_rate_stacked_bars(experiment.name, arr_readouts, img_folder_path+'all_images.pdf')
 
 
-def run_evaluation(monitor, experiment, repetitions):
+def run_evaluation(monitor, experiment, repetitions, save_experiments):
 	arr_acc = [] #accuracy
 	arr_cf = {} #confusion matrix by class
 	arr_t = [] #time
@@ -57,41 +57,20 @@ def run_evaluation(monitor, experiment, repetitions):
 			arr_cf[class_to_monitor][2].append(arrTP[class_to_monitor])
 			arr_cf[class_to_monitor][3].append(arrTN[class_to_monitor])	
 
-	
-	neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))
-	neptune.log_metric('Accuracy', np.mean(arr_acc)) 
-	neptune.log_metric('Process time', np.mean(arr_t)) 
-	neptune.log_metric('Memory', np.mean(arr_mem))
-	neptune.log_metric('F1', np.mean(arr_f1))
+	if save_experiments:
+		neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))
+		neptune.log_metric('Accuracy', np.mean(arr_acc)) 
+		neptune.log_metric('Process time', np.mean(arr_t)) 
+		neptune.log_metric('Memory', np.mean(arr_mem))
+		neptune.log_metric('F1', np.mean(arr_f1))
 
-	for monitored_class in range(experiment.classes_to_monitor):
-		neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][0])))
-		neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][1])))
-		neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][2])))
-		neptune.log_metric('True Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][3])))
+		for monitored_class in range(experiment.classes_to_monitor):
+			neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][0])))
+			neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][1])))
+			neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][2])))
+			neptune.log_metric('True Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][3])))
 
-	'''
-	# storing results
-	readout = Readout()
-	readout.name = monitor.monitor_name
-	
-	readout.avg_acc = np.mean(arr_acc) 
-	readout.avg_time = np.mean(arr_t) 
-	readout.avg_memory = np.mean(arr_mem)
-	readout.avg_F1 = np.mean(arr_f1)
 
-	avg_cf = {}
-	for class_to_monitor in range(experiment.classes_to_monitor):
-		avg_cf[class_to_monitor] = [
-		 int(np.mean(arr_cf[class_to_monitor][0])),
-		 int(np.mean(arr_cf[class_to_monitor][1])),
-		 int(np.mean(arr_cf[class_to_monitor][2])),
-		 int(np.mean(arr_cf[class_to_monitor][3]))
-		]
-	readout.avg_cf = avg_cf
-
-	return readout
-'''
 	return True
 
 
