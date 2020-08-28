@@ -11,10 +11,23 @@ sep = util.get_separator()
 experiment_type = 'novelty_detection'
 root_path = 'src'+sep+experiment_type+sep+'bin'+sep+'monitors'
 
+
 def build_abstraction_based_monitor(class_to_monitor, monitor_name, n_clusters_oob, monitor_folder):
 	monitor = Monitor(monitor_name)
 	monitor.class_to_monitor = class_to_monitor
 	monitor.trainer = act_func_based_monitor
+	monitor.method = abstraction_box.make_abstraction
+	monitor.filename = 'monitor_'+monitor_name+'.p'
+	monitor.n_clusters = n_clusters_oob
+	monitor.monitors_folder = monitor_folder
+
+	return monitor
+
+
+def build_gradient_based_monitor(class_to_monitor, monitor_name, n_clusters_oob, monitor_folder):
+	monitor = Monitor(monitor_name)
+	monitor.class_to_monitor = class_to_monitor
+	monitor.trainer = act_func_gradient_based_monitor
 	monitor.method = abstraction_box.make_abstraction
 	monitor.filename = 'monitor_'+monitor_name+'.p'
 	monitor.n_clusters = n_clusters_oob
@@ -41,6 +54,13 @@ def prepare_box_based_monitors(dataset_name, technique_names, class_to_monitor,
 				monitor = build_abstraction_based_monitor(class_to_monitor, monitor_name, n_clusters_oob, monitor_folder)
 
 				monitors.append(monitor)
+
+			elif 'oob_gradient' == technique:
+				monitor_name = technique+'_{}_clusters'.format(n_clusters_oob)
+				
+				monitor = build_gradient_based_monitor(class_to_monitor, monitor_name, n_clusters_oob, monitor_folder)
+
+				monitors.append(monitor)
 			
 			elif 'oob_isomap' == technique or 'oob_pca' == technique:
 				
@@ -48,6 +68,7 @@ def prepare_box_based_monitors(dataset_name, technique_names, class_to_monitor,
 
 				for n_components in arr_n_components:
 					monitor_name = technique+'_{}_components_{}_clusters'.format(n_components, n_clusters_oob)
+					reduc_name = technique+'_{}_components'.format(n_components)
 
 					if 'oob_isomap' == technique:
 						dim_reduc_method = manifold.Isomap(n_components = n_components)
@@ -56,7 +77,7 @@ def prepare_box_based_monitors(dataset_name, technique_names, class_to_monitor,
 
 					monitor = build_abstraction_based_monitor(class_to_monitor, monitor_name, n_clusters_oob, monitor_folder)
 					monitor.n_components = n_components
-					monitor.dim_reduc_filename_prefix = 'trained_'+monitor_name+'.p'
+					monitor.dim_reduc_filename_prefix = 'trained_'+reduc_name+'.p'
 
 					monitor.dim_reduc_method = dim_reduc_method
 					

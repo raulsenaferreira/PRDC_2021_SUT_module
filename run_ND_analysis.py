@@ -1,4 +1,5 @@
 import os
+import logging
 from src import model_config
 from src.Classes.model_builder import ModelBuilder
 from src.Classes.monitor import Monitor
@@ -18,6 +19,7 @@ from src.novelty_detection import load_monitors
 from sklearn import manifold
 import pickle
 import numpy as np
+import neptune
 
 
 sep = util.get_separator()
@@ -35,41 +37,64 @@ sep = util.get_separator()
 8 = using the derivative of activation functions instead of raw values)
 '''
 
+def set_tf_loglevel(level):
+    if level >= logging.FATAL:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    if level >= logging.ERROR:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    if level >= logging.WARNING:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+    else:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+    logging.getLogger('tensorflow').setLevel(level)
 
-def save_results(experiment, arr_readouts, plot=False):
-	print("saving experiments", experiment.name)
+
+def save_results(PARAMS, classes_to_monitor, experiment_type, name, technique, arr_readouts, plot=False):
+	print("saving experiments", name)
 	filenames = config_ND.load_file_names()
-	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+experiment.experiment_type+sep+experiment.name+sep
-	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+experiment.experiment_type+sep+experiment.name+sep
+	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+experiment_type+sep+name+sep+'_'+technique+sep
+	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+experiment_type+sep+name+sep+'_'+technique+sep
 
-	metrics.save_results(arr_readouts, csvs_folder_path, filenames, ',')
+	#metrics.save_results(arr_readouts, csvs_folder_path, filenames, ',')
+	metrics.save_results_in_neptune(PARAMS, arr_readouts, classes_to_monitor)
 	
 	if plot:
 		os.makedirs(img_folder_path, exist_ok=True)
-		metrics.plot_pos_neg_rate_stacked_bars(experiment.name, arr_readouts, img_folder_path+'all_images.pdf')
+		metrics.plot_pos_neg_rate_stacked_bars(name, arr_readouts, img_folder_path+'all_images.pdf')
 
 
 if __name__ == "__main__":
+	# disabling tensorflow logs
+	set_tf_loglevel(logging.FATAL)
+	# re-enabling tensorflow logs
+	#set_tf_loglevel(logging.INFO)
+
+	#saving experiments in the cloud (optional)
+	neptune.init('youruser/project')
+
 	# variables regarding Novelty-Detection runtime-monitoring experiments
 	experiment_type = 'novelty_detection'
-	dataset_names = ['MNIST']#, 'GTSRB']
+	dataset_names = ['GTSRB'] #'MNIST', 
 	validation_size = 0.3
-	model_names = config_ND.load_vars(experiment_type, 'model_names')
-	technique_names = config_ND.load_vars(experiment_type, 'technique_names')
-	num_classes_to_monitor = [10, 43]
-	arr_n_components = [2, 3, 5, 10]
-	arr_n_clusters_oob = [2, 3, 4, 5]
+	model_names = ['leNet'] #, 'leNet'
+
+	
+	num_classes_to_monitor = [43] #10, 
+	
+	PARAMS = {'arr_n_components' : [2], #, 3, 5, 10
+	 'arr_n_clusters_oob' : [3], #0, 2, 3, 4, 5
+				'technique_names' : ['oob']}#'oob', 'oob_isomap', 'oob_pca'
 
 	# other settings
-	parallel_execution = True
+	parallel_execution = False
 	repetitions = 1
 	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	## loading experiments
 	for model_name, dataset_name, classes_to_monitor in zip(model_names, dataset_names, num_classes_to_monitor):
 		arr_monitors =  np.array([])
-		pool = Pool()
-		processes_pool = []
+		arr_readouts = []
+
 		# loading dataset
 		dataset = Dataset(dataset_name)
 		X, y = dataset.load_dataset(mode='test')
@@ -85,12 +110,12 @@ if __name__ == "__main__":
 
 		#for class_to_monitor in range(classes_to_monitor):
 		# loading monitors for Novelty Detection
-		for technique in technique_names:
+		for technique in PARAMS['technique_names']:
 			monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor,
-			 arr_n_clusters_oob, arr_n_components)
+			 PARAMS['arr_n_clusters_oob'], PARAMS['arr_n_components'])
 
 			# creating an instance of an experiment
-			experiment = Experiment(model_name+'_'+dataset_name+'_monitored_class_')
+			experiment = Experiment(model_name+'_'+dataset_name)
 			experiment.experiment_type = experiment_type
 			experiment.dataset = dataset
 			experiment.model = model
@@ -105,28 +130,31 @@ if __name__ == "__main__":
 				experiment.tester = dnn_oob_tester
 				experiment.evaluator = dnn_oob_evaluator
 
-			arr_readouts = experiment.evaluator.evaluate(repetitions, experiment, parallel_execution) 
-			print('len(arr_readouts)', len(arr_readouts))
-			#save_results(experiment, arr_readouts, plot=False)
+			#readouts = experiment.evaluator.evaluate(repetitions, experiment, parallel_execution)
+			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution) 
+			#print('len(arr_readouts)', len(readouts))
+			#arr_readouts.append(readouts)
+		
+			#save_results(PARAMS, classes_to_monitor, experiment.experiment_type, experiment.name, technique, arr_readouts, plot=False)
 
-			'''
-			if  parallel_execution:
-				processes_pool.append(pool.apipe(experiment.evaluator.evaluate, repetitions, experiment))
-			else:
-				processes_pool.append(experiment)
+		'''
+		if  parallel_execution:
+			processes_pool.append(pool.apipe(experiment.evaluator.evaluate, repetitions, experiment))
+		else:
+			processes_pool.append(experiment)
 
-			if parallel_execution:
-				timeout = 60 * len(experiment.monitors)
-				print("\nMax seconds to run each experiment:", timeout)
+		if parallel_execution:
+			timeout = 60 * len(experiment.monitors)
+			print("\nMax seconds to run each experiment:", timeout)
 
-				for process in processes_pool:
-					arr_readouts = process.get(timeout=timeout)	
-			else:
-				for experiment in processes_pool:
-					arr_readouts = experiment.evaluator.evaluate(repetitions, experiment) 
-					print('len(arr_readouts)', len(arr_readouts))
-					save_results(experiment, arr_readouts, plot=False)
-			'''
+			for process in processes_pool:
+				arr_readouts = process.get(timeout=timeout)	
+		else:
+			for experiment in processes_pool:
+				arr_readouts = experiment.evaluator.evaluate(repetitions, experiment) 
+				print('len(arr_readouts)', len(arr_readouts))
+				save_results(experiment, arr_readouts, plot=False)
+		'''
 
 #print('Class {} with {} monitors on dataset {}'.format(class_to_monitor, len(arr_monitors), dataset_name))
 #cd Users\rsenaferre\Desktop\GITHUB\phd_experiments

@@ -13,6 +13,7 @@ astroid==2.3.1
 astropy==3.2.1
 astutils==0.0.3
 async-timeout==3.0.1
+asyncio==3.4.3
 atomicwrites==1.3.0
 attrs==19.2.0
 Babel==2.7.0
@@ -22,7 +23,6 @@ backports.os==0.1.1
 backports.shutil-get-terminal-size==1.0.0
 backports.tempfile==1.0
 backports.weakref==1.0.post1
--e git+https://github.com/openai/baselines.git@9ee399f5b20cd70ac0a871927a6cf043b478193f#egg=baselines
 beautifulsoup4==4.8.0
 bitarray==1.0.1
 bkcharts==0.2
@@ -35,7 +35,7 @@ certifi==2019.11.28
 cffi==1.12.3
 chardet==3.0.4
 Click==7.0
-cloudpickle==1.2.2
+cloudpickle==1.5.0
 clyent==1.2.2
 colorama==0.4.1
 comtypes==1.1.7
@@ -49,13 +49,13 @@ cryptography==2.7
 cycler==0.10.0
 Cython==0.29.13
 cytoolz==0.10.0
-dask==2.5.2
+dask==2.22.0
 dd==0.5.4
 decorator==4.4.0
 defusedxml==0.6.0
 dill==0.3.1.1
 discrete-signals==0.7.3
-distributed==2.5.2
+distributed==2.22.0
 docutils==0.15.2
 dotmap==1.3.8
 easydict==1.9
@@ -75,13 +75,14 @@ google-auth==1.11.0
 google-auth-oauthlib==0.4.1
 google-pasta==0.1.8
 googleapis-common-protos==1.52.0
+graphviz==0.8.4
 greenlet==0.4.15
 grpcio==1.26.0
 gym==0.15.4
 h5py==2.10.0
 HeapDict==1.0.1
 html5lib==1.0.1
-idna==2.8
+idna==2.6
 idx2numpy==1.2.2
 imageio==2.6.0
 imagesize==1.1.0
@@ -133,6 +134,7 @@ msgpack==0.6.1
 multidict==4.7.4
 multipledispatch==0.6.0
 multiprocess==0.70.9
+mxnet==1.6.0
 navigator-updater==0.2.1
 nbconvert==5.6.0
 nbformat==4.4.0
@@ -142,7 +144,7 @@ nose==1.3.7
 notebook==6.0.1
 numba==0.45.1
 numexpr==2.7.0
-numpy==1.18.1
+numpy==1.16.6
 numpydoc==0.9.1
 oauthlib==3.1.0
 olefile==0.46
@@ -164,6 +166,7 @@ pickleshare==0.7.5
 Pillow==6.2.0
 pkginfo==1.5.0.1
 pluggy==0.13.0
+plumbum==1.6.9
 ply==3.10
 Polygon3==3.0.8
 pox==0.2.7
@@ -209,9 +212,10 @@ pyzmq==18.1.0
 QtAwesome==0.6.0
 qtconsole==4.5.5
 QtPy==1.9.0
-requests==2.22.0
+requests==2.18.4
 requests-oauthlib==1.3.0
 rope==0.14.0
+rpyc==4.1.5
 rsa==4.0
 ruamel-yaml==0.15.46
 scenic==1.0.0b2
@@ -244,7 +248,7 @@ SQLAlchemy==1.3.9
 statsmodels==0.10.1
 sympy==1.4
 tables==3.5.2
-tblib==1.4.0
+tblib==1.7.0
 tensorboard==2.1.0
 tensorflow==2.1.0
 tensorflow-datasets==3.1.0
@@ -261,7 +265,7 @@ tornado==6.0.3
 tqdm==4.36.1
 traitlets==4.3.3
 unicodecsv==0.14.1
-urllib3==1.25.8
+urllib3==1.22
 verifai==0.0.0
 virtualenv==16.7.9
 wcwidth==0.1.7

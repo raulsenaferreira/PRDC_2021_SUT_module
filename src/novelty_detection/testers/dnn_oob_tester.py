@@ -5,6 +5,9 @@ import psutil
 from src.utils import util
 
 
+
+sep = util.get_separator()
+
 def run(X_test, y_test, experiment, monitor, dataset_name):
     arrPred = []
     arrFalseNegative = {}
@@ -35,18 +38,21 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         arrPred.append(yPred)
         intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
         
-        #for class_to_monitor in range(experiment.classes_to_monitor): 
-            #if yPred == class_to_monitor:
-        if monitor.method(monitor.boxes, intermediateValues, yPred, monitor.dim_reduc_method):    
+        # loading abstraction boxes
+        monitor_path = monitor.monitors_folder+str(yPred) +sep+ monitor.filename
+        boxes = pickle.load(open(monitor_path, "rb"))
+        #print(np.shape(boxes))
+        
+        if monitor.method(boxes, intermediateValues, yPred, monitor.monitors_folder, monitor.dim_reduc_method):    
             if yPred != lbl:
-                arrFalseNegative[class_to_monitor] += 1 #False negative           
+                arrFalseNegative[yPred] += 1 #False negative           
             if yPred == lbl: 
-                arrTrueNegative[class_to_monitor] += 1 #True negatives
+                arrTrueNegative[yPred] += 1 #True negatives
         else:
             if yPred != lbl: 
-                arrTruePositive[class_to_monitor] += 1 #True positives
+                arrTruePositive[yPred] += 1 #True positives
             if yPred == lbl: 
-                arrFalsePositive[class_to_monitor] += 1 #False positives
+                arrFalsePositive[yPred] += 1 #False positives
                     
         #elif lbl==class_to_monitor and yPred != class_to_monitor:
             #print("missclassification --- new pattern for class",yPred, str(lbl))

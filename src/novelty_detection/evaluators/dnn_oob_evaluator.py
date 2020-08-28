@@ -7,6 +7,7 @@ from src.utils import metrics
 from src.novelty_detection import config as config_ND
 from src.utils import util
 from pathos.multiprocessing import ProcessingPool as Pool
+import neptune
 
 
 
@@ -56,6 +57,20 @@ def run_evaluation(monitor, experiment, repetitions):
 			arr_cf[class_to_monitor][2].append(arrTP[class_to_monitor])
 			arr_cf[class_to_monitor][3].append(arrTN[class_to_monitor])	
 
+	
+	neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))
+	neptune.log_metric('Accuracy', np.mean(arr_acc)) 
+	neptune.log_metric('Process time', np.mean(arr_t)) 
+	neptune.log_metric('Memory', np.mean(arr_mem))
+	neptune.log_metric('F1', np.mean(arr_f1))
+
+	for monitored_class in range(experiment.classes_to_monitor):
+		neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][0])))
+		neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][1])))
+		neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][2])))
+		neptune.log_metric('True Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][3])))
+
+	'''
 	# storing results
 	readout = Readout()
 	readout.name = monitor.monitor_name
@@ -76,33 +91,38 @@ def run_evaluation(monitor, experiment, repetitions):
 	readout.avg_cf = avg_cf
 
 	return readout
+'''
+	return True
 
 
 def evaluate(repetitions, experiment, parallel_execution):
+	cores = 6
 	arr_readouts = []
 	processes_pool = []
+	success = False
 
 	if  parallel_execution:
-		pool = Pool()
-		timeout = 600 #* len(experiment.monitors)
-		print("\nMax seconds to run each experiment:", timeout)
+		pool = Pool(cores)
+		timeout = 1000 #* len(experiment.monitors)
+		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in experiment.monitors:
 			processes_pool.append(pool.apipe(run_evaluation, monitor, experiment, repetitions))
 
 		for process in processes_pool:
-			readout = process.get(timeout=timeout)
-			arr_readouts.append(readout)
+			success = process.get(timeout=timeout)
+			#arr_readouts.append(readout)
 	else:
+		print("\nserial execution")
 		for monitor in experiment.monitors:
-			readout = run_evaluation(monitor, experiment, repetitions)
-			arr_readouts.append(readout)
+			success = run_evaluation(monitor, experiment, repetitions)
+			#arr_readouts.append(readout)
 
-	print('len(arr_readouts)', len(arr_readouts))
+	#print('len(arr_readouts)', len(arr_readouts))
 	#if save:
 	#save_results(experiment, arr_readouts, plot=False)	
-
-	return arr_readouts
+	return success
+	#return arr_readouts
 
 
 if __name__ == "__main__":

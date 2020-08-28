@@ -1,3 +1,5 @@
+import os
+import logging
 import numpy as np
 from src.utils import util
 from src import model_config as model_cfg
@@ -10,8 +12,20 @@ from timeit import default_timer as timer
 from keras.models import load_model
 
 
+def set_tf_loglevel(level):
+	if level >= logging.FATAL:
+		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+	if level >= logging.ERROR:
+		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+	if level >= logging.WARNING:
+		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+	else:
+		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+	logging.getLogger('tensorflow').setLevel(level)
+
+
 def build_all_monitors(parallel_execution, arr_n_components, arr_n_clusters_oob,
- technique_names, classes_to_monitor, model_file, X, y):
+ technique_names, classes_to_monitor, model_file, X, y, save):
 	arr_monitors = []
 
 	# Generate monitors for each class for a specific dataset
@@ -24,37 +38,45 @@ def build_all_monitors(parallel_execution, arr_n_components, arr_n_clusters_oob,
 	
 	#Parallelizing the experiments (optional): one experiment per Core
 	if parallel_execution:
+		cores = 6
 		timeout = 30 * len(arr_monitors)
-		pool = Pool()
+		pool = Pool(cores)
 		processes_pool = []
+
+		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in arr_monitors:
 			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model_file, X, y)) 
 		
 		for process in processes_pool:
-			trained_monitor = process.get(timeout=timeout)
+			_, _ = process.get(timeout=timeout)
 	else:
+		print("\nSerial execution.")
 		for monitor in arr_monitors:
-			trained_monitor = monitor.trainer.run(monitor, model_file, X, y)
+			_, _ = monitor.trainer.run(monitor, model_file, X, y, save)
 			
 
 
 if __name__ == "__main__":
+	# disabling tensorflow logs
+	set_tf_loglevel(logging.FATAL)
+	# re-enabling tensorflow logs
+	#set_tf_loglevel(logging.INFO)
+
 	#general settings
 	sep = util.get_separator()
-	parallel_execution = True
-	parallel_execution_on_CPU = True
-	parallel_execution_on_GPU = True
+	save = True
+	parallel_execution = False
 
-	arr_n_components = [2, 3, 5, 10]
-	arr_n_clusters_oob = [2, 3, 4, 5]
+	arr_n_components = [2]#, 3, 5, 10]
+	arr_n_clusters_oob = [3]#2, , 4, 5]
 
 	experiment_type = 'novelty_detection'
-	dataset_names = ['MNIST','GTSRB']# 
+	dataset_names = ['GTSRB']# 'MNIST',
 	validation_size = 0.3
-	model_names = config_ND.load_vars(experiment_type, 'model_names')
-	technique_names = config_ND.load_vars(experiment_type, 'technique_names')
-	num_classes_to_monitor = [10, 43]# 
+	model_names = ['leNet'] #, 'leNet'
+	technique_names = ['oob_pca']#'oob', 'oob_isomap', 'oob_pca', 'oob_gradient']
+	num_classes_to_monitor = [43]# 10, 43
 	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 	
 	for model_name, dataset_name, classes_to_monitor in zip(model_names, dataset_names, num_classes_to_monitor):
@@ -79,8 +101,8 @@ if __name__ == "__main__":
 
 		start = timer()
 
-		build_all_monitors(parallel_execution, arr_n_components, 
-			arr_n_clusters_oob, technique_names, classes_to_monitor, model, X, y)
+		build_all_monitors(parallel_execution, arr_n_components, arr_n_clusters_oob,
+		 technique_names, classes_to_monitor, model, X, y, save)
 		
 		dt = timer() - start
 		print("Monitors for {} built in {} minutes".format(dataset_name, dt/60))

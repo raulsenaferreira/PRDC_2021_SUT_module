@@ -2,6 +2,31 @@ import os
 import numpy as np
 import pickle
 from src.utils import util
+import tensorflow as tf
+from tensorflow import keras
+
+
+
+def compute_loss(input_image, filter_index):
+	feature_extractor = keras.Model(inputs=model.inputs, outputs=layer.output)
+	
+	activation = feature_extractor(input_image)
+	# We avoid border artifacts by only involving non-border pixels in the loss.
+	filter_activation = activation[:, 2:-2, 2:-2, filter_index]
+	return tf.reduce_mean(filter_activation)
+
+
+@tf.function
+def gradient_ascent_step(img, filter_index, learning_rate):
+	with tf.GradientTape() as tape:
+		tape.watch(img)
+		loss = compute_loss(img, filter_index)
+	# Compute gradients.
+	grads = tape.gradient(loss, img)
+	# Normalize gradients.
+	grads = tf.math.l2_normalize(grads)
+	img += learning_rate * grads
+	return loss, img
 
 
 def build_monitor(model, X, y, class_to_monitor, layer_index):

@@ -3,28 +3,33 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import pickle
 from sklearn.cluster import KMeans
+from src.utils import util
 
 
-def make_boxes(class_to_monitor, dataByCluster):
-	array_box_by_cluster = {}
-	array_box_by_cluster.update({class_to_monitor:[]})
+
+sep = util.get_separator()
+
+def make_boxes(dataByCluster):
+	array_box_by_cluster = []
 
 	for k, v in dataByCluster.items():
-		arr_intermediate = []
+		arr_boxes = []
 		v = np.asarray(v)
 
 		for i in range(v.shape[1]):
 			min_i = np.amin(v[:,i])
 			max_i = np.amax(v[:,i])
-			arr_intermediate.append([min_i, max_i])
-		array_box_by_cluster[class_to_monitor].append(arr_intermediate)
+
+			arr_boxes.append([min_i, max_i])
+
+		array_box_by_cluster.append(arr_boxes)
 
 	return array_box_by_cluster
 
 
-def make_abstraction(data, monitor):
+def make_abstraction(data, monitor, save):
 	data = np.asarray(data)
-	print('data.shape', data.shape)
+	#print('data.shape', data.shape)
 	
 	if monitor.dim_reduc_method==None:
 		#doing a projection by taking just the first and the last dimension of data
@@ -35,9 +40,9 @@ def make_abstraction(data, monitor):
 		file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix
 
 		os.makedirs(monitor.monitors_folder, exist_ok=True)
-		
-		print("Saving trained dim reduc method in", file_path)
-		pickle.dump(method, open(file_path, "wb"))
+		if save:
+			print("Saving trained dim reduc method in", file_path)
+			pickle.dump(method, open(file_path, "wb"))
 
 		data = method.transform(data)
 
@@ -52,10 +57,10 @@ def make_abstraction(data, monitor):
 		except:
 			dataByCluster.update({c:[d]})
 
-	return make_boxes(monitor.class_to_monitor, dataByCluster)
+	return make_boxes(dataByCluster)
 
 
-def make_abstraction_without_dim_reduc(data, monitor):
+def make_abstraction_without_dim_reduc(data, monitor, save):
 	data = np.asarray(data)
 
 	print(data.shape)
@@ -75,43 +80,53 @@ def make_abstraction_without_dim_reduc(data, monitor):
 	array_box_by_cluster.update({monitor.class_to_monitor:[]})
 
 	for k, v in dataByCluster.items():
-		arr_intermediate = []
+		arr_boxes = []
 		v = np.asarray(v)
 
 		for i in range(v.shape[1]):
 			min_i = np.amin(v[:,i])
 			max_i = np.amax(v[:,i])
-			arr_intermediate.append([min_i, max_i])
-		array_box_by_cluster[monitor.class_to_monitor].append(arr_intermediate)
+			arr_boxes.append([min_i, max_i])
+		array_box_by_cluster[monitor.class_to_monitor].append(arr_boxes)
 
 	return array_box_by_cluster
 
 
-def find_point(boxes, intermediateValues, class_to_monitor, dim_reduc_obj):
+def find_point(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_reduc_obj):
+	result = False
 	data = np.asarray(intermediateValues)
-	#print(intermediateValues)
+	#print(np.shape(data))
 	
 	if dim_reduc_obj!=None:
-		data = dim_reduc_obj[class_to_monitor].transform(data.reshape(1, -1))[0]
-		
-	#print(data)
-	x = data[0]
-	y = data[-1]
-	#print("point:", x, y)
-	result = False
+		dim_reduc_obj = pickle.load(open(monitor_folder+str(class_to_monitor) +sep+'trained_'+dim_reduc_obj+'.p', "rb"))
+		#data = dim_reduc_obj[class_to_monitor].transform(data.reshape(1, -1))[0] #old version
+		data = dim_reduc_obj.transform(data.reshape(1, -1))[0] #last version
+		#data = dim_reduc_obj.transform(data)
+		#print(np.shape(data))
+		x = data[0]
+		y = data[1]
+	else:
+		x = data[0]
+		y = data[-1]
+
+	#print(np.shape(boxes))
+
 	try:
-		for box in boxes[class_to_monitor]:
+		for box in boxes:
 			#B = box[0]
-			#print(box)
+			#print(class_to_monitor, box)
 			x1 = box[0][0]
 			x2 = box[0][1]
 			y1 = box[1][0]
 			y2 = box[1][1]
+			
 			if x >= x1 and x <= x2 and y >= y1 and y <= y2: 
 				return True
 	except:
 		pass
 		#print("error @ find_point function")
+	#print("point:", x, y)
+
 	return result
 
 

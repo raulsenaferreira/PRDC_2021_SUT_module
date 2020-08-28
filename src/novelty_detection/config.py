@@ -138,7 +138,7 @@ def load_vars(experiment_type, key):
 
 	var_dict['validation_size'] = 0.3
 	
-	var_dict['model_names'] = ['leNet']#, 'leNet']	
+	var_dict['model_names'] = ['leNet', 'leNet']#, 'leNet']	
 	var_dict['batch_numbers'] = [128, 10]
 	var_dict['epoch_numbers'] = [12, 32]
 	

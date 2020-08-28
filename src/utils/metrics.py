@@ -6,6 +6,7 @@ from math import sqrt
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.metrics import roc_auc_score
 from src.utils import util
@@ -64,7 +65,7 @@ def plot_false_decisions_legend():
 	plt.show()
 
 
-def plot_pos_neg_rate_stacked_bars(experiment_name, arr_readouts, fig_path):
+def plot_pos_neg_rate_stacked_bars_total(experiment_name, arr_readouts, num_classes, fig_path):
 	figures = []
 	x = []
 	y_fp = [] 
@@ -72,10 +73,29 @@ def plot_pos_neg_rate_stacked_bars(experiment_name, arr_readouts, fig_path):
 	y_tp = [] 
 	y_tn = []
 
-	for readout in arr_readouts:	
+	#COLOR = 'black'
+	#mpl.rcParams['text.color'] = 'white'
+	#mpl.rcParams['axes.labelcolor'] = 'black'
+	#mpl.rcParams['xtick.color'] = 'black'
+	#mpl.rcParams['ytick.color'] = 'black'
+	mpl.rcParams['font.size'] = 12
+
+	for readout in arr_readouts:
+		fp, fn, tp, tn = 0, 0, 0, 0
 		x.append(readout.name)
-		fp, fn, tp, tn = readout.avg_cf
-		
+
+		for monitored_class in range(num_classes):
+			fp += readout.avg_cf[monitored_class][0]
+			fn += readout.avg_cf[monitored_class][1]
+			tp += readout.avg_cf[monitored_class][2]
+			tn += readout.avg_cf[monitored_class][3]
+
+		print('Method:', readout.name)
+		print('fp', fp)
+		print('fn', fn)
+		print('tp', tp)
+		print('tn', tn)
+
 		y_fp.append(fp)
 		y_fn.append(fn)
 		y_tp.append(tp)
@@ -85,25 +105,33 @@ def plot_pos_neg_rate_stacked_bars(experiment_name, arr_readouts, fig_path):
 	
 	fig = plt.figure()
 	ax = fig.add_subplot()
-	width = 0.2
+	width = 0.3
 	blue = [0, .4, .6]
 	yellow = [1, 0.65, 0.25]
 	red = [1, 0, 0]
-	ax.bar(x, y_tp, color=blue, edgecolor="white", width=width, label='True positive')
+	darkgrey = 'darkgrey'
+	ax.bar(x, y_tp, color=darkgrey, edgecolor="white", width=width, label='True positive')
 	sums = y_tp
-	ax.bar(x, y_fn, bottom=sums, color=yellow, edgecolor="white", hatch="x", width=width, label='False negative')
+	ax.bar(x, y_fn, bottom=sums, color=darkgrey, edgecolor="white", hatch="x", width=width, label='False negative')
 	sums =[_x + _y for _x, _y in zip(sums, y_fn)]
-	ax.bar(x, y_fp, bottom=sums, color=red, edgecolor='white', hatch=".", width=width, label='False positive')
+	ax.bar(x, y_fp, bottom=sums, color=darkgrey, edgecolor='white', hatch=".", width=width, label='False positive')
 	sums = [_x + _y for _x, _y in zip(sums, y_fp)]
-	ax.bar(x, y_tn, bottom=sums, color=[0, 0.2, 0.1], edgecolor='white', hatch="*", width=width, label='True negative')
+	#ax.bar(x, y_tn, bottom=sums, color=[0, 0.2, 0.1], edgecolor='white', hatch="*", width=width, label='True negative')
 
 	ax.set_xlabel("Methods")
-	ax.set_ylabel("Percentage")
-	ax.set_ylim([0, 100])
+	ax.set_ylabel("Instances")
+	#ax.set_ylim([0, 100])
 	ax.xaxis.set_ticks(xticks, x)
 	ax.legend()
 	#ax.annotate('{}'.format(height))
+
+	for i in range(len(y_fp)):
+		plt.annotate(str(y_tp[i]), xy=(width/2+i-0.2, y_tp[i]*0.2), va='bottom', ha='left')
+		plt.annotate(str(y_fn[i]), xy=(width/2+i-0.2, (y_fn[i]+y_tp[i])-y_fn[i]*0.5), va='bottom', ha='left')
+		plt.annotate(str(y_fp[i]), xy=(width/2+i-0.2, (y_fp[i]+y_fn[i]+y_tp[i])-y_fp[i]*0.5), va='bottom', ha='left')
+		
 	
+
 	fig.suptitle(experiment_name)
 	ax.figure.canvas.set_window_title(experiment_name)
 	figures.append(fig)
@@ -111,27 +139,7 @@ def plot_pos_neg_rate_stacked_bars(experiment_name, arr_readouts, fig_path):
 
 	multipage(fig_path, figures, dpi=250)
 
-'''
-def plot_pos_neg_rate_stacked_bars(scores):
-	#N = 5
-	#menMeans = (20, 35, 30, 35, 27)
-	#womenMeans = (25, 32, 34, 20, 25)
-	#menStd = (2, 3, 4, 1, 2)
-	#womenStd = (3, 5, 2, 3, 3)
-	ind = np.arange(len(dic_by_method)) # the x locations for the groups
-	width = 0.35 # the width of the bars: can also be len(x) sequence
 
-	p1 = plt.bar(ind, menMeans, width)
-	p2 = plt.bar(ind, womenMeans, width)
-
-	plt.ylabel('Scores')
-	plt.title('Scores by group and gender')
-	plt.xticks(ind, ('G1', 'G2', 'G3', 'G4', 'G5'))
-	plt.yticks(np.arange(0, 81, 10))
-	plt.legend((p1[0], p2[0]), ('Men', 'Women'))
-
-	plt.show()
-'''
 
 def multipage(filename, figs=None, dpi=200):
 	pp = PdfPages(filename)
@@ -142,10 +150,3 @@ def multipage(filename, figs=None, dpi=200):
 	pp.close()
 	#usage
 	#multipage('multipage_w_raster.pdf', [fig2, fig3], dpi=250)
-
-
-#confusion_matrices = [['CNN_OOB', [0.0, 11.0, 0.0, 1021.0], [14.0, 14.0, 1.0, 417.0]], ['CNN_OOB_isomap', [5.0, 11.0, 0.0, 1016.0], [7.0, 13.0, 2.0, 424.0]]]
-#datasets = ['MNIST', 'GTSRB']
-#img_name = 'all_images.pdf'
-#img_folder_path = 'results'+sep+'img'+sep
-#plot_pos_neg_rate_stacked_bars(confusion_matrices, datasets, img_folder_path+img_name)

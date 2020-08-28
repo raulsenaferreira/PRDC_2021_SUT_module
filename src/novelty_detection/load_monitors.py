@@ -34,15 +34,15 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
 			monitor_name = technique+'_{}_clusters'.format(n_clusters_oob)
 			monitor = Monitor(monitor_name)
 
-			for class_to_monitor in range(classes_to_monitor):
-				monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
-				monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
-
-				monitor.monitors_folder = monitor_folder
-				monitor.filename = 'monitor_'+monitor_name+'.p'
-				monitor_path = monitor.monitors_folder+monitor.filename
+			#for class_to_monitor in range(classes_to_monitor):
+			monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
+			#	monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
+			monitor_folder += technique +sep+ 'class_'
+			monitor.monitors_folder = monitor_folder
+			monitor.filename = 'monitor_'+monitor_name+'.p'
+				#monitor_path = monitor.monitors_folder+monitor.filename
 				# loading abstraction boxes
-				boxes[class_to_monitor] = pickle.load(open(monitor_path, "rb"))
+				#boxes[class_to_monitor] = pickle.load(open(monitor_path, "rb"))
 
 			if 'ensemble' in technique:
 				monitor.method = abstraction_box.find_point_box_ensemble
@@ -50,7 +50,7 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
 				monitor.method = abstraction_box.find_point
 
 			monitor.dim_reduc_method = None
-			monitor.boxes = boxes
+			#monitor.boxes = boxes
 			monitors.append(monitor)
 			
 		elif 'oob_isomap' == technique or 'oob_pca' == technique:
@@ -58,28 +58,32 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
 			for n_components in arr_n_components:
 				boxes = {}
 				dim_reduc_method = {}
+				
 				monitor_name = technique+'_{}_components_{}_clusters'.format(n_components, n_clusters_oob)
+				reduc_name = technique+'_{}_components'.format(n_components)
+
 				monitor = Monitor(monitor_name)
 
-				for class_to_monitor in range(classes_to_monitor):
-					monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
-					monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
-
-					monitor.monitors_folder = monitor_folder
-					monitor.filename = 'monitor_'+monitor_name+'.p'
-					dim_reduc_method[class_to_monitor] = pickle.load(open(monitor_folder+'trained_'+monitor_name+'.p', "rb"))
+				#for class_to_monitor in range(classes_to_monitor):
+				monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
+				#	monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
+				monitor_folder += technique +sep+ 'class_'
+				monitor.monitors_folder = monitor_folder
+				monitor.filename = 'monitor_'+monitor_name+'.p'
+				#	dim_reduc_method[class_to_monitor] = pickle.load(open(monitor_folder+'trained_'+reduc_name+'.p', "rb"))
 				
 					# loading abstraction boxes
-					monitor_path = monitor.monitors_folder+monitor.filename
-					boxes[class_to_monitor] = pickle.load(open(monitor_path, "rb"))
+					#monitor_path = monitor.monitors_folder+monitor.filename
+					#boxes[class_to_monitor] = pickle.load(open(monitor_path, "rb"))
 				
 				if 'ensemble' in technique:
 					monitor.method = abstraction_box.find_point_box_ensemble
 				else:
 					monitor.method = abstraction_box.find_point
 
-				monitor.dim_reduc_method = dim_reduc_method
-				monitor.boxes = boxes
+				#monitor.dim_reduc_method = dim_reduc_method
+				monitor.dim_reduc_method = reduc_name
+				#monitor.boxes = boxes
 				monitors.append(monitor)
 
 		elif '' == technique:
