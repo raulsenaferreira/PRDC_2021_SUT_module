@@ -70,11 +70,10 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 			neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][2])))
 			neptune.log_metric('True Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][3])))
 
-
 	return True
 
 
-def evaluate(repetitions, experiment, parallel_execution):
+def evaluate(repetitions, experiment, parallel_execution, save_experiments):
 	cores = 6
 	arr_readouts = []
 	processes_pool = []
@@ -86,7 +85,7 @@ def evaluate(repetitions, experiment, parallel_execution):
 		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in experiment.monitors:
-			processes_pool.append(pool.apipe(run_evaluation, monitor, experiment, repetitions))
+			processes_pool.append(pool.apipe(run_evaluation, monitor, experiment, repetitions, save_experiments))
 
 		for process in processes_pool:
 			success = process.get(timeout=timeout)
@@ -94,7 +93,7 @@ def evaluate(repetitions, experiment, parallel_execution):
 	else:
 		print("\nserial execution")
 		for monitor in experiment.monitors:
-			success = run_evaluation(monitor, experiment, repetitions)
+			success = run_evaluation(monitor, experiment, repetitions, save_experiments)
 			#arr_readouts.append(readout)
 
 	#print('len(arr_readouts)', len(arr_readouts))

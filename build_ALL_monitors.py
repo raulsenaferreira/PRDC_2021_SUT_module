@@ -69,13 +69,13 @@ if __name__ == "__main__":
 	parallel_execution = False
 
 	arr_n_components = [2]#, 3, 5, 10]
-	arr_n_clusters_oob = [0]#2, 3, 4, 5]
+	arr_n_clusters_oob = [1]#0, 1, 2, 3, 4, 5]
 
 	experiment_type = 'novelty_detection'
 	dataset_names = ['GTSRB']# 'MNIST',
 	validation_size = 0.3
 	model_names = ['leNet'] #, 'leNet'
-	technique_names = ['oob_pca']#'oob', 'oob_isomap', 'oob_pca', 'oob_gradient']
+	technique_names = ['oob']#'oob', 'oob_isomap', 'oob_pca', 'oob_gradient']
 	num_classes_to_monitor = [43]# 10, 43
 	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 	

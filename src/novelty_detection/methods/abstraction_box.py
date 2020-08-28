@@ -127,7 +127,7 @@ def find_point(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_
 		x = data[0]
 		y = data[-1]
 
-	print(np.shape(boxes))
+	#print(np.shape(boxes))
 
 	try:
 		for box in boxes:

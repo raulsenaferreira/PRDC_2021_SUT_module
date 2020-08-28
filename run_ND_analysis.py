@@ -73,7 +73,7 @@ if __name__ == "__main__":
 	
 	PARAMS = {'arr_n_components' : [2], #, 3, 5, 10
 	 'arr_n_clusters_oob' : [0], #0, 2, 3, 4, 5
-				'technique_names' : ['oob']}#'oob', 'oob_isomap', 'oob_pca'
+				'technique_names' : ['oob_pca']}#'oob', 'oob_isomap', 'oob_pca'
 
 	# other settings
 	save_experiments = False
