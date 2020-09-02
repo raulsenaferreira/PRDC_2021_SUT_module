@@ -28,6 +28,7 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
     
     model = experiment.model
 
+    zeros = 0
     #memory
     process = psutil.Process(os.getpid())
 
@@ -43,7 +44,10 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         boxes = pickle.load(open(monitor_path, "rb"))
         #print(np.shape(boxes))
         
-        if monitor.method(boxes, intermediateValues, yPred, monitor.monitors_folder, monitor.dim_reduc_method):    
+        is_in_the_box = monitor.method(boxes, intermediateValues, yPred, monitor.monitors_folder, monitor.dim_reduc_method)
+        zeros+=is_in_the_box[1]
+        
+        if is_in_the_box[0]:
             if yPred != lbl:
                 arrFalseNegative[yPred] += 1 #False negative           
             if yPred == lbl: 
@@ -54,8 +58,7 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
             if yPred == lbl: 
                 arrFalsePositive[yPred] += 1 #False positives
                     
-        #elif lbl==class_to_monitor and yPred != class_to_monitor:
-            #print("missclassification --- new pattern for class",yPred, str(lbl))
+    print("zeroed points:", zeros)
     memory = process.memory_info().rss / 1024 / 1024
 
     return arrPred, y_test, memory, arrFalsePositive, arrFalseNegative, arrTruePositive, arrTrueNegative

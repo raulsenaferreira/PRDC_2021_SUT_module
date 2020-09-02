@@ -100,7 +100,7 @@ def plot_pos_neg_rate_stacked_bars_total(experiment_name, arr_readouts, num_clas
 		print("monitors precision =", precision)
 		recall = tp/(tp+fn)
 		print("monitors recall =", recall)
-		F1 = 2*((precision*recall)/(precision+recall))
+		F1 = 2 * (precision * recall) / (precision + recall)
 		print("monitors F1 score =", F1)
 
 		y_fp.append(fp)
@@ -117,11 +117,13 @@ def plot_pos_neg_rate_stacked_bars_total(experiment_name, arr_readouts, num_clas
 	yellow = [1, 0.65, 0.25]
 	red = [1, 0, 0]
 	darkgrey = 'darkgrey'
+	gray = 'gray'
+	grey = 'grey'
 	ax.bar(x, y_tp, color=darkgrey, edgecolor="white", width=width, label='True positive')
 	sums = y_tp
-	ax.bar(x, y_fn, bottom=sums, color=darkgrey, edgecolor="white", hatch="x", width=width, label='False negative')
+	ax.bar(x, y_fn, bottom=sums, color=grey, edgecolor="white", hatch="x", width=width, label='False negative')
 	sums =[_x + _y for _x, _y in zip(sums, y_fn)]
-	ax.bar(x, y_fp, bottom=sums, color=darkgrey, edgecolor='white', hatch=".", width=width, label='False positive')
+	ax.bar(x, y_fp, bottom=sums, color=gray, edgecolor='white', hatch=".", width=width, label='False positive')
 	sums = [_x + _y for _x, _y in zip(sums, y_fp)]
 	#ax.bar(x, y_tn, bottom=sums, color=[0, 0.2, 0.1], edgecolor='white', hatch="*", width=width, label='True negative')
 
@@ -147,7 +149,6 @@ def plot_pos_neg_rate_stacked_bars_total(experiment_name, arr_readouts, num_clas
 	multipage(fig_path, figures, dpi=250)
 
 
-
 def multipage(filename, figs=None, dpi=200):
 	pp = PdfPages(filename)
 	if figs is None:
@@ -157,3 +158,7 @@ def multipage(filename, figs=None, dpi=200):
 	pp.close()
 	#usage
 	#multipage('multipage_w_raster.pdf', [fig2, fig3], dpi=250)
+
+
+def plot_act_func_boxes_animation(boxes, point):
+	return True

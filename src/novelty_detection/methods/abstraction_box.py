@@ -4,6 +4,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import pickle
 from sklearn.cluster import KMeans
 from src.utils import util
+from matplotlib.path import Path
 
 
 
@@ -42,22 +43,35 @@ def make_boxes(data):
 def make_abstraction(data, monitor, save):
 	data = np.asarray(data)
 	#print('data.shape', data.shape)
+	os.makedirs(monitor.monitors_folder, exist_ok=True)
 	
 	if monitor.dim_reduc_method==None:
 		#doing a projection by taking just the first and the last dimension of data
 		data = data[:,[0,-1]]
 	else:
 		#using a dimensionality reduction function
-		method = monitor.dim_reduc_method.fit(data)
-		file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix
+		if monitor.technique == 'oob_pca_isomap':
+			pca_method = monitor.dim_reduc_method[0].fit(data)
+			data1 = pca_method.transform(data)
+			isomap_method = monitor.dim_reduc_method[1].fit(data1)
+			data = isomap_method.transform(data1)
 
-		os.makedirs(monitor.monitors_folder, exist_ok=True)
-		if save:
-			print("Saving trained dim reduc method in", file_path)
-			pickle.dump(method, open(file_path, "wb"))
+			if save:
+				file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix[0]
+				print("Saving trained PCA in", file_path)
+				pickle.dump(pca_method, open(file_path, "wb"))
+				print("Saving trained Isomap in", file_path)
+				file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix[1]
+				pickle.dump(isomap_method, open(file_path, "wb"))
 
-		data = method.transform(data)
+		else:
+			method = monitor.dim_reduc_method.fit(data)
 
+			if save:
+				print("Saving trained dim reduc method in", file_path)
+				pickle.dump(method, open(file_path, "wb"))
+
+			data = method.transform(data)
 	
 	print("making boxes...", data.shape)
 
@@ -111,22 +125,30 @@ def make_abstraction_without_dim_reduc(data, monitor, save):
 
 
 def find_point(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_reduc_obj):
+	ok = 0
 	result = False
 	data = np.asarray(intermediateValues)
 	#print(np.shape(data))
+	x,y = None, None
 	
 	if dim_reduc_obj!=None:
-		dim_reduc_obj = pickle.load(open(monitor_folder+str(class_to_monitor) +sep+'trained_'+dim_reduc_obj+'.p', "rb"))
-		#data = dim_reduc_obj[class_to_monitor].transform(data.reshape(1, -1))[0] #old version
-		data = dim_reduc_obj.transform(data.reshape(1, -1))[0] #last version
-		#data = dim_reduc_obj.transform(data)
-		#print(np.shape(data))
+		if type(dim_reduc_obj) == type([]):
+			dim_reduc_obj_1 = pickle.load(open(monitor_folder+str(class_to_monitor) +sep+'trained_'+dim_reduc_obj[0], "rb"))
+			intermediate_data = dim_reduc_obj_1.transform(data.reshape(1, -1))[0]
+			dim_reduc_obj_2 = pickle.load(open(monitor_folder+str(class_to_monitor) +sep+'trained_'+dim_reduc_obj[1], "rb"))
+			data = dim_reduc_obj_2.transform(intermediate_data.reshape(1, -1))[0]
+		else:
+			dim_reduc_obj = pickle.load(open(monitor_folder+str(class_to_monitor) +sep+'trained_'+dim_reduc_obj+'.p', "rb"))
+			#data = dim_reduc_obj[class_to_monitor].transform(data.reshape(1, -1))[0] #old version
+			data = dim_reduc_obj.transform(data.reshape(1, -1))[0] #last version
+			#data = dim_reduc_obj.transform(data)
+			#print(np.shape(data))
 		x = data[0]
 		y = data[1]
 	else:
 		x = data[0]
 		y = data[-1]
-
+		#print("find_point:", x,y)
 	#print(np.shape(boxes))
 
 	try:
@@ -139,13 +161,44 @@ def find_point(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_
 			y2 = box[1][1]
 			
 			if x >= x1 and x <= x2 and y >= y1 and y <= y2: 
-				return True
+				if x==0 and y==0:
+					ok = 1
+				return True, ok
 	except:
 		pass
 		#print("error @ find_point function")
 	#print("point:", x, y)
 
-	return result
+	return result, ok
+
+
+def find_point_2(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_reduc_obj):
+	
+	#result = False
+	data = np.asarray(intermediateValues)
+
+	if dim_reduc_obj!=None:
+		dim_reduc_obj = pickle.load(open(monitor_folder+str(class_to_monitor) +sep+'trained_'+dim_reduc_obj+'.p', "rb"))
+		#data = dim_reduc_obj[class_to_monitor].transform(data.reshape(1, -1))[0] #old version
+		data = dim_reduc_obj.transform(data.reshape(1, -1))[0] #last version
+		#data = dim_reduc_obj.transform(data)
+		#print(np.shape(data))
+
+		#x = data[0]
+		#y = data[1]
+	else:
+		x = data[0]
+		y = data[-1]
+		data = [x, y]
+		data = np.reshape(data, (-1, 2))
+		#print(np.shape(data))
+		print("find_point_2:", data)
+
+	path1 = Path(boxes[0])
+	index = path1.contains_points(data)
+	print("return:", index)
+
+	#return result
 
 
 def find_point_box_ensemble(arr_boxes, intermediateValues_all, dim_reduc_obj):

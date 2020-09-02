@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 import cv2
+import skimage.data
+import skimage.transform
 import keras.backend as K
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
@@ -101,6 +103,65 @@ class Dataset:
 		return x_train, y_train, x_valid, y_valid, x_test, y_test, input_shape
 
 
+	def load_BTSC_dataset(self, mode, onehotencoder=True):
+		# Reading the input images and putting them into a numpy array
+		images=[]
+		labels=[]
+		data_dir = ''
+
+		if mode == 'train':
+			data_dir = self.trainPath
+		else:
+			data_dir = self.testPath
+			
+		directories = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
+		
+		n_inputs = self.height * self.width * self.channels
+
+		for d in directories:
+			label_dir = os.path.join(data_dir, d)
+			file_names = [os.path.join(label_dir, f) for f in os.listdir(label_dir) if f.endswith(".ppm")]
+
+			for f in file_names:
+				image=cv2.imread(f)
+				#image=skimage.data.imread(f)
+				image_from_array = Image.fromarray(image, 'RGB')
+				size_image = image_from_array.resize((self.height, self.width))
+				image = np.array(size_image)
+
+				images.append(image)
+				labels.append(int(d))
+
+		X=np.array(images)
+		X= X/255.0
+		y=np.array(labels)
+
+		s=np.arange(X.shape[0])
+		np.random.seed(self.num_classes)
+		np.random.shuffle(s)
+
+		X=X[s]
+		y=y[s]
+		
+		if mode == 'train':
+			# Split Data
+			X_train,X_valid,Y_train,Y_valid = train_test_split(X,y,test_size = self.validation_size)
+			
+			if onehotencoder:
+				#Using one hote encoding for the train and validation labels
+				Y_train = to_categorical(Y_train, self.num_classes)
+				Y_valid = to_categorical(Y_valid, self.num_classes)
+			print("Training set shape :", X_train.shape)
+			#print(X_valid.shape[0], 'validation samples')
+			print("Validation set shape :", X_valid.shape)
+			
+			return X_train,X_valid,Y_train,Y_valid
+
+		else:
+			print("Testing set shape :", X.shape)
+			return X, y
+
+
 	def load_GTRSB_dataset(self, onehotencoder=True):
 		# Reading the input images and putting them into a numpy array
 		data=[]
@@ -140,7 +201,7 @@ class Dataset:
 			Y_train = to_categorical(Y_train, self.num_classes)
 			Y_valid = to_categorical(Y_valid, self.num_classes)
 		print("Training set shape :", X_train.shape)
-		print(X_valid.shape[0], 'validation samples')
+		#print(X_valid.shape[0], 'validation samples')
 		print("Validation set shape :", X_valid.shape)
 		
 		return X_train,X_valid,Y_train,Y_valid
@@ -199,6 +260,18 @@ class Dataset:
 				data = X_train, y_train, X_valid, y_valid
 			else:
 				_, _, _, _, X_test, y_test = self.load_cifar_10()
+				data = X_test, y_test
+
+		elif self.dataset_name == 'BTSC':
+			self.num_classes = 62
+			self.channels = 3
+			if mode == 'train':
+				self.trainPath = 'data'+self.sep+'BTSC'+self.sep+"Training"+self.sep
+				X_train, X_valid, Y_train, Y_valid = self.load_BTSC_dataset(mode)
+				data = X_train, Y_train, X_valid, Y_valid
+			else:
+				self.testPath = 'data'+self.sep+'BTSC'+self.sep+"Testing"+self.sep
+				X_test, y_test = self.load_BTSC_dataset(mode)
 				data = X_test, y_test
 
 		else:

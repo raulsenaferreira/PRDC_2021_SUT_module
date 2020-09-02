@@ -1,10 +1,10 @@
 import numpy as np
 from src.utils import util
-from sklearn import manifold
 from src.Classes.monitor import Monitor
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
 from sklearn.decomposition import PCA
+from sklearn.manifold import Isomap
 
 
 sep = util.get_separator()
@@ -62,23 +62,31 @@ def prepare_box_based_monitors(dataset_name, technique_names, class_to_monitor,
 
 				monitors.append(monitor)
 			
-			elif 'oob_isomap' == technique or 'oob_pca' == technique:
+			elif 'oob_isomap' == technique or 'oob_pca' == technique or 'oob_pca_isomap' == technique:
 				
-				dim_reduc_method = None
+				dim_reduc_method = []
+				dim_reduc_filename_prefix = []
 
 				for n_components in arr_n_components:
 					monitor_name = technique+'_{}_components_{}_clusters'.format(n_components, n_clusters_oob)
 					reduc_name = technique+'_{}_components'.format(n_components)
 
 					if 'oob_isomap' == technique:
-						dim_reduc_method = manifold.Isomap(n_components = n_components)
+						dim_reduc_method = Isomap(n_components = n_components)
+						dim_reduc_filename_prefix = 'trained_'+reduc_name+'.p'
 					elif 'oob_pca' == technique:
 						dim_reduc_method = PCA(n_components = n_components)
+						dim_reduc_filename_prefix = 'trained_'+reduc_name+'.p'
+					elif 'oob_pca_isomap' == technique:
+						dim_reduc_method.append(PCA(n_components = 20)) #good range value for image datasets: (20-40)
+						dim_reduc_filename_prefix.append('trained_PCA_'+reduc_name+'.p')
+						dim_reduc_method.append(Isomap(n_components=n_components))
+						dim_reduc_filename_prefix.append('trained_Isomap_'+reduc_name+'.p')
 
 					monitor = build_abstraction_based_monitor(class_to_monitor, monitor_name, n_clusters_oob, monitor_folder)
 					monitor.n_components = n_components
-					monitor.dim_reduc_filename_prefix = 'trained_'+reduc_name+'.p'
-
+					monitor.dim_reduc_filename_prefix = dim_reduc_filename_prefix
+					monitor.technique = technique
 					monitor.dim_reduc_method = dim_reduc_method
 					
 					monitors.append(monitor)

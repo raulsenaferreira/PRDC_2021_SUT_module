@@ -71,12 +71,12 @@ if __name__ == "__main__":
 	model_names = ['leNet'] #, 'leNet'
 	num_classes_to_monitor = [43] #10, 
 	
-	PARAMS = {'arr_n_components' : [2], #, 3, 5, 10
-	 'arr_n_clusters_oob' : [0], #0, 2, 3, 4, 5
-				'technique_names' : ['oob_pca']}#'oob', 'oob_isomap', 'oob_pca'
+	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
+	 'arr_n_clusters_oob' : [1], #1, 2, 3, 4, 5
+				'technique_names' : ['oob_pca_isomap']}#'oob', 'oob_isomap', 'oob_pca'
 
 	# other settings
-	save_experiments = False
+	save_experiments = True
 	parallel_execution = False
 	repetitions = 1
 	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data

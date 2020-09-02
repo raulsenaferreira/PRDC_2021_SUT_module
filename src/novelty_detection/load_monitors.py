@@ -39,7 +39,8 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
 			#	monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
 			monitor_folder += technique +sep+ 'class_'
 			monitor.monitors_folder = monitor_folder
-			monitor.filename = 'monitor_'+monitor_name+'.p'
+			#monitor.filename = 'monitor_'+monitor_name+'.p'
+			monitor.filename = 'monitor_'+monitor_name+'.p_2' #built with true labels instead of right predictions
 				#monitor_path = monitor.monitors_folder+monitor.filename
 				# loading abstraction boxes
 				#boxes[class_to_monitor] = pickle.load(open(monitor_path, "rb"))
@@ -53,11 +54,11 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
 			#monitor.boxes = boxes
 			monitors.append(monitor)
 			
-		elif 'oob_isomap' == technique or 'oob_pca' == technique:
+		elif 'oob_isomap' == technique or 'oob_pca' == technique or 'oob_pca_isomap' == technique:
 			
 			for n_components in arr_n_components:
 				boxes = {}
-				dim_reduc_method = {}
+				dim_reduc_method = []
 				
 				monitor_name = technique+'_{}_components_{}_clusters'.format(n_components, n_clusters_oob)
 				reduc_name = technique+'_{}_components'.format(n_components)
@@ -70,6 +71,7 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
 				monitor_folder += technique +sep+ 'class_'
 				monitor.monitors_folder = monitor_folder
 				monitor.filename = 'monitor_'+monitor_name+'.p'
+				#monitor.filename = 'monitor_'+monitor_name+'.p_2' #built with true labels instead of right predictions
 				#	dim_reduc_method[class_to_monitor] = pickle.load(open(monitor_folder+'trained_'+reduc_name+'.p', "rb"))
 				
 					# loading abstraction boxes
@@ -83,6 +85,12 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
 
 				#monitor.dim_reduc_method = dim_reduc_method
 				monitor.dim_reduc_method = reduc_name
+
+				if 'oob_pca_isomap' == technique:
+					dim_reduc_method.append('PCA_'+reduc_name+'.p')
+					dim_reduc_method.append('Isomap_'+reduc_name+'.p')
+					monitor.dim_reduc_method = dim_reduc_method
+
 				#monitor.boxes = boxes
 				monitors.append(monitor)
 
