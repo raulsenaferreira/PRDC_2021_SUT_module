@@ -110,7 +110,15 @@ def histograms(image, reference):
 	print("average:", (b+g+r)/3)
 	'''
 
-def compare_histograms(img, ref):
+def compare_histograms(img, ref, centered):
+	def get_center_pixels(arr, npix):
+	    slices = [slice(shape/2-npix,shape/2+npix) for shape in arr.shape]
+	    return arr[slices]
+
+	if centered:
+		img = get_center_pixels(img,28)
+		ref = get_center_pixels(ref,28)
+
 	histSize = 256
 	histRange = (0, 256) # the upper boundary is exclusive
 	accumulate = False

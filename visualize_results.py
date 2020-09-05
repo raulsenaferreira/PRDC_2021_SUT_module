@@ -206,7 +206,9 @@ def visualize_distributions(dataset):
 	)
 	plt.show()
 
-
+def get_center_pixels(arr, npix):
+    slices = [slice(shape/2-npix,shape/2+npix) for shape in arr.shape]
+    return arr[slices]
 
 dataset_name = 'GTSRB'#'BTSC', GTSRB
 classes_to_monitor = 43
@@ -235,13 +237,21 @@ dataset = Dataset(dataset_name)
 X, y = dataset.load_dataset(mode='test')
 
 indices = np.where(y == 1)
-image = np.asarray(X[indices][:50])
+image = np.asarray(X[indices][50])
 indices = np.where(y == 2)
-reference = np.asarray(X[indices][:50])
-#idm.plot_diff_images(image, reference)
+reference = np.asarray(X[indices][50])
 print(image.shape, reference.shape)
-idm.histograms(image, reference)
+idm.plot_diff_images(image, reference)
+#idm.histograms(image, reference)
 #sim = idm.compare_histograms(image, reference)
+
+image = get_center_pixels(image,28)
+reference = get_center_pixels(reference,28)
+print(image.shape, reference.shape)
+idm.plot_diff_images(image, reference)
+#idm.histograms(image, reference)
+#sim = idm.compare_histograms(image, reference)
+
 #visualize_experiments(experiments, names, 'ID=GTSRB; OOD=BTSC', classes_to_monitor)
 
 

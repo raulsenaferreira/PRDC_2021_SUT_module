@@ -113,7 +113,7 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
                     missclassified_images_monitor.append(img)
                     missclassified_image_labels_monitor.append(yPred)
                     #print(img[0].shape, ref_img.shape)
-                    sim = idm.compare_histograms(np.float32(img[0]), ref_img)
+                    sim = idm.compare_histograms(np.float32(img[0]), ref_img, centered=True)
                     missclassified_images_monitor_similarity.append(sim)
         else:
             if is_in_the_box[0]:
