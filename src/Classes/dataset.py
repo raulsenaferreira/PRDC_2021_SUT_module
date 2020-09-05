@@ -63,7 +63,7 @@ class Dataset:
 		return x_train, y_train, x_valid, y_valid, x_test, y_test
 
 
-	def load_mnist(self, onehotencoder=True):
+	def load_mnist(self, onehotencoder):
 		# input image dimensions
 		img_rows, img_cols, img_dim = 28, 28, 1
 
@@ -103,7 +103,7 @@ class Dataset:
 		return x_train, y_train, x_valid, y_valid, x_test, y_test, input_shape
 
 
-	def load_BTSC_dataset(self, mode, onehotencoder=True):
+	def load_BTSC_dataset(self, mode, onehotencoder):
 		# Reading the input images and putting them into a numpy array
 		images=[]
 		labels=[]
@@ -111,7 +111,7 @@ class Dataset:
 
 		if mode == 'train':
 			data_dir = self.trainPath
-		else:
+		elif mode == 'test':
 			data_dir = self.testPath
 			
 		directories = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
@@ -162,7 +162,7 @@ class Dataset:
 			return X, y
 
 
-	def load_GTRSB_dataset(self, onehotencoder=True):
+	def load_GTRSB_dataset(self, onehotencoder):
 		# Reading the input images and putting them into a numpy array
 		data=[]
 		labels=[]
@@ -227,52 +227,67 @@ class Dataset:
 		return X_test, y_test
 
 
-	def load_dataset(self, mode=None):
+	def load_dataset(self, mode=None, onehotencoder=False):
 		data = []
 
 		if self.dataset_name == 'MNIST':
 			self.num_classes = 10
 			self.channels = 1
 			if mode == 'train':
-				X_train, Y_train, X_valid, Y_valid, _, _, _ = self.load_mnist()
+				X_train, Y_train, X_valid, Y_valid, _, _, _ = self.load_mnist(onehotencoder=True)
 				data = X_train, Y_train, X_valid, Y_valid
-			else:
-				_, _, _, _, X_test, y_test, _ = self.load_mnist(onehotencoder=False)
+			elif mode == 'test':
+				_, _, _, _, X_test, y_test, _ = self.load_mnist(onehotencoder)
 				data = X_test, y_test
+			elif mode == 'test_entire_data':
+				X_train, Y_train, X_valid, Y_valid, X_test, y_test, _ = self.load_mnist(onehotencoder)
+				data = X_train, Y_train, X_valid, Y_valid, X_test, y_test
 
 		elif self.dataset_name == 'GTSRB':
 			self.num_classes = 43
 			self.channels = 3
-			if mode == 'train':
-				self.trainPath = 'data'+self.sep+'GTS_dataset'+self.sep+"kaggle"+self.sep+"Train"+self.sep
-				X_train, X_valid, Y_train, Y_valid = self.load_GTRSB_dataset()
+			self.trainPath = 'data'+self.sep+'GTS_dataset'+self.sep+"kaggle"+self.sep+"Train"+self.sep
+			self.testPath = 'data'+self.sep+'GTS_dataset'+self.sep+"kaggle"+self.sep
+			
+			if mode == 'train':	
+				X_train, X_valid, Y_train, Y_valid = self.load_GTRSB_dataset(onehotencoder=True)
 				data = X_train, Y_train, X_valid, Y_valid
-			else:
-				self.testPath = 'data'+self.sep+'GTS_dataset'+self.sep+"kaggle"+self.sep
+			elif mode == 'test':
 				X_test, y_test = self.load_GTRSB_csv("Test.csv")
 				data = X_test, y_test
+			elif mode == 'test_entire_data':
+				X_train, X_valid, Y_train, Y_valid = self.load_GTRSB_dataset(onehotencoder)
+				X_test, y_test = self.load_GTRSB_csv("Test.csv")
+				data = X_train, Y_train, X_valid, Y_valid, X_test, y_test
 
 		elif self.dataset_name == 'CIFAR-10':
 			self.num_classes = 10
 			self.channels = 3
 			if mode == 'train':
-				X_train, y_train, X_valid, y_valid, _, _ = self.load_cifar_10()
+				X_train, y_train, X_valid, y_valid, _, _ = self.load_cifar_10(onehotencoder=True)
 				data = X_train, y_train, X_valid, y_valid
-			else:
-				_, _, _, _, X_test, y_test = self.load_cifar_10()
+			elif mode == 'test':
+				_, _, _, _, X_test, y_test = self.load_cifar_10(onehotencoder)
 				data = X_test, y_test
 
 		elif self.dataset_name == 'BTSC':
 			self.num_classes = 62
 			self.channels = 3
+			self.trainPath = 'data'+self.sep+'BTSC'+self.sep+"Training"+self.sep
+			self.testPath = 'data'+self.sep+'BTSC'+self.sep+"Testing"+self.sep
 			if mode == 'train':
-				self.trainPath = 'data'+self.sep+'BTSC'+self.sep+"Training"+self.sep
-				X_train, X_valid, Y_train, Y_valid = self.load_BTSC_dataset(mode)
+				X_train, X_valid, Y_train, Y_valid = self.load_BTSC_dataset(mode, onehotencoder=True)
 				data = X_train, Y_train, X_valid, Y_valid
-			else:
-				self.testPath = 'data'+self.sep+'BTSC'+self.sep+"Testing"+self.sep
-				X_test, y_test = self.load_BTSC_dataset(mode)
+			elif mode == 'test':
+				X_test, y_test = self.load_BTSC_dataset(mode, onehotencoder)
 				data = X_test, y_test
+			elif mode == 'test_entire_data':
+				X_train, X_valid, Y_train, Y_valid = self.load_BTSC_dataset('train', onehotencoder)
+				X_test, y_test = self.load_BTSC_dataset('test', onehotencoder)
+				
+				X = np.vstack([X_train, X_valid, X_test])
+				y = np.hstack([Y_train, Y_valid, y_test])
+				data = X, y
 
 		else:
 			print("Dataset not found!!")

@@ -63,20 +63,30 @@ def save_results(PARAMS, classes_to_monitor, experiment_type, name, technique, a
 		metrics.plot_pos_neg_rate_stacked_bars(name, arr_readouts, img_folder_path+'all_images.pdf')
 
 
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = np.random.permutation(len(a))
+    return a[p], b[p]
+
+
 if __name__ == "__main__":
 	# variables regarding Novelty-Detection runtime-monitoring experiments
 	experiment_type = 'novelty_detection'
-	dataset_names = ['GTSRB'] #'MNIST', 
-	validation_size = 0.3
-	model_names = ['leNet'] #, 'leNet'
+
+	dataset_names = ['GTSRB'] #'MNIST', 'GTSRB'
 	num_classes_to_monitor = [43] #10, 
+
+	ood_dataset_name = 'BTSC'
+	ood_num_classes_to_monitor = 62
+
+	model_names = ['leNet'] #, 'leNet'
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
 	 'arr_n_clusters_oob' : [1], #1, 2, 3, 4, 5
-				'technique_names' : ['oob_pca_isomap']}#'oob', 'oob_isomap', 'oob_pca'
+				'technique_names' : ['oob_isomap']}#'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
-	save_experiments = True
+	save_experiments = False
 	parallel_execution = False
 	repetitions = 1
 	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
@@ -95,9 +105,21 @@ if __name__ == "__main__":
 		arr_monitors =  np.array([])
 		arr_readouts = []
 
-		# loading dataset
+		# loading ID dataset
 		dataset = Dataset(dataset_name)
 		X, y = dataset.load_dataset(mode='test')
+
+		#loading OOD dataset
+		OOD_dataset = Dataset(ood_dataset_name)
+		ood_X, ood_y = OOD_dataset.load_dataset(mode='test_entire_data')
+		ood_y += num_classes_to_monitor #avoiding same class numbers for the two datasets
+
+		#concatenate and shuffling ID and OOD datasets
+		X = np.vstack([X, ood_X])
+		y = np.hstack([y, ood_y])
+		X, y = unison_shuffled_copies(X, y)
+
+		print("Final dataset shape", X.shape, y.shape)
 		
 		# for one that wants speeding up tests using part of data
 		X_limit = int(len(X)*percentage_of_data)

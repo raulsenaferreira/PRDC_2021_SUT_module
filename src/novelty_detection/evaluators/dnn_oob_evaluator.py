@@ -28,21 +28,23 @@ def save_results(experiment, arr_readouts, plot=False):
 
 def run_evaluation(monitor, experiment, repetitions, save_experiments):
 	arr_acc = [] #accuracy
-	arr_cf = {} #confusion matrix by class
+	arr_cf_ID = {} #confusion matrix by class for ID data
+	arr_cf_OOD = {} #confusion matrix by class for OOD data
 	arr_t = [] #time
 	arr_mem = [] #memory
 	arr_f1 = [] #F1
 
 	for class_to_monitor in range(experiment.classes_to_monitor):
-		arr_cf.update({class_to_monitor: [[],[],[],[]]})
+		arr_cf_ID.update({class_to_monitor: [[],[],[],[]]})
+		arr_cf_OOD.update({class_to_monitor: [[],[]]})
 
 	dataset = experiment.dataset
 
 	for i in range(repetitions):
-		print("Evaluating {} with {} monitor: {} of {} ...\n".format(experiment.name, monitor.monitor_name, i+1, repetitions))
+		print("Evaluating {} with {} monitor: {} of {} repetitions...\n".format(experiment.name, monitor.monitor_name, i+1, repetitions))
 		
 		ini = timer()
-		arrPred, arrLabel, memory, arrFP, arrFN, arrTP, arrTN = experiment.tester.run(
+		arrPred, arrLabel, memory, arrFP_ID, arrFN_ID, arrTP_ID, arrTN_ID, arrFN_OOD, arrTP_OOD = experiment.tester.run(
 			dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
 		end = timer()
 
@@ -52,10 +54,14 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		arr_f1.append(metrics.F1(arrLabel, arrPred))
 	
 		for class_to_monitor in range(experiment.classes_to_monitor):
-			arr_cf[class_to_monitor][0].append(arrFP[class_to_monitor])
-			arr_cf[class_to_monitor][1].append(arrFN[class_to_monitor])
-			arr_cf[class_to_monitor][2].append(arrTP[class_to_monitor])
-			arr_cf[class_to_monitor][3].append(arrTN[class_to_monitor])	
+			# ID
+			arr_cf_ID[class_to_monitor][0].append(arrFP_ID[class_to_monitor])
+			arr_cf_ID[class_to_monitor][1].append(arrFN_ID[class_to_monitor])
+			arr_cf_ID[class_to_monitor][2].append(arrTP_ID[class_to_monitor])
+			arr_cf_ID[class_to_monitor][3].append(arrTN_ID[class_to_monitor])
+			# OOD
+			arr_cf_OOD[class_to_monitor][0].append(len(arrFN_OOD[class_to_monitor]))
+			arr_cf_OOD[class_to_monitor][1].append(len(arrTP_OOD[class_to_monitor]))	
 
 	if save_experiments:
 		neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))
@@ -65,10 +71,14 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		neptune.log_metric('F1', np.mean(arr_f1))
 
 		for monitored_class in range(experiment.classes_to_monitor):
-			neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][0])))
-			neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][1])))
-			neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][2])))
-			neptune.log_metric('True Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf[monitored_class][3])))
+			# ID + OOD
+			fn_OOD = int(np.mean(arr_cf_OOD[monitored_class][0]))
+			tp_OOD = int(np.mean(arr_cf_OOD[monitored_class][1]))
+
+			neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][0])))
+			neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][1])) + fn_OOD)
+			neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][2])) + tp_OOD)
+			neptune.log_metric('True Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][3])))
 
 	return True
 

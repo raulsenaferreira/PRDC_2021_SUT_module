@@ -4,7 +4,7 @@ from src.Classes.dataset import Dataset
 
 
 if __name__ == "__main__":
-	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	perc_of_data = 0.1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	dataset_names = ['MNIST', 'GTSRB', 'CIFAR-10']
 	models_pool = []
@@ -12,13 +12,15 @@ if __name__ == "__main__":
 
 	#general settings
 	parallel_execution = False
-	'''
+	
 	#datasets
-	mnistObj = Dataset(dataset_names[0])
+	#mnistObj = Dataset(dataset_names[0])
 	
 	gtsrbObj = Dataset(dataset_names[1])
-	'''
-	cifarObj = Dataset(dataset_names[2])
+	
+	#cifarObj = Dataset(dataset_names[2])
+	
+
 	'''
 	#Model 1: CNN with MNIST dataset
 	model_builder = model_cfg.load_settings('lenet_mnist')
@@ -29,13 +31,18 @@ if __name__ == "__main__":
 	model_builder = model_cfg.load_settings('lenet_gtsrb')
 	model_builder.dataset = gtsrbObj
 	models_pool.append(model_builder) 
-	'''
+	
 	#Model 3: ResNet with CIFAR-10 dataset
 	model_builder = model_cfg.load_settings('resnet_cifar10')
 	model_builder.dataset = cifarObj
 	models_pool.append(model_builder) 
-	
-	#Model 3: Ensemble of CNN with MNIST dataset
+	'''
+	#Model 4: VGG16 with GTSRB dataset
+	model_builder = model_cfg.load_settings('vgg16_gtsrb')
+	model_builder.dataset = gtsrbObj
+	models_pool.append(model_builder)
+
+	#Model 5: Ensemble of CNN with MNIST dataset
 	#model = model_cfg.load_settings(3)
 	#model.dataset = mnistObj
 	#models_pool.append(model)

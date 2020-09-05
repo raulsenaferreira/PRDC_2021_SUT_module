@@ -3,6 +3,7 @@ from src.Classes import dnn_simple_model
 from src.Classes import cnn
 from src.Classes import le_net
 from src.Classes import resnet
+from src.Classes import vgg16
 from src.utils import util
 
 sep = util.get_separator()
@@ -31,6 +32,13 @@ def load_settings(model_acronym):
 		model.batch_size = 32
 		model.epochs = 200
 		model.algorithm = resnet
+		model.runner = dnn_simple_model
+
+	elif model_acronym == 'vgg16_gtsrb':
+		model.model_name = 'vgg16_GTSRB.h5'
+		model.batch_size = 100
+		model.epochs = 10
+		model.algorithm = vgg16
 		model.runner = dnn_simple_model
 
 	elif model_acronym == 3:

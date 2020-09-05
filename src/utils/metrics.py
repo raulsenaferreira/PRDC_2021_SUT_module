@@ -90,18 +90,7 @@ def plot_pos_neg_rate_stacked_bars_total(experiment_name, arr_readouts, num_clas
 			tp += readout.avg_cf[monitored_class][2]
 			tn += readout.avg_cf[monitored_class][3]
 
-		print('Method:', readout.name)
-		print('fp', fp)
-		print('fn', fn)
-		print('tp', tp)
-		print('tn', tn)
-		print("monitors accuracy =",(tn+tp)/(tn+tp+fp+fn))
-		precision = tp/(tp+fp)
-		print("monitors precision =", precision)
-		recall = tp/(tp+fn)
-		print("monitors recall =", recall)
-		F1 = 2 * (precision * recall) / (precision + recall)
-		print("monitors F1 score =", F1)
+		plot_statistics(readout.name, tn, tp, fp, fn)
 
 		y_fp.append(fp)
 		y_fn.append(fn)
@@ -162,3 +151,38 @@ def multipage(filename, figs=None, dpi=200):
 
 def plot_act_func_boxes_animation(boxes, point):
 	return True
+
+
+def plot_statistics(title, tn, tp, fp, fn):
+	print('Method:', title)
+	print('fp', fp)
+	print('fn', fn)
+	print('tp', tp)
+	print('tn', tn)
+
+	total_instances = tn + tp + fp + fn
+	#print("total instances = ", total_instances)
+
+	tnr = tn/(tn+fp)
+	tpr = tp/(tp+fn)
+	#print("TNR @ TPR 95% =", )
+
+	print("monitors accuracy =",(tn+tp)/(tn+tp+fp+fn))
+
+	mcc = ((tp*tn) - (fp*fn)) / math.sqrt((tp+fp) * (tp+fn) * (tn+fp) * (tn+fn))
+	print("monitor MCC score = ", mcc)
+
+	error = (fp+fn)/(tn+tp+fp+fn)
+	print("monitors error =",error)
+
+	confidence_score = 1.96 * math.sqrt((error * (1 - error)) / total_instances) # Wilson score with 95% confidence interval (1.96)
+	print("confidence interval = [{}, {}]".format(error-confidence_score, error+confidence_score)) 
+
+	precision = tp/(tp+fp)
+	print("monitors precision =", precision)
+
+	recall = tp/(tp+fn)
+	print("monitors recall =", recall)
+
+	F1 = 2 * (precision * recall) / (precision + recall)
+	print("monitors F1 score =", F1)

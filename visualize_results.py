@@ -11,12 +11,14 @@ from sklearn.manifold import TSNE, Isomap
 from sklearn.decomposition import PCA
 from keras.models import load_model
 import seaborn as sns
+from PIL import Image
+from src.novelty_detection.methods import image_dist_matching as idm
 
 
 sns.set()
 sep = util.get_separator()
 
-def visualize_experiments(id_experiments, names, dataset_name, classes_to_monitor):
+def visualize_experiments(id_experiments, names, title, classes_to_monitor):
 
 	project = neptune.init('raulsenaferreira/PhD')
 	experiments = project.get_experiments(id=id_experiments)
@@ -50,9 +52,9 @@ def visualize_experiments(id_experiments, names, dataset_name, classes_to_monito
 
 		arr_readouts.append(readout)
 
-	fig_name = img_folder_path+'all_methods_class_'+dataset_name+'.pdf'
+	fig_name = img_folder_path+'all_methods_class_'+title+'.pdf'
 	os.makedirs(img_folder_path, exist_ok=True)
-	metrics.plot_pos_neg_rate_stacked_bars_total(dataset_name, arr_readouts, classes_to_monitor, fig_name)
+	metrics.plot_pos_neg_rate_stacked_bars_total(title, arr_readouts, classes_to_monitor, fig_name)
 
 
 def plot_images(data, labels, num_row, num_col):
@@ -130,8 +132,7 @@ def act_func(model, X):
 	return arrWeights
 
 
-def visualize_distributions():
-	dataset_name = 'GTSRB'#'BTSC', GTSRB
+def visualize_distributions(dataset):
 	dataset = Dataset(dataset_name)
 	#X, y, _, _ = dataset.load_dataset(mode='train')
 	#y = np.argmax(y, axis=1) #if using training data
@@ -207,7 +208,7 @@ def visualize_distributions():
 
 
 
-dataset_name = 'GTSRB'
+dataset_name = 'GTSRB'#'BTSC', GTSRB
 classes_to_monitor = 43
 
 # Get list of experiments
@@ -217,28 +218,63 @@ classes_to_monitor = 43
 #experiments = project.get_experiments(id=['PHD-24', 'PHD-30', 'PHD-33'])
 #names = ['oob_3_clusters', 'oob_1_cluster', 'oob_1_cluster V2']
 
-experiments = ['PHD-30', 'PHD-33', 'PHD-31', 'PHD-34', 'PHD-32', 'PHD-35', 'PHD-37', 'PHD-36']
-names = ['oob', 'oob V2', 'oob_isomap', 'oob_isomap V2', 'oob_pca', 'oob_pca V2', 'oob_pca_isomap', 'oob_pca_isomap V2']
+#experiments = ['PHD-30', 'PHD-33', 'PHD-31', 'PHD-34', 'PHD-32', 'PHD-35', 'PHD-37', 'PHD-36']
+#names = ['oob', 'oob V2', 'oob_isomap', 'oob_isomap V2', 'oob_pca', 'oob_pca V2', 'oob_pca_isomap', 'oob_pca_isomap V2']
 
-visualize_experiments(experiments, names, dataset_name, classes_to_monitor)
+#experiments = ['PHD-38', 'PHD-39', 'PHD-40', 'PHD-41', 'PHD-42', 'PHD-43'] #out of distribution experiments using 30% of BTSC dataset
+#names = ['oob 1 cluster', 'oob 3 clusters', 'oob_isomap 1 cluster', 'oob_isomap 3 clusters', 'oob_pca 1 cluster', 'oob_pca 3 clusters']
+
+#experiments = ['PHD-45', 'PHD-46', 'PHD-47', 'PHD-48', 'PHD-49', 'PHD-50', 'PHD-51', 'PHD-52'] #out of distribution experiments using 100% of BTSC dataset
+#names = ['oob 1 cluster', 'oob 3 clusters', 'oob_isomap 1 cluster', 'oob_isomap 3 clusters', 'oob_pca 1 cluster', 'oob_pca 3 clusters', 'oob_pca_isomap 1 cluster', 'oob_pca_isomap 3 clusters']
+
+experiments = ['PHD-45', 'PHD-54']
+names = ['oob 1', 'oob 2']
+
+total_instances = 19725
+dataset = Dataset(dataset_name)
+X, y = dataset.load_dataset(mode='test')
+
+indices = np.where(y == 1)
+image = np.asarray(X[indices][:50])
+indices = np.where(y == 2)
+reference = np.asarray(X[indices][:50])
+#idm.plot_diff_images(image, reference)
+print(image.shape, reference.shape)
+idm.histograms(image, reference)
+#sim = idm.compare_histograms(image, reference)
+#visualize_experiments(experiments, names, 'ID=GTSRB; OOD=BTSC', classes_to_monitor)
+
 
 '''
-from pylab import *
-from matplotlib.path import Path
-import matplotlib.patches as patches
+dataset = Dataset(dataset_name)
+#X, y, _, _ = dataset.load_dataset(mode='train')
+#y = np.argmax(y, axis=1) #if using training data
 
-data = np.random.rand(100,4)
+X, y = dataset.load_dataset(mode='test')
+img = np.asarray([X[0]])
 
-verts = [(0.3, 0.7), (0.3, 0.3), (0.7, 0.3), (0.7, 0.7)]
+#path to load the model
+models_folder = "src"+sep+"bin"+sep+"models"+sep
+model_file = models_folder+'leNet_'+dataset_name+'.h5'
 
-path1 = Path(verts)
-index = path1.contains_points(data[:,:2])
+# loading model
+model = load_model(model_file)
 
-print (data[index, :2])
+arrWeights = util.get_activ_func(model, img, layerIndex=0)[0]
+print(np.shape(arrWeights))
+plt.matshow(img[0, :, :, :])
+plt.show()
+plt.matshow(arrWeights[ :, :, np.shape()], cmap='viridis')
+plt.show()
+'''
+'''
+color = ('r','g','b')
+for channel,col in enumerate(color):
+    histr = cv2.calcHist([img],[channel],None,[256],[0,256])
+    plt.plot(histr,color = col)
+    plt.xlim([0,256])
+plt.title('Histogram for color scale picture for class {}'.format(y[0]))
+plt.show()
 
-plot(data[:,0],data[:,1], 'b.')
-patch = patches.PathPatch(path1, facecolor='orange', lw=2)
-gca().add_patch(patch)
-plot(data[index,0], data[index,1], 'r.')
-show()
+cv2.destroyAllWindows()
 '''

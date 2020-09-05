@@ -69,7 +69,7 @@ if __name__ == "__main__":
 	parallel_execution = False
 
 	arr_n_components = [2]#, 3, 5, 10]
-	arr_n_clusters_oob = [1]#1, 2, 3, 4, 5]
+	arr_n_clusters_oob = [3]#1, 2, 3, 4, 5]
 
 	experiment_type = 'novelty_detection'
 	dataset_names = ['GTSRB']# 'MNIST',
