@@ -20,12 +20,12 @@ def plot_diff_images(image, reference):
 
 
 	for i, img in enumerate((image, reference)):
-	    for c, c_color in enumerate(('red', 'green', 'blue')):
-	        img_hist, bins = exposure.histogram(img[..., c], source_range='dtype')
-	        axes[c, i].plot(bins, img_hist / img_hist.max())
-	        img_cdf, bins = exposure.cumulative_distribution(img[..., c])
-	        axes[c, i].plot(bins, img_cdf)
-	        axes[c, 0].set_ylabel(c_color)
+		for c, c_color in enumerate(('red', 'green', 'blue')):
+			img_hist, bins = exposure.histogram(img[..., c], source_range='dtype')
+			axes[c, i].plot(bins, img_hist / img_hist.max())
+			img_cdf, bins = exposure.cumulative_distribution(img[..., c])
+			axes[c, i].plot(bins, img_cdf)
+			axes[c, 0].set_ylabel(c_color)
 
 	axes[0, 0].set_title('Source')
 	axes[0, 1].set_title('Reference')
@@ -112,8 +112,8 @@ def histograms(image, reference):
 
 def compare_histograms(img, ref, centered):
 	def get_center_pixels(arr, npix):
-	    slices = [slice(shape/2-npix,shape/2+npix) for shape in arr.shape]
-	    return arr[slices]
+		slices = [slice(shape/2-npix,shape/2+npix) for shape in arr.shape]
+		return arr[slices]
 
 	if centered:
 		img = get_center_pixels(img,28)
@@ -149,3 +149,33 @@ def compare_histograms(img, ref, centered):
 	print("average:", (b+g+r)/3)
 
 	return round((b+g+r)/3, 2)
+
+
+
+def template_matching(img, template):
+	#img = cv.imread('messi5.jpg',0)
+	img2 = img.copy()
+	#template = cv.imread('template.jpg',0)
+	w, h = 14,14#template.shape[::-1]
+	# All the 6 methods for comparison in a list
+	methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR',
+				'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
+	for meth in methods:
+		img = img2.copy()
+		method = eval(meth)
+		# Apply template Matching
+		res = cv.matchTemplate(img,template,method)
+		min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
+		# If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+		if method in [cv.TM_SQDIFF, cv.TM_SQDIFF_NORMED]:
+			top_left = min_loc
+		else:
+			top_left = max_loc
+		bottom_right = (top_left[0] + w, top_left[1] + h)
+		cv.rectangle(img,top_left, bottom_right, 255, 2)
+		plt.subplot(121),plt.imshow(res,cmap = 'gray')
+		plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
+		plt.subplot(122),plt.imshow(img,cmap = 'gray')
+		plt.title('Detected Point'), plt.xticks([]), plt.yticks([])
+		plt.suptitle(meth)
+		plt.show()

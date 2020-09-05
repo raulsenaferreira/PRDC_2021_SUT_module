@@ -206,9 +206,11 @@ def visualize_distributions(dataset):
 	)
 	plt.show()
 
-def get_center_pixels(arr, npix):
-    slices = [slice(shape/2-npix,shape/2+npix) for shape in arr.shape]
-    return arr[slices]
+def crop_center(img,cropx,cropy):
+    y,x = 28, 28
+    startx = x//2-(cropx//2)
+    starty = y//2-(cropy//2)    
+    return img[starty:starty+cropy,startx:startx+cropx]
 
 dataset_name = 'GTSRB'#'BTSC', GTSRB
 classes_to_monitor = 43
@@ -237,19 +239,21 @@ dataset = Dataset(dataset_name)
 X, y = dataset.load_dataset(mode='test')
 
 indices = np.where(y == 1)
-image = np.asarray(X[indices][50])
-indices = np.where(y == 2)
-reference = np.asarray(X[indices][50])
-print(image.shape, reference.shape)
-idm.plot_diff_images(image, reference)
-#idm.histograms(image, reference)
+image = np.asarray(X[indices][5])
+indices = np.where(y == 41)
+reference = np.asarray(X[indices][5])
+#print(image.shape, reference.shape)
+#idm.plot_diff_images(np.asarray([image]), np.asarray([reference]))
+#idm.histograms(np.asarray([image]), np.asarray([reference]))
 #sim = idm.compare_histograms(image, reference)
 
-image = get_center_pixels(image,28)
-reference = get_center_pixels(reference,28)
-print(image.shape, reference.shape)
-idm.plot_diff_images(image, reference)
-#idm.histograms(image, reference)
+image2 = crop_center(image,14, 14)
+reference2 = crop_center(reference,14, 14)
+#print(image.shape, reference.shape)
+idm.template_matching(reference, image2)
+idm.template_matching(image, reference2)
+#idm.plot_diff_images(image, reference)
+#idm.histograms(np.asarray([image]), np.asarray([reference]))
 #sim = idm.compare_histograms(image, reference)
 
 #visualize_experiments(experiments, names, 'ID=GTSRB; OOD=BTSC', classes_to_monitor)
@@ -280,9 +284,9 @@ plt.show()
 '''
 color = ('r','g','b')
 for channel,col in enumerate(color):
-    histr = cv2.calcHist([img],[channel],None,[256],[0,256])
-    plt.plot(histr,color = col)
-    plt.xlim([0,256])
+	histr = cv2.calcHist([img],[channel],None,[256],[0,256])
+	plt.plot(histr,color = col)
+	plt.xlim([0,256])
 plt.title('Histogram for color scale picture for class {}'.format(y[0]))
 plt.show()
 
