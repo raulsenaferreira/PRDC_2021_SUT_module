@@ -5,6 +5,8 @@ import psutil
 from src.utils import util
 import matplotlib.pyplot as plt
 from src.novelty_detection.methods import image_dist_matching as idm
+from src.novelty_detection.methods import kde_based_monitoring as kde_monitor
+
 
 
 sep = util.get_separator()
@@ -72,9 +74,12 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
     missclassified_images_DNN = []
     missclassified_image_labels_DNN = []
 
-    #testing hybrid monitor
-    indices = np.where(y_test == 36)
-    ref_img = np.float32(X_test[indices])[0]
+    #testing hybrid monitor histogram comparison
+    #indices = np.where(y_test == 36)
+    #ref_img = np.float32(X_test[indices])[0]
+
+    #testing hybrid monitor 1: kde minimum threshold on images by class
+    arr_pdf_cuttoff, arr_kde_by_class, arr_PCA = kde_monitor.get_pdf_cuttoff(dataset_name, experiment.classes_to_monitor, cutoff='minimum')
 
     for img, lbl in zip(X_test, y_test):
                 
@@ -91,6 +96,12 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         
         is_in_the_box = monitor.method(boxes, intermediateValues, yPred, monitor.monitors_folder, monitor.dim_reduc_method)
         zeros+=is_in_the_box[1]
+
+        imc = kde_monitor.crop_center(img[0], 12, 12)
+        #print(imc.shape[0])
+        img_reshaped = imc.flatten().reshape(imc.shape[0]*imc.shape[1]*imc.shape[2], -1)
+        img_transformed = arr_PCA[yPred].transform(img_reshaped)
+        pdf = arr_kde_by_class[yPred].score(img_transformed)
         
         if lbl < experiment.classes_to_monitor: # OOD label numbers starts after the ID label numbers
             if is_in_the_box[0]:
@@ -102,6 +113,45 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
                 if yPred == lbl: 
                     arrTrueNegative_ID[yPred] += 1 #True negatives
             else:
+                if pdf >= arr_pdf_cuttoff[yPred]:
+                    if yPred != lbl:
+                        arrFalseNegative_ID[yPred] += 1 #False negative
+                    else:
+                        arrTrueNegative_ID[yPred] += 1 #True negatives
+                else:
+                    if yPred != lbl:
+                        arrTruePositive_ID[yPred] += 1 #True positives
+                    else:
+                        arrFalsePositive_ID[yPred] += 1 #False positives
+            '''
+            else:
+                #kde based approach 1: 
+                #OOD is considered when the image is both outside of the box and 
+                #has pdf below the minimum of the original class
+                if pdf < arr_pdf_cuttoff[yPred]:
+                    #OOD detected !!
+                    if yPred != lbl: 
+                        arrTruePositive_ID[yPred] += 1 #True positives
+                        #counter_monitor_TP+=1
+                        #TP_classified_images_monitor.append(img)
+                        #TP_image_labels_monitor.append(yPred)
+                    if yPred == lbl: 
+                        arrFalsePositive_ID[yPred] += 1 #False positives
+                        #counter_monitor+=1
+                        #missclassified_images_monitor.append(img)
+                        #missclassified_image_labels_monitor.append(yPred)
+                else:
+                    if yPred != lbl:
+                        arrFalseNegative_ID[yPred] += 1 #False negative 
+                        #counter_DNN+=1
+                        #missclassified_images_DNN.append(img)
+                        #missclassified_image_labels_DNN.append(yPred)          
+                    if yPred == lbl: 
+                        arrTrueNegative_ID[yPred] += 1 #True negatives
+            '''
+            '''
+            else:
+
                 if yPred != lbl: 
                     arrTruePositive_ID[yPred] += 1 #True positives
                     #counter_monitor_TP+=1
@@ -109,22 +159,38 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
                     #TP_image_labels_monitor.append(yPred)
                 if yPred == lbl: 
                     arrFalsePositive_ID[yPred] += 1 #False positives
-                    #counter_monitor+=1
-                    #missclassified_images_monitor.append(img)
-                    #missclassified_image_labels_monitor.append(yPred)
+                    counter_monitor+=1
+                    missclassified_images_monitor.append(img)
+                    missclassified_image_labels_monitor.append(yPred)
+                    
+                    #histogram based approach
                     #print(img[0].shape, ref_img.shape)
                     #sim = idm.compare_histograms(np.float32(img[0]), ref_img, centered=True)
                     #missclassified_images_monitor_similarity.append(sim)
+            '''
         else:
             if is_in_the_box[0]:
                 arrFalseNegative_OOD[yPred].append(lbl) #False negative           
                 #if yPred == lbl: 
                     #arrTrueNegative_OOD[yPred] += 1 #True negatives
             else:
-                arrTruePositive_OOD[yPred].append(lbl) #True positives
-                #if yPred == lbl: 
-                    #arrFalsePositive_OOD[yPred] += 1 #False positives
-        '''
+                if pdf >= arr_pdf_cuttoff[yPred]:
+                    arrFalseNegative_OOD[yPred].append(lbl) #False negative
+                else:
+                    arrTruePositive_OOD[yPred].append(lbl) #True positives
+            '''
+            else:
+                if pdf < arr_pdf_cuttoff[yPred]:
+                    if yPred != lbl: 
+                        arrTruePositive_OOD[yPred].append(lbl) #True positives
+                    #if yPred == lbl: 
+                        #arrFalsePositive_OOD[yPred] += 1 #False positives
+                else:
+                    if yPred != lbl:
+                        arrFalseNegative_OOD[yPred].append(lbl) #False negative           
+                    #if yPred == lbl: 
+                        #arrTrueNegative_OOD[yPred] += 1 #True negatives
+            '''
         if counter_monitor_TP % 10 == 0 and counter_monitor_TP > 0:
             plot_images("True positives (Monitor detected right)", TP_classified_images_monitor, TP_image_labels_monitor, 2, 5)
             counter_monitor_TP = 0
@@ -136,7 +202,7 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
             counter_monitor = 0
             missclassified_images_monitor = []
             missclassified_image_labels_monitor = []
-        
+        '''
         if counter_DNN % 60 == 0 and counter_DNN > 0:
             plot_images("False negatives (DNN misclassified)", missclassified_images_DNN, missclassified_image_labels_DNN, 6, 10)
             counter_DNN = 0
@@ -144,7 +210,7 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
             missclassified_image_labels_DNN = []
         '''
 
-    #print("zeroed points:", zeros)
+    print("zeroed points:", zeros)
     memory = process.memory_info().rss / 1024 / 1024
 
     return arrPred, y_test, memory, arrFalsePositive_ID, arrFalseNegative_ID, arrTruePositive_ID, arrTrueNegative_ID, arrFalseNegative_OOD, arrTruePositive_OOD

@@ -1,0 +1,72 @@
+Method: oob_3_cluster
+fp 125
+fn 7058
+tp 474
+tn 12068
+monitors accuracy = 0.6358428390367554
+monitor MCC score =  0.1491517381206685
+monitors error = 0.36415716096324463
+confidence interval = [0.3574418382979488, 0.3708724836285405]
+monitors precision = 0.7913188647746243
+monitors recall = 0.06293149229952204
+monitors F1 score = 0.11659082523674824
+Method: oob_isomap_3_cluster
+fp 209
+fn 6688
+tp 844
+tn 11984
+monitors accuracy = 0.6503422053231939
+monitor MCC score =  0.20513145053474308
+monitors error = 0.3496577946768061
+confidence interval = [0.34300291600348065, 0.3563126733501315]
+monitors precision = 0.8015194681861348
+monitors recall = 0.11205523101433883
+monitors F1 score = 0.19662201514269076
+Method: oob_pca_3_cluster
+fp 335
+fn 6902
+tp 630
+tn 11858
+monitors accuracy = 0.6331051964512041
+monitor MCC score =  0.12650916048469765
+monitors error = 0.36689480354879594
+confidence interval = [0.3601688125019968, 0.3736207945955951]
+monitors precision = 0.6528497409326425
+monitors recall = 0.08364312267657993
+monitors F1 score = 0.14828763092856304
+Method: oob_3_cluster_KDE_v2
+fp 122
+fn 7072
+tp 460
+tn 12071
+monitors accuracy = 0.6352851711026616
+monitor MCC score =  0.14661703262078274
+monitors error = 0.3647148288973384
+confidence interval = [0.35799731404589435, 0.3714323437487825]
+monitors precision = 0.7903780068728522
+monitors recall = 0.061072756240042485
+monitors F1 score = 0.11338427409415824
+Method: oob_isomap_3_cluster_KDE_v2
+fp 207
+fn 6703
+tp 829
+tn 11986
+monitors accuracy = 0.6496831432192649
+monitor MCC score =  0.20273349763920362
+monitors error = 0.3503168567807351
+confidence interval = [0.3436590853307683, 0.3569746282307019]
+monitors precision = 0.8001930501930502
+monitors recall = 0.11006372809346787
+monitors F1 score = 0.1935107376283847
+Method: oob_pca_3_cluster_KDE_v2
+fp 320
+fn 6915
+tp 617
+tn 11873
+monitors accuracy = 0.6332065906210393
+monitor MCC score =  0.12715743927180748
+monitors error = 0.3667934093789607
+confidence interval = [0.3600678092854271, 0.37351900947249433]
+monitors precision = 0.6584845250800427
+monitors recall = 0.08191715347849177
+monitors F1 score = 0.1457078757822647

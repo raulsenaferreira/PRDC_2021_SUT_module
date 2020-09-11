@@ -82,8 +82,8 @@ if __name__ == "__main__":
 	model_names = ['leNet'] #, 'leNet'
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
-	 'arr_n_clusters_oob' : [1], #1, 2, 3, 4, 5
-				'technique_names' : ['oob_isomap']}#'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'arr_n_clusters_oob' : [3], #1, 2, 3, 4, 5
+				'technique_names' : ['oob', 'oob_isomap', 'oob_pca']}#'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
 	save_experiments = False

@@ -169,10 +169,13 @@ def template_matching(img, template):
 		# If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
 		if method in [cv.TM_SQDIFF, cv.TM_SQDIFF_NORMED]:
 			top_left = min_loc
+			print("top_left", top_left)
 		else:
 			top_left = max_loc
+
 		bottom_right = (top_left[0] + w, top_left[1] + h)
-		cv.rectangle(img,top_left, bottom_right, 255, 2)
+		cv.rectangle(img,top_left, bottom_right, 255, 1)
+		#print("rectangle image", top_left, bottom_right)
 		plt.subplot(121),plt.imshow(res,cmap = 'gray')
 		plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
 		plt.subplot(122),plt.imshow(img,cmap = 'gray')

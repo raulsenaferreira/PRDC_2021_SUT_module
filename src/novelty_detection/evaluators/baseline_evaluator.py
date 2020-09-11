@@ -26,59 +26,54 @@ def save_results(experiment, arr_readouts, plot=False):
 		metrics.plot_pos_neg_rate_stacked_bars(experiment.name, arr_readouts, img_folder_path+'all_images.pdf')
 
 
-def run_evaluation(monitor, experiment, repetitions, save_experiments):
+def run_evaluation(experiment, repetitions, save_experiments):
+	monitor_name = 'No monitor'
 	arr_acc = [] #accuracy
-	arr_cf_ID = {} #confusion matrix by class for ID data
-	arr_cf_OOD = {} #confusion matrix by class for OOD data
 	arr_t = [] #time
 	arr_mem = [] #memory
 	arr_f1 = [] #F1
-
-	for class_to_monitor in range(experiment.classes_to_monitor):
-		arr_cf_ID.update({class_to_monitor: [[],[],[],[]]})
-		arr_cf_OOD.update({class_to_monitor: [[],[]]})
+	arr_mcc = [] #MCC
+	arr_precision = []
+	arr_recall = []
 
 	dataset = experiment.dataset
 
 	for i in range(repetitions):
-		print("Evaluating {} with {} monitor: {} of {} repetitions...\n".format(experiment.name, monitor.monitor_name, i+1, repetitions))
+		lbl_ypred_ood = [[], []] #ground truth and predicted
+
+		print("Evaluating {}: {} of {} repetitions...\n".format(experiment.name, i+1, repetitions))
 		
 		ini = timer()
-		arrPred, arrLabel, memory, arrFP_ID, arrFN_ID, arrTP_ID, arrTN_ID, arrFN_OOD, arrTP_OOD = experiment.tester.run(
-			dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
+		arrPred, arrLabel, memory = experiment.tester.run(
+			dataset.X, dataset.y, experiment, dataset.dataset_name)
 		end = timer()
 
 		arr_acc.append(metrics.evaluate(arrLabel, arrPred, 'accuracy'))
 		arr_t.append(end-ini)
 		arr_mem.append(memory)
 		arr_f1.append(metrics.evaluate(arrLabel, arrPred, 'F1'))
-	
-		for class_to_monitor in range(experiment.classes_to_monitor):
-			# ID
-			arr_cf_ID[class_to_monitor][0].append(arrFP_ID[class_to_monitor])
-			arr_cf_ID[class_to_monitor][1].append(arrFN_ID[class_to_monitor])
-			arr_cf_ID[class_to_monitor][2].append(arrTP_ID[class_to_monitor])
-			arr_cf_ID[class_to_monitor][3].append(arrTN_ID[class_to_monitor])
-			# OOD
-			arr_cf_OOD[class_to_monitor][0].append(len(arrFN_OOD[class_to_monitor]))
-			arr_cf_OOD[class_to_monitor][1].append(len(arrTP_OOD[class_to_monitor]))	
-
+		arr_mcc.append(metrics.evaluate(arrLabel, arrPred, 'MCC'))
+		arr_precision.append(metrics.evaluate(arrLabel, arrPred, 'precision'))
+		arr_recall.append(metrics.evaluate(arrLabel, arrPred, 'recall'))
+		
+	'''
+	print('Accuracy', np.mean(arr_acc)) 
+	print('Process time', np.mean(arr_t)) 
+	print('Memory', np.mean(arr_mem))
+	print('F1', np.mean(arr_f1))
+	print('MCC', np.mean(arr_mcc))
+	print('precision', np.mean(arr_precision))
+	print('recall', np.mean(arr_recall))
+	'''
 	if save_experiments:
-		neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))
+		neptune.create_experiment('hyper_parameter/{}'.format("baseline"))
 		neptune.log_metric('Accuracy', np.mean(arr_acc)) 
 		neptune.log_metric('Process time', np.mean(arr_t)) 
 		neptune.log_metric('Memory', np.mean(arr_mem))
 		neptune.log_metric('F1', np.mean(arr_f1))
-
-		for monitored_class in range(experiment.classes_to_monitor):
-			# ID + OOD
-			fn_OOD = int(np.mean(arr_cf_OOD[monitored_class][0]))
-			tp_OOD = int(np.mean(arr_cf_OOD[monitored_class][1]))
-
-			neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][0])))
-			neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][1])) + fn_OOD)
-			neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][2])) + tp_OOD)
-			neptune.log_metric('True Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][3])))
+		neptune.log_metric('MCC', np.mean(arr_mcc))
+		neptune.log_metric('precision', np.mean(arr_precision))
+		neptune.log_metric('recall', np.mean(arr_recall))
 
 	return True
 
@@ -95,16 +90,14 @@ def evaluate(repetitions, experiment, parallel_execution, save_experiments):
 		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in experiment.monitors:
-			processes_pool.append(pool.apipe(run_evaluation, monitor, experiment, repetitions, save_experiments))
+			processes_pool.append(pool.apipe(run_evaluation, experiment, repetitions, save_experiments))
 
 		for process in processes_pool:
 			success = process.get(timeout=timeout)
 			#arr_readouts.append(readout)
 	else:
 		print("\nserial execution")
-		for monitor in experiment.monitors:
-			success = run_evaluation(monitor, experiment, repetitions, save_experiments)
-			#arr_readouts.append(readout)
+		success = run_evaluation(experiment, repetitions, save_experiments)
 
 	#print('len(arr_readouts)', len(arr_readouts))
 	#if save:

@@ -7,6 +7,8 @@ from src.Classes.experiment import Experiment
 from src.novelty_detection.evaluators import dnn_oob_evaluator
 from src.novelty_detection.testers import dnn_oob_tester
 from src.novelty_detection.testers import en_dnn_oob_tester
+from src.novelty_detection.evaluators import baseline_evaluator
+from src.novelty_detection.testers import baseline_tester
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
 from src.utils import util
@@ -73,7 +75,7 @@ if __name__ == "__main__":
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
 	 'arr_n_clusters_oob' : [1], #1, 2, 3, 4, 5
-				'technique_names' : ['oob']}#'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+				'technique_names' : ['baseline']}#'baseline', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
 	save_experiments = True
@@ -111,27 +113,38 @@ if __name__ == "__main__":
 		#for class_to_monitor in range(classes_to_monitor):
 		# loading monitors for Novelty Detection
 		for technique in PARAMS['technique_names']:
-			monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor,
-			 PARAMS['arr_n_clusters_oob'], PARAMS['arr_n_components'])
-
 			# creating an instance of an experiment
 			experiment = Experiment(model_name+'_'+dataset_name)
 			experiment.experiment_type = experiment_type
-			experiment.dataset = dataset
 			experiment.model = model
-			experiment.monitors = monitors
 			experiment.classes_to_monitor = classes_to_monitor
 
-			## diferent evaluator and tester, if ensemble or standalone model
-			if 'ensemble' in model_name:
-				experiment.evaluator = en_dnn_oob_evaluator
-				experiment.tester = en_dnn_oob_tester
-			else:
-				experiment.tester = dnn_oob_tester
-				experiment.evaluator = dnn_oob_evaluator
+			monitors = None
+
+			if technique == 'baseline':
+				experiment.evaluator = baseline_evaluator
+				experiment.tester = baseline_tester
+
+			elif 'oob' in technique:
+				monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor,
+				 PARAMS['arr_n_clusters_oob'], PARAMS['arr_n_components'])
+
+				## diferent evaluator and tester, if ensemble or standalone model
+				if 'ensemble' in model_name:
+					experiment.evaluator = en_dnn_oob_evaluator
+					experiment.tester = en_dnn_oob_tester
+				else:
+					experiment.tester = dnn_oob_tester
+					experiment.evaluator = dnn_oob_evaluator
+
+			experiment.dataset = dataset
+			experiment.monitors = monitors
 
 			#readouts = experiment.evaluator.evaluate(repetitions, experiment, parallel_execution)
-			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments) 
+			if technique == 'baseline':
+				experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)
+			else:
+				experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)
 			#print('len(arr_readouts)', len(readouts))
 			#arr_readouts.append(readouts)
 		

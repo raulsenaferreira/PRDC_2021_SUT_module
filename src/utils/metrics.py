@@ -1,6 +1,8 @@
 import os
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
 from math import sqrt
 import numpy as np
@@ -36,13 +38,20 @@ def save_results(arr_readouts, csvs_folder_path, filenames, delimiter):
 	np.savetxt(csvs_folder_path+cf_file_name, [p for p in results[4]], delimiter=delimiter, fmt='%s')
 
 
-def evaluate(y_actual, y_predicted):
-	return round(accuracy_score(y_actual, y_predicted), 4)*100
+def evaluate(y_true, y_pred, metric='accuracy'):
+	if metric=='accuracy':
+		return round(accuracy_score(y_true, y_pred), 4)*100
+	elif metric=='F1':
+		return f1_score(y_true, y_pred, average=None)
+	elif metric=='MCC':
+		return matthews_corrcoef(y_true, y_pred)
+	elif metric=='precision':
+		return precision_score(y_true, y_pred, average=None)
+	elif metric=='recall':
+		return recall_score(y_true, y_pred, average=None)
+	else:
+		print("Metric not found!")
 	
-
-def F1(y_true, y_pred):
-	return f1_score(y_true, y_pred, average=None)
-
 
 def plot_false_decisions_legend():
 	fig = plt.figure()
