@@ -24,14 +24,14 @@ def set_tf_loglevel(level):
 	logging.getLogger('tensorflow').setLevel(level)
 
 
-def build_all_monitors(parallel_execution, arr_n_components, arr_n_clusters_oob,
+def build_monitors_by_class(root_path, parallel_execution, dataset_name, arr_n_components, arr_n_clusters_oob,
  technique_names, classes_to_monitor, model_file, X, y, save):
 	arr_monitors = []
 
 	# Generate monitors for each class for a specific dataset
 	for class_to_monitor in range(classes_to_monitor):
 		#Building monitors for Novelty Detection
-		monitors = build_monitors.prepare_box_based_monitors(dataset_name, technique_names, class_to_monitor,
+		monitors = build_monitors.prepare_box_based_monitors(root_path, dataset_name, technique_names, class_to_monitor,
 		 arr_n_clusters_oob, arr_n_components)
 		arr_monitors.extend(monitors)
 		#arr_monitors = np.append(arr_monitors, monitors)
@@ -56,6 +56,31 @@ def build_all_monitors(parallel_execution, arr_n_components, arr_n_clusters_oob,
 			_, _ = monitor.trainer.run(monitor, model_file, X, y, save)
 			
 
+def build_monitors_knn_all_classes(root_path, parallel_execution, dataset_name, arr_n_components, arr_n_clusters, model_file, X, y, save):
+	# Generate monitors for all classes for a specific dataset
+	#Building monitors for Novelty Detection
+	arr_monitors = build_monitors.prepare_knn_based_monitors(root_path, dataset_name, arr_n_clusters, arr_n_components)
+	
+	#Parallelizing the experiments (optional): one experiment per Core
+	if parallel_execution:
+		cores = 6
+		timeout = 30 * len(arr_monitors)
+		pool = Pool(cores)
+		processes_pool = []
+
+		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
+
+		for monitor in arr_monitors:
+			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model_file, X, y, save)) 
+		
+		for process in processes_pool:
+			process.get(timeout=timeout)
+	else:
+		print("\nSerial execution.")
+		for monitor in arr_monitors:
+			monitor.trainer.run(monitor, model_file, X, y, save)
+
+
 
 if __name__ == "__main__":
 	# disabling tensorflow logs
@@ -69,15 +94,17 @@ if __name__ == "__main__":
 	parallel_execution = False
 
 	arr_n_components = [2]#, 3, 5, 10]
-	arr_n_clusters_oob = [3]#1, 2, 3, 4, 5]
+	arr_n_clusters = [2, 5, 10]#1, 2, 3, 4, 5]
 
-	experiment_type = 'novelty_detection'
+	sub_field = 'novelty_detection'
 	dataset_names = ['GTSRB']# 'MNIST',
 	validation_size = 0.3
 	model_names = ['leNet'] #, 'leNet'
-	technique_names = ['oob_pca_isomap']#'oob', 'oob_isomap', 'oob_pca', 'oob_pca_tsne']
+	technique_names = ['knn']#'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap']
 	num_classes_to_monitor = [43]# 10, 43
 	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+
+	root_path = 'src'+sep+sub_field+sep+'bin'+sep+'monitors'
 	
 	for model_name, dataset_name, classes_to_monitor in zip(model_names, dataset_names, num_classes_to_monitor):
 		
@@ -101,8 +128,9 @@ if __name__ == "__main__":
 
 		start = timer()
 
-		build_all_monitors(parallel_execution, arr_n_components, arr_n_clusters_oob,
-		 technique_names, classes_to_monitor, model, X, y, save)
+		#build_monitors_by_class(root_path, parallel_execution, dataset_name, arr_n_components, arr_n_clusters,
+		# technique_names, classes_to_monitor, model, X, y, save)
+		build_monitors_knn_all_classes(root_path, parallel_execution, dataset_name, arr_n_components, arr_n_clusters, model, X, y, save)
 		
 		dt = timer() - start
 		print("Monitors for {} built in {} minutes".format(dataset_name, dt/60))

@@ -11,14 +11,31 @@ import numpy as np
 
 sep = util.get_separator()
 dir_path = os.path.dirname(os.path.realpath(__file__))
-experiment_type = 'novelty_detection'
-#root_path = 'src'+sep+experiment_type+sep+'bin'+sep+'monitors'
 root_path = dir_path+sep+'bin'+sep+'monitors'
 
 
-#cwd = os.getcwd()
-#print(dir_path)
-#print(cwd)
+def load_cluster_based_monitors(dataset_name, technique, classes_to_monitor,
+ arr_n_clusters = [3], arr_n_components = [2]):
+	monitoring_characteristics = 'dnn_internals'
+	monitors = []
+
+	for n_clusters in arr_n_clusters:
+		monitor = None
+		monitor_name = technique+'_{}_clusters'.format(n_clusters)
+
+		if 'knn' == technique:
+			monitor = Monitor(monitor_name)
+
+			# for class_to_monitor in range(classes_to_monitor):
+			monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
+			# monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
+			monitor_folder += technique +sep+ 'class_'
+			monitor.monitors_folder = monitor_folder
+
+			monitors.append(monitor)
+
+	return np.array(monitors)
+
 
 def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
  arr_n_clusters_oob = [3], arr_n_components = [2]):

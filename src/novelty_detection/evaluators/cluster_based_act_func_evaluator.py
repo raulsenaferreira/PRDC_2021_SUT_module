@@ -39,9 +39,10 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		arr_cf_OOD.update({class_to_monitor: [[],[]]})
 
 	dataset = experiment.dataset
+	experiment_type = experiment.experiment_type
 
 	for i in range(repetitions):
-		print("Evaluating {} with {} monitor: {} of {} repetitions...\n".format(experiment.name, monitor.monitor_name, i+1, repetitions))
+		print("Evaluating {} in {} with {} monitor: {} of {} repetitions...\n".format(experiment_type, experiment.name, monitor.monitor_name, i+1, repetitions))
 		
 		ini = timer()
 		arrPred, arrLabel, memory, arrFP_ID, arrFN_ID, arrTP_ID, arrTN_ID, arrFN_OOD, arrTP_OOD = experiment.tester.run(
@@ -59,6 +60,7 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 			arr_cf_ID[class_to_monitor][1].append(arrFN_ID[class_to_monitor])
 			arr_cf_ID[class_to_monitor][2].append(arrTP_ID[class_to_monitor])
 			arr_cf_ID[class_to_monitor][3].append(arrTN_ID[class_to_monitor])
+
 			# OOD
 			arr_cf_OOD[class_to_monitor][0].append(len(arrFN_OOD[class_to_monitor]))
 			arr_cf_OOD[class_to_monitor][1].append(len(arrTP_OOD[class_to_monitor]))	
@@ -95,7 +97,7 @@ def evaluate(repetitions, experiment, parallel_execution, save_experiments):
 		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in experiment.monitors:
-			processes_pool.append(pool.apipe(run_evaluation, monitor, experiment, repetitions, save_experiments))
+			processes_pool.append(pool.apipe(run_evaluation, experiment, repetitions, save_experiments))
 
 		for process in processes_pool:
 			success = process.get(timeout=timeout)
@@ -104,7 +106,6 @@ def evaluate(repetitions, experiment, parallel_execution, save_experiments):
 		print("\nserial execution")
 		for monitor in experiment.monitors:
 			success = run_evaluation(monitor, experiment, repetitions, save_experiments)
-			#arr_readouts.append(readout)
 
 	#print('len(arr_readouts)', len(arr_readouts))
 	#if save:

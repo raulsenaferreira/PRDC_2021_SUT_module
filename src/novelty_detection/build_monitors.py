@@ -3,13 +3,13 @@ from src.utils import util
 from src.Classes.monitor import Monitor
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
+from src.novelty_detection.methods import clustered_act_function_monitor
 from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 
 
+
 sep = util.get_separator()
-experiment_type = 'novelty_detection'
-root_path = 'src'+sep+experiment_type+sep+'bin'+sep+'monitors'
 
 
 def build_abstraction_based_monitor(class_to_monitor, monitor_name, n_clusters_oob, monitor_folder):
@@ -36,7 +36,34 @@ def build_gradient_based_monitor(class_to_monitor, monitor_name, n_clusters_oob,
 	return monitor
 
 
-def prepare_box_based_monitors(dataset_name, technique_names, class_to_monitor,
+def build_knn_based_monitor(monitor_name, n_clusters, monitor_folder):
+	monitor = Monitor(monitor_name)
+	monitor.trainer = clustered_act_function_monitor
+	monitor.method = "knn"
+	monitor.filename = 'monitor_'+monitor_name+'.p'
+	monitor.n_clusters = n_clusters
+	monitor.monitors_folder = monitor_folder
+
+	return monitor
+
+
+def prepare_knn_based_monitors(root_path, dataset_name, arr_n_clusters, arr_n_components):
+	monitoring_characteristics = 'dnn_internals'
+	technique = 'knn'
+	monitors = []
+	
+	monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
+	monitor_folder += technique +sep
+
+	for n_clusters in arr_n_clusters:
+		monitor_name = technique+'_{}_clusters'.format(n_clusters)			
+		monitor = build_knn_based_monitor(monitor_name, n_clusters, monitor_folder)
+		monitors.append(monitor)
+
+	return monitors
+
+
+def prepare_box_based_monitors(root_path, dataset_name, technique_names, class_to_monitor,
  arr_n_clusters_oob = [3], arr_n_components = [2]):
 
 	monitoring_characteristics = 'dnn_internals'
@@ -90,8 +117,5 @@ def prepare_box_based_monitors(dataset_name, technique_names, class_to_monitor,
 					monitor.dim_reduc_method = dim_reduc_method
 					
 					monitors.append(monitor)
-
-			elif '' == technique:
-				pass
 
 	return monitors

@@ -16,8 +16,8 @@ sep = util.get_separator()
 def save_results(experiment, arr_readouts, plot=False):
 	print("saving experiments", experiment.name)
 	filenames = config_ND.load_file_names()
-	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+experiment.experiment_type+sep+experiment.name+sep
-	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+experiment.experiment_type+sep+experiment.name+sep
+	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+experiment.sub_field+sep+experiment.name+sep
+	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+experiment.sub_field+sep+experiment.name+sep
 
 	metrics.save_results(arr_readouts, csvs_folder_path, filenames, ',')
 	

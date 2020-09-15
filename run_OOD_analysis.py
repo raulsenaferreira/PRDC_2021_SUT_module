@@ -49,11 +49,11 @@ def set_tf_loglevel(level):
     logging.getLogger('tensorflow').setLevel(level)
 
 
-def save_results(PARAMS, classes_to_monitor, experiment_type, name, technique, arr_readouts, plot=False):
+def save_results(PARAMS, classes_to_monitor, sub_field, name, technique, arr_readouts, plot=False):
 	print("saving experiments", name)
 	filenames = config_ND.load_file_names()
-	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+experiment_type+sep+name+sep+'_'+technique+sep
-	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+experiment_type+sep+name+sep+'_'+technique+sep
+	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+sub_field+sep+name+sep+'_'+technique+sep
+	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+sub_field+sep+name+sep+'_'+technique+sep
 
 	#metrics.save_results(arr_readouts, csvs_folder_path, filenames, ',')
 	metrics.save_results_in_neptune(PARAMS, arr_readouts, classes_to_monitor)
@@ -71,7 +71,7 @@ def unison_shuffled_copies(a, b):
 
 if __name__ == "__main__":
 	# variables regarding Novelty-Detection runtime-monitoring experiments
-	experiment_type = 'novelty_detection'
+	sub_field = 'novelty_detection'
 
 	dataset_names = ['GTSRB'] #'MNIST', 'GTSRB'
 	num_classes_to_monitor = [43] #10, 
@@ -138,7 +138,8 @@ if __name__ == "__main__":
 
 			# creating an instance of an experiment
 			experiment = Experiment(model_name+'_'+dataset_name)
-			experiment.experiment_type = experiment_type
+			experiment.experiment_type = 'OOD'
+			experiment.sub_field = sub_field
 			experiment.dataset = dataset
 			experiment.model = model
 			experiment.monitors = monitors
@@ -157,7 +158,7 @@ if __name__ == "__main__":
 			#print('len(arr_readouts)', len(readouts))
 			#arr_readouts.append(readouts)
 		
-			#save_results(PARAMS, classes_to_monitor, experiment.experiment_type, experiment.name, technique, arr_readouts, plot=False)
+			#save_results(PARAMS, classes_to_monitor, experiment.sub_field, experiment.name, technique, arr_readouts, plot=False)
 
 		'''
 		if  parallel_execution:

@@ -11,3 +11,4 @@ class Experiment:
 		self.models = []
 		self.datasets = []
 		self.tester = None
+		self.experiment_type = 'ID' # ID for in distribution, OOD for out-of-distribution

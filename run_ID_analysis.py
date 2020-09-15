@@ -9,6 +9,8 @@ from src.novelty_detection.testers import dnn_oob_tester
 from src.novelty_detection.testers import en_dnn_oob_tester
 from src.novelty_detection.evaluators import baseline_evaluator
 from src.novelty_detection.testers import baseline_tester
+from src.novelty_detection.evaluators import cluster_based_act_func_evaluator
+from src.novelty_detection.testers import cluster_based_act_func_tester
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
 from src.utils import util
@@ -51,11 +53,11 @@ def set_tf_loglevel(level):
     logging.getLogger('tensorflow').setLevel(level)
 
 
-def save_results(PARAMS, classes_to_monitor, experiment_type, name, technique, arr_readouts, plot=False):
+def save_results(PARAMS, classes_to_monitor, sub_field, name, technique, arr_readouts, plot=False):
 	print("saving experiments", name)
 	filenames = config_ND.load_file_names()
-	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+experiment_type+sep+name+sep+'_'+technique+sep
-	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+experiment_type+sep+name+sep+'_'+technique+sep
+	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+sub_field+sep+name+sep+'_'+technique+sep
+	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+sub_field+sep+name+sep+'_'+technique+sep
 
 	#metrics.save_results(arr_readouts, csvs_folder_path, filenames, ',')
 	metrics.save_results_in_neptune(PARAMS, arr_readouts, classes_to_monitor)
@@ -67,21 +69,21 @@ def save_results(PARAMS, classes_to_monitor, experiment_type, name, technique, a
 
 if __name__ == "__main__":
 	# variables regarding Novelty-Detection runtime-monitoring experiments
-	experiment_type = 'novelty_detection'
+	sub_field = 'novelty_detection'
 	dataset_names = ['GTSRB'] #'MNIST', 'GTSRB'
 	validation_size = 0.3
 	model_names = ['leNet'] #, 'leNet'
 	num_classes_to_monitor = [43] #10, 
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
-	 'arr_n_clusters_oob' : [1], #1, 2, 3, 4, 5
-				'technique_names' : ['baseline']}#'baseline', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'arr_n_clusters_oob' : [3], #1, 2, 3, 4, 5
+				'technique_names' : ['knn']}#'baseline', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
-	save_experiments = True
+	save_experiments = False
 	parallel_execution = False
 	repetitions = 1
-	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	percentage_of_data = 0.1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
@@ -115,9 +117,11 @@ if __name__ == "__main__":
 		for technique in PARAMS['technique_names']:
 			# creating an instance of an experiment
 			experiment = Experiment(model_name+'_'+dataset_name)
-			experiment.experiment_type = experiment_type
+			experiment.experiment_type = 'ID'
+			experiment.sub_field = sub_field
 			experiment.model = model
 			experiment.classes_to_monitor = classes_to_monitor
+			experiment.dataset = dataset
 
 			monitors = None
 
@@ -137,18 +141,19 @@ if __name__ == "__main__":
 					experiment.tester = dnn_oob_tester
 					experiment.evaluator = dnn_oob_evaluator
 
-			experiment.dataset = dataset
-			experiment.monitors = monitors
+			elif 'knn' == technique:
+				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, classes_to_monitor,
+				 PARAMS['arr_n_clusters_oob'], PARAMS['arr_n_components'])
+				experiment.evaluator = baseline_evaluator
+				experiment.tester = baseline_tester
 
-			#readouts = experiment.evaluator.evaluate(repetitions, experiment, parallel_execution)
-			if technique == 'baseline':
-				experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)
-			else:
-				experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)
+			experiment.monitors = monitors
+			
+			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)
 			#print('len(arr_readouts)', len(readouts))
 			#arr_readouts.append(readouts)
 		
-			#save_results(PARAMS, classes_to_monitor, experiment.experiment_type, experiment.name, technique, arr_readouts, plot=False)
+			#save_results(PARAMS, classes_to_monitor, experiment.sub_field, experiment.name, technique, arr_readouts, plot=False)
 
 		'''
 		if  parallel_execution:
@@ -168,6 +173,3 @@ if __name__ == "__main__":
 				print('len(arr_readouts)', len(arr_readouts))
 				save_results(experiment, arr_readouts, plot=False)
 		'''
-
-#print('Class {} with {} monitors on dataset {}'.format(class_to_monitor, len(arr_monitors), dataset_name))
-#cd Users\rsenaferre\Desktop\GITHUB\phd_experiments
