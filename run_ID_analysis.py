@@ -76,14 +76,17 @@ if __name__ == "__main__":
 	num_classes_to_monitor = [43] #10, 
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
-	 'arr_n_clusters_oob' : [3], #1, 2, 3, 4, 5
-				'technique_names' : ['knn']}#'baseline', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
+	 #for dbscan
+	 'eps' : [0.2, 0.3, 0.5], 'min_samples': [5],  #min_samples 3, 5, 7, 10
+
+	 'technique_names' : ['dbscan']}#'baseline', 'knn', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
-	save_experiments = False
+	save_experiments = True
 	parallel_execution = False
 	repetitions = 1
-	percentage_of_data = 0.1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
@@ -130,8 +133,7 @@ if __name__ == "__main__":
 				experiment.tester = baseline_tester
 
 			elif 'oob' in technique:
-				monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor,
-				 PARAMS['arr_n_clusters_oob'], PARAMS['arr_n_components'])
+				monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor, PARAMS)
 
 				## diferent evaluator and tester, if ensemble or standalone model
 				if 'ensemble' in model_name:
@@ -141,11 +143,10 @@ if __name__ == "__main__":
 					experiment.tester = dnn_oob_tester
 					experiment.evaluator = dnn_oob_evaluator
 
-			elif 'knn' == technique:
-				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, classes_to_monitor,
-				 PARAMS['arr_n_clusters_oob'], PARAMS['arr_n_components'])
-				experiment.evaluator = baseline_evaluator
-				experiment.tester = baseline_tester
+			elif 'knn' == technique or 'dbscan' == technique:
+				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
+				experiment.evaluator = cluster_based_act_func_evaluator
+				experiment.tester = cluster_based_act_func_tester
 
 			experiment.monitors = monitors
 			

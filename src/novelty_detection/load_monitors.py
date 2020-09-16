@@ -14,34 +14,49 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 root_path = dir_path+sep+'bin'+sep+'monitors'
 
 
-def load_cluster_based_monitors(dataset_name, technique, classes_to_monitor,
- arr_n_clusters = [3], arr_n_components = [2]):
+def create_monitor(dataset_name, monitoring_characteristics):
+	monitor = Monitor(monitor_name)
+
+	# for class_to_monitor in range(classes_to_monitor):
+	monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
+	# monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
+	monitor_folder += technique +sep
+	monitor.monitors_folder = monitor_folder
+	monitor.filename = 'monitor_'+monitor_name+'.p'
+
+	return monitor
+
+
+def load_cluster_based_monitors(dataset_name, technique, params):
 	monitoring_characteristics = 'dnn_internals'
 	monitors = []
 
-	for n_clusters in arr_n_clusters:
-		monitor = None
-		monitor_name = technique+'_{}_clusters'.format(n_clusters)
+	if 'knn' == technique:
+		arr_n_clusters = PARAMS['arr_n_clusters']
 
-		if 'knn' == technique:
-			monitor = Monitor(monitor_name)
-
-			# for class_to_monitor in range(classes_to_monitor):
-			monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
-			# monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
-			monitor_folder += technique +sep+ 'class_'
-			monitor.monitors_folder = monitor_folder
-
+		for n_clusters in arr_n_clusters:
+			monitor_name = technique+'_{}_clusters'.format(n_clusters)
+			monitor = create_monitor(technique, n_clusters, dataset_name, monitoring_characteristics)
 			monitors.append(monitor)
+
+	elif 'dbscan' == technique:
+		arr_eps = PARAMS['eps']
+		arr_min_samples = PARAMS['min_samples']
+
+		for eps in arr_eps:
+			for min_samples in arr_min_samples:
+				monitor_name = technique+'_{}_eps_{}_min_samples'.format(eps, min_samples)
+				monitor = create_monitor(technique, eps, dataset_name, monitoring_characteristics)
+				monitors.append(monitor)
 
 	return np.array(monitors)
 
 
-def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
- arr_n_clusters_oob = [3], arr_n_components = [2]):
+def load_box_based_monitors(dataset_name, technique, classes_to_monitor, params):
 
 	monitoring_characteristics = 'dnn_internals'
 	monitors = []
+	arr_n_clusters_oob = params['arr_n_clusters']
 	
 	for n_clusters_oob in arr_n_clusters_oob:
 		monitor = None
@@ -72,6 +87,7 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor,
 			monitors.append(monitor)
 			
 		elif 'oob_isomap' == technique or 'oob_pca' == technique or 'oob_pca_isomap' == technique:
+			arr_n_components = params['arr_n_components']
 			
 			for n_components in arr_n_components:
 				boxes = {}

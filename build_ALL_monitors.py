@@ -24,15 +24,13 @@ def set_tf_loglevel(level):
 	logging.getLogger('tensorflow').setLevel(level)
 
 
-def build_monitors_by_class(root_path, parallel_execution, dataset_name, arr_n_components, arr_n_clusters_oob,
- technique_names, classes_to_monitor, model_file, X, y, save):
+def build_monitors_by_class(root_path, parallel_execution, dataset_name, params, classes_to_monitor, model_file, X, y, save):
 	arr_monitors = []
 
 	# Generate monitors for each class for a specific dataset
 	for class_to_monitor in range(classes_to_monitor):
 		#Building monitors for Novelty Detection
-		monitors = build_monitors.prepare_box_based_monitors(root_path, dataset_name, technique_names, class_to_monitor,
-		 arr_n_clusters_oob, arr_n_components)
+		monitors = build_monitors.prepare_box_based_monitors(root_path, dataset_name, params, class_to_monitor)
 		arr_monitors.extend(monitors)
 		#arr_monitors = np.append(arr_monitors, monitors)
 	
@@ -56,10 +54,9 @@ def build_monitors_by_class(root_path, parallel_execution, dataset_name, arr_n_c
 			_, _ = monitor.trainer.run(monitor, model_file, X, y, save)
 			
 
-def build_monitors_knn_all_classes(root_path, parallel_execution, dataset_name, arr_n_components, arr_n_clusters, model_file, X, y, save):
+def build_monitors_cluster_all_classes(root_path, parallel_execution, dataset_name, params, model_file, X, y, save):
 	# Generate monitors for all classes for a specific dataset
-	#Building monitors for Novelty Detection
-	arr_monitors = build_monitors.prepare_knn_based_monitors(root_path, dataset_name, arr_n_clusters, arr_n_components)
+	arr_monitors = build_monitors.prepare_cluster_based_monitors(root_path, dataset_name, params)
 	
 	#Parallelizing the experiments (optional): one experiment per Core
 	if parallel_execution:
@@ -93,15 +90,20 @@ if __name__ == "__main__":
 	save = True
 	parallel_execution = False
 
-	arr_n_components = [2]#, 3, 5, 10]
-	arr_n_clusters = [2, 5, 10]#1, 2, 3, 4, 5]
-
 	sub_field = 'novelty_detection'
 	dataset_names = ['GTSRB']# 'MNIST',
 	validation_size = 0.3
 	model_names = ['leNet'] #, 'leNet'
-	technique_names = ['knn']#'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap']
+	
+	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
+	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
+	 #for dbscan
+	 'eps' : [0.2, 0.3, 0.5], 'min_samples': [5],  #min_samples 3, 5, 7, 10
+
+	 'technique_names' : ['dbscan']}#'baseline', 'knn', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+
 	num_classes_to_monitor = [43]# 10, 43
+	is_build_monitors_by_class = False
 	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	root_path = 'src'+sep+sub_field+sep+'bin'+sep+'monitors'
@@ -128,9 +130,10 @@ if __name__ == "__main__":
 
 		start = timer()
 
-		#build_monitors_by_class(root_path, parallel_execution, dataset_name, arr_n_components, arr_n_clusters,
-		# technique_names, classes_to_monitor, model, X, y, save)
-		build_monitors_knn_all_classes(root_path, parallel_execution, dataset_name, arr_n_components, arr_n_clusters, model, X, y, save)
+		if is_build_monitors_by_class:
+			build_monitors_by_class(root_path, parallel_execution, dataset_name, PARAMS, classes_to_monitor, model, X, y, save)
+		else:
+			build_monitors_cluster_all_classes(root_path, parallel_execution, dataset_name, PARAMS, model, X, y, save)
 		
 		dt = timer() - start
 		print("Monitors for {} built in {} minutes".format(dataset_name, dt/60))

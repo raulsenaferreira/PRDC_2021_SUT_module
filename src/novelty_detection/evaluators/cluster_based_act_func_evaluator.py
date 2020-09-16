@@ -42,11 +42,15 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 	experiment_type = experiment.experiment_type
 
 	for i in range(repetitions):
-		print("Evaluating {} in {} with {} monitor: {} of {} repetitions...\n".format(experiment_type, experiment.name, monitor.monitor_name, i+1, repetitions))
+		print("Evaluating {} on {} data with {} monitor: {} of {} repetitions...\n".format(experiment.name, experiment_type, monitor.monitor_name, i+1, repetitions))
 		
 		ini = timer()
-		arrPred, arrLabel, memory, arrFP_ID, arrFN_ID, arrTP_ID, arrTN_ID, arrFN_OOD, arrTP_OOD = experiment.tester.run(
-			dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
+		if experiment_type == 'ID':
+			arrPred, arrLabel, memory, arrFP_ID, arrFN_ID, arrTP_ID, arrTN_ID, _, _ = experiment.tester.run(
+				dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
+		else:
+			arrPred, arrLabel, memory, arrFP_ID, arrFN_ID, arrTP_ID, arrTN_ID, arrFN_OOD, arrTP_OOD = experiment.tester.run(
+				dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
 		end = timer()
 
 		arr_acc.append(metrics.evaluate(arrLabel, arrPred, 'accuracy'))
@@ -61,9 +65,10 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 			arr_cf_ID[class_to_monitor][2].append(arrTP_ID[class_to_monitor])
 			arr_cf_ID[class_to_monitor][3].append(arrTN_ID[class_to_monitor])
 
-			# OOD
-			arr_cf_OOD[class_to_monitor][0].append(len(arrFN_OOD[class_to_monitor]))
-			arr_cf_OOD[class_to_monitor][1].append(len(arrTP_OOD[class_to_monitor]))	
+			if experiment_type == 'OOD':
+				# OOD
+				arr_cf_OOD[class_to_monitor][0].append(len(arrFN_OOD[class_to_monitor]))
+				arr_cf_OOD[class_to_monitor][1].append(len(arrTP_OOD[class_to_monitor]))	
 
 	if save_experiments:
 		neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))
@@ -73,9 +78,12 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		neptune.log_metric('F1', np.mean(arr_f1))
 
 		for monitored_class in range(experiment.classes_to_monitor):
-			# ID + OOD
-			fn_OOD = int(np.mean(arr_cf_OOD[monitored_class][0]))
-			tp_OOD = int(np.mean(arr_cf_OOD[monitored_class][1]))
+			fn_OOD, tp_OOD = 0, 0
+			
+			if experiment_type == 'OOD':
+				# ID + OOD
+				fn_OOD = int(np.mean(arr_cf_OOD[monitored_class][0]))
+				tp_OOD = int(np.mean(arr_cf_OOD[monitored_class][1]))
 
 			neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][0])))
 			neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][1])) + fn_OOD)

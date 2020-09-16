@@ -3,6 +3,8 @@ import numpy as np
 import pickle
 from src.utils import util
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
 
 
 
@@ -29,13 +31,21 @@ def build_monitor(model, X, y, layer_index):
 
 
 def run(monitor, model, X, y, save):
+    use_scaler = True
     trained_monitor = None
     layer_index = monitor.layer_index
 
     #building monitor with training set
     arrWeights, arrLabels = build_monitor(model, X, y, layer_index)
+    #print("arrWeights:", np.shape(arrWeights))
+    #print("arrLabels:", np.shape(arrLabels))
+    if use_scaler:
+        arrWeights = StandardScaler().fit_transform(arrWeights)
+
     if monitor.method == "knn":
-        trained_monitor = KNeighborsClassifier(n_neighbors=monitor.n_clusters).fit(arrWeights, arrLabels)
+        trained_monitor = KNeighborsClassifier(n_neighbors=monitor.n_clusters).fit(arrWeights, np.ravel(arrLabels))
+    elif monitor.method == "dbscan":
+        trained_monitor = DBSCAN(eps=monitor.eps, min_samples=monitor.min_samples).fit(arrWeights)
 
     file_path = monitor.monitors_folder+monitor.filename
     if save:

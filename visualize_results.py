@@ -4,7 +4,6 @@ from src.Classes.readout import Readout
 from src.utils import metrics
 from src.utils import util
 from src.Classes.dataset import Dataset
-from src.novelty_detection.methods.lsh import LSH
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -375,7 +374,13 @@ if __name__ == '__main__':
 	#names = ['oob_3_cluster','oob_isomap_3_cluster', 'oob_pca_3_cluster',
 	# 'oob_3_cluster_KDE_v2', 'oob_isomap_3_cluster_KDE_v2', 'oob_pca_3_cluster_KDE_v2']
 
-	#visualize_experiments(experiments, names, 'ID=GTSRB; OOD=BTSC', classes_to_monitor)
+	#experiments = ['PHD-69', 'PHD-70', 'PHD-71', 'PHD-72'] # in distribution experiments using GTSRB dataset
+	#names = ['knn_2_cluster','knn_3_cluster', 'knn_5_cluster', 'knn_10_cluster']
+
+	experiments = ['PHD-73', 'PHD-74', 'PHD-75', 'PHD-76'] # in distribution experiments using GTSRB dataset
+	names = ['dbscan_0.2_eps','dbscan_0.2_eps', 'dbscan_0.2_eps', 'dbscan_0.2_eps']
+
+	visualize_experiments(experiments, names, 'ID=GTSRB; KNN variants', classes_to_monitor)
 
 	total_instances = 19725
 	dataset = Dataset(dataset_name)
@@ -472,17 +477,3 @@ if __name__ == '__main__':
 
 	cv2.destroyAllWindows()
 	'''
-
-	X, y, X_val, y_val = dataset.load_dataset(mode='train')
-	#assumes that data is a num_observations by num_features numpy matrix
-	X_r = X[:, :, :, 0]
-	X_g = X[:, :, :, 1]
-	X_b = X[:, :, :, 2]
-	X_reshaped = X.flatten().reshape(X.shape[0], -1)
-	#print(X_reshaped)
-	lsh_model = LSH(X_reshaped[:1000])
-	num_of_random_vectors = 15
-	lsh_model.train(num_of_random_vectors)
-
-	#find the 5 nearest neighbors of data[1] while searching in 10 buckets 
-	lsh_model.query(X_reshaped[:15], 20, 200)

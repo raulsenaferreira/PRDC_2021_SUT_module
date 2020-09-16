@@ -36,42 +36,62 @@ def build_gradient_based_monitor(class_to_monitor, monitor_name, n_clusters_oob,
 	return monitor
 
 
-def build_knn_based_monitor(monitor_name, n_clusters, monitor_folder):
+def build_cluster_based_monitor(technique, monitor_name, monitor_folder):
 	monitor = Monitor(monitor_name)
 	monitor.trainer = clustered_act_function_monitor
-	monitor.method = "knn"
+	monitor.method = technique
 	monitor.filename = 'monitor_'+monitor_name+'.p'
-	monitor.n_clusters = n_clusters
 	monitor.monitors_folder = monitor_folder
 
 	return monitor
 
 
-def prepare_knn_based_monitors(root_path, dataset_name, arr_n_clusters, arr_n_components):
+def prepare_cluster_based_monitors(root_path, dataset_name, PARAMS):
 	monitoring_characteristics = 'dnn_internals'
-	technique = 'knn'
 	monitors = []
+	technique_names = PARAMS['technique_names']
 	
-	monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
-	monitor_folder += technique +sep
+	for technique in technique_names:
+		monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
+		monitor_folder += technique +sep
 
-	for n_clusters in arr_n_clusters:
-		monitor_name = technique+'_{}_clusters'.format(n_clusters)			
-		monitor = build_knn_based_monitor(monitor_name, n_clusters, monitor_folder)
-		monitors.append(monitor)
+		if technique  == 'knn':
+			arr_n_clusters = PARAMS['n_clusters']
+			for n_clusters in arr_n_clusters:
+				monitor_name = technique+'_{}_clusters'.format(n_clusters)			
+				monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
+				monitor.n_clusters = n_clusters
+
+				monitors.append(monitor)
+
+		elif technique == 'dbscan':
+			arr_eps = PARAMS['eps']
+			arr_min_samples = PARAMS['min_samples']
+
+			for eps in arr_eps:
+				for min_samples in arr_min_samples:
+					monitor_name = technique+'_{}_eps_{}_min_samples'.format(eps, min_samples)
+					monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
+					monitor.eps = eps
+					monitor.min_samples = min_samples
+
+					monitors.append(monitor)
 
 	return monitors
 
 
-def prepare_box_based_monitors(root_path, dataset_name, technique_names, class_to_monitor,
- arr_n_clusters_oob = [3], arr_n_components = [2]):
-
+def prepare_box_based_monitors(root_path, dataset_name, PARAMS, class_to_monitor):
 	monitoring_characteristics = 'dnn_internals'
 	monitors = []
 	c = '{}'.format(class_to_monitor)
+
+	technique_names = PARAMS['technique_names']
+
 	for technique in technique_names:
 		monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
 		monitor_folder += technique +sep+ 'class_'+ c +sep
+
+		arr_n_clusters_oob = PARAMS['arr_n_clusters']
 
 		for n_clusters_oob in arr_n_clusters_oob:
 
@@ -93,6 +113,8 @@ def prepare_box_based_monitors(root_path, dataset_name, technique_names, class_t
 				
 				dim_reduc_method = []
 				dim_reduc_filename_prefix = []
+
+				arr_n_components = PARAMS['arr_n_components']
 
 				for n_components in arr_n_components:
 					monitor_name = technique+'_{}_components_{}_clusters'.format(n_components, n_clusters_oob)

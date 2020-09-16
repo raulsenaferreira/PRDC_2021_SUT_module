@@ -36,8 +36,6 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
     arrFalseNegative_OOD = {}
     arrTruePositive_OOD = {}
 
-    experiment_type = experiment.experiment_type
-
     #3 variables for log (optional)
     counter = 0
     loading_percentage = 0.1
@@ -72,9 +70,9 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
     missclassified_images_DNN = []
     missclassified_image_labels_DNN = []
 
-    #testing hybrid monitor
-    indices = np.where(y_test == 36)
-    ref_img = np.float32(X_test[indices])[0]
+    # loading cluster-baed monitor
+    monitor_path = monitor.monitors_folder +sep+ monitor.filename
+    cluster_based_monitor = pickle.load(open(monitor_path, "rb"))
 
     for img, lbl in zip(X_test, y_test):
                 
@@ -84,16 +82,11 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         arrPred.append(yPred)
         intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
         
-        # loading abstraction boxes
-        monitor_path = monitor.monitors_folder+str(yPred) +sep+ monitor.filename
-        boxes = pickle.load(open(monitor_path, "rb"))
-        #print(np.shape(boxes))
-        
-        is_in_the_box = monitor.method(boxes, intermediateValues, yPred, monitor.monitors_folder, monitor.dim_reduc_method)
-        zeros+=is_in_the_box[1]
+        yPred_by_monitor = cluster_based_monitor.predict(np.reshape(intermediateValues, (1, -1)))
+        #print(np.shape(yPred_by_monitor))
         
         if lbl < experiment.classes_to_monitor: # OOD label numbers starts after the ID label numbers
-            if is_in_the_box[0]:
+            if yPred_by_monitor == yPred:
                 if yPred != lbl:
                     arrFalseNegative_ID[yPred] += 1 #False negative 
                     #counter_DNN+=1
@@ -112,11 +105,9 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
                     #counter_monitor+=1
                     #missclassified_images_monitor.append(img)
                     #missclassified_image_labels_monitor.append(yPred)
-                    #print(img[0].shape, ref_img.shape)
-                    #sim = idm.compare_histograms(np.float32(img[0]), ref_img, centered=True)
-                    #missclassified_images_monitor_similarity.append(sim)
+                    
         else:
-            if is_in_the_box[0]:
+            if yPred_by_monitor == yPred:
                 arrFalseNegative_OOD[yPred].append(lbl) #False negative           
                 #if yPred == lbl: 
                     #arrTrueNegative_OOD[yPred] += 1 #True negatives
