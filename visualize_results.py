@@ -358,29 +358,31 @@ if __name__ == '__main__':
 	#experiments = ['PHD-38', 'PHD-39', 'PHD-40', 'PHD-41', 'PHD-42', 'PHD-43'] #out of distribution experiments using 30% of BTSC dataset
 	#names = ['oob 1 cluster', 'oob 3 clusters', 'oob_isomap 1 cluster', 'oob_isomap 3 clusters', 'oob_pca 1 cluster', 'oob_pca 3 clusters']
 
-	#experiments = ['PHD-45', 'PHD-46', 'PHD-47', 'PHD-48', 'PHD-49', 'PHD-50', 'PHD-51', 'PHD-52'] #out of distribution experiments using 100% of BTSC dataset
+	#experiments = ['PHD-45', 'PHD-46', 'PHD-47', 'PHD-48', 'PHD-49', 'PHD-50', 'PHD-51', 'PHD-52'] #out of distribution experiments using 100% of BTSC dataset + 30% GTSRB
 	#names = ['oob 1 cluster', 'oob 3 clusters', 'oob_isomap 1 cluster', 'oob_isomap 3 clusters', 'oob_pca 1 cluster', 'oob_pca 3 clusters', 'oob_pca_isomap 1 cluster', 'oob_pca_isomap 3 clusters']
 
 	#experiments = ['PHD-45', 'PHD-54']
 	#names = ['oob 1', 'oob 2']
 
 	#experiments = ['PHD-45', 'PHD-47', 'PHD-49',
-	# 'PHD-61', 'PHD-62', 'PHD-63'] #out of distribution experiments using 100% of BTSC dataset
+	# 'PHD-61', 'PHD-62', 'PHD-63'] #out of distribution experiments using 100% of BTSC dataset + 30% GTSRB
 	#names = ['oob_1_cluster','oob_isomap_1_cluster', 'oob_pca_1_cluster',
 	# 'oob_1_cluster_KDE_v2', 'oob_isomap_1_cluster_KDE_v2', 'oob_pca_1_cluster_KDE_v2']
 
 	#experiments = ['PHD-46', 'PHD-48', 'PHD-50',
-	# 'PHD-64', 'PHD-65', 'PHD-66'] #out of distribution experiments using 100% of BTSC dataset
+	# 'PHD-64', 'PHD-65', 'PHD-66'] #out of distribution experiments using 100% of BTSC dataset + 30% GTSRB
 	#names = ['oob_3_cluster','oob_isomap_3_cluster', 'oob_pca_3_cluster',
 	# 'oob_3_cluster_KDE_v2', 'oob_isomap_3_cluster_KDE_v2', 'oob_pca_3_cluster_KDE_v2']
 
 	#experiments = ['PHD-69', 'PHD-70', 'PHD-71', 'PHD-72'] # in distribution experiments using GTSRB dataset
 	#names = ['knn_2_cluster','knn_3_cluster', 'knn_5_cluster', 'knn_10_cluster']
+	title = 'ID=GTSRB; KNN variants'
 
-	experiments = ['PHD-73', 'PHD-74', 'PHD-75', 'PHD-76'] # in distribution experiments using GTSRB dataset
-	names = ['dbscan_0.2_eps','dbscan_0.2_eps', 'dbscan_0.2_eps', 'dbscan_0.2_eps']
+	experiments = ['PHD-73', 'PHD-74', 'PHD-75', 'PHD-76'] # out of distribution experiments using 100% of BTSC dataset + 30% GTSRB
+	names = ['knn_2_cluster','knn_3_cluster', 'knn_5_cluster', 'knn_10_cluster']
+	title = 'ID=GTSRB; OOD=BTSC; KNN variants'
 
-	visualize_experiments(experiments, names, 'ID=GTSRB; KNN variants', classes_to_monitor)
+	visualize_experiments(experiments, names, title, classes_to_monitor)
 
 	total_instances = 19725
 	dataset = Dataset(dataset_name)

@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 from src.utils import util
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.cluster import DBSCAN
+import hdbscan
 from sklearn.preprocessing import StandardScaler
 
 
@@ -44,8 +44,8 @@ def run(monitor, model, X, y, save):
 
     if monitor.method == "knn":
         trained_monitor = KNeighborsClassifier(n_neighbors=monitor.n_clusters).fit(arrWeights, np.ravel(arrLabels))
-    elif monitor.method == "dbscan":
-        trained_monitor = DBSCAN(eps=monitor.eps, min_samples=monitor.min_samples).fit(arrWeights)
+    elif monitor.method == "hdbscan":
+        trained_monitor = hdbscan.HDBSCAN(min_cluster_size=monitor.min_samples, prediction_data=True).fit(arrWeights)
 
     file_path = monitor.monitors_folder+monitor.filename
     if save:

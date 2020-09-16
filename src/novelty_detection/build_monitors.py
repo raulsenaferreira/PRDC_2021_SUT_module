@@ -64,18 +64,15 @@ def prepare_cluster_based_monitors(root_path, dataset_name, PARAMS):
 
 				monitors.append(monitor)
 
-		elif technique == 'dbscan':
-			arr_eps = PARAMS['eps']
+		elif technique == 'hdbscan':
 			arr_min_samples = PARAMS['min_samples']
 
-			for eps in arr_eps:
-				for min_samples in arr_min_samples:
-					monitor_name = technique+'_{}_eps_{}_min_samples'.format(eps, min_samples)
-					monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
-					monitor.eps = eps
-					monitor.min_samples = min_samples
+			for min_samples in arr_min_samples:
+				monitor_name = technique+'_{}_min_samples'.format(min_samples)
+				monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
+				monitor.min_samples = min_samples
 
-					monitors.append(monitor)
+				monitors.append(monitor)
 
 	return monitors
 

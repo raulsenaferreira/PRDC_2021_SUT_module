@@ -6,6 +6,12 @@ from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
 from src.novelty_detection.evaluators import dnn_oob_evaluator
 from src.novelty_detection.testers import dnn_oob_tester
+from src.novelty_detection.evaluators import dnn_baseline_evaluator
+from src.novelty_detection.testers import dnn_baseline_tester
+from src.novelty_detection.evaluators import dnn_knn_act_func_evaluator
+from src.novelty_detection.testers import dnn_knn_act_func_tester
+from src.novelty_detection.evaluators import dnn_dbscan_act_func_evaluator
+from src.novelty_detection.testers import dnn_dbscan_act_func_tester
 from src.novelty_detection.testers import en_dnn_oob_tester
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
@@ -82,11 +88,13 @@ if __name__ == "__main__":
 	model_names = ['leNet'] #, 'leNet'
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
-	 'arr_n_clusters_oob' : [3], #1, 2, 3, 4, 5
-				'technique_names' : ['oob', 'oob_isomap', 'oob_pca']}#'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
+	 #for hdbscan
+	 'min_samples': [5],  #min_samples 5, 10, 15
+	 'technique_names' : ['knn']}#'baseline', 'knn', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
-	save_experiments = False
+	save_experiments = True
 	parallel_execution = False
 	repetitions = 1
 	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
@@ -133,27 +141,42 @@ if __name__ == "__main__":
 		#for class_to_monitor in range(classes_to_monitor):
 		# loading monitors for Novelty Detection
 		for technique in PARAMS['technique_names']:
-			monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor,
-			 PARAMS['arr_n_clusters_oob'], PARAMS['arr_n_components'])
-
-			# creating an instance of an experiment
 			experiment = Experiment(model_name+'_'+dataset_name)
 			experiment.experiment_type = 'OOD'
 			experiment.sub_field = sub_field
-			experiment.dataset = dataset
 			experiment.model = model
-			experiment.monitors = monitors
 			experiment.classes_to_monitor = classes_to_monitor
+			experiment.dataset = dataset
 
-			## diferent evaluator and tester, if ensemble or standalone model
-			if 'ensemble' in model_name:
-				experiment.evaluator = en_dnn_oob_evaluator
-				experiment.tester = en_dnn_oob_tester
-			else:
-				experiment.tester = dnn_oob_tester
-				experiment.evaluator = dnn_oob_evaluator
+			monitors = None
 
-			#readouts = experiment.evaluator.evaluate(repetitions, experiment, parallel_execution)
+			if technique == 'baseline':
+				experiment.evaluator = dnn_baseline_evaluator
+				experiment.tester = dnn_baseline_tester
+
+			elif 'oob' in technique:
+				monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor, PARAMS)
+
+				## diferent evaluator and tester, if ensemble or standalone model
+				if 'ensemble' in model_name:
+					experiment.evaluator = en_dnn_oob_evaluator
+					experiment.tester = en_dnn_oob_tester
+				else:
+					experiment.tester = dnn_oob_tester
+					experiment.evaluator = dnn_oob_evaluator
+
+			elif 'knn' == technique:
+				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
+				experiment.evaluator = dnn_knn_act_func_evaluator
+				experiment.tester = dnn_knn_act_func_tester
+
+			elif 'hdbscan' == technique:
+				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
+				experiment.evaluator = dnn_dbscan_act_func_evaluator
+				experiment.tester = dnn_dbscan_act_func_tester
+
+			experiment.monitors = monitors
+			
 			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments) 
 			#print('len(arr_readouts)', len(readouts))
 			#arr_readouts.append(readouts)

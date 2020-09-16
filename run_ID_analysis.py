@@ -6,11 +6,13 @@ from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
 from src.novelty_detection.evaluators import dnn_oob_evaluator
 from src.novelty_detection.testers import dnn_oob_tester
+from src.novelty_detection.evaluators import dnn_baseline_evaluator
+from src.novelty_detection.testers import dnn_baseline_tester
+from src.novelty_detection.evaluators import dnn_knn_act_func_evaluator
+from src.novelty_detection.testers import dnn_knn_act_func_tester
+from src.novelty_detection.evaluators import dnn_dbscan_act_func_evaluator
+from src.novelty_detection.testers import dnn_dbscan_act_func_tester
 from src.novelty_detection.testers import en_dnn_oob_tester
-from src.novelty_detection.evaluators import baseline_evaluator
-from src.novelty_detection.testers import baseline_tester
-from src.novelty_detection.evaluators import cluster_based_act_func_evaluator
-from src.novelty_detection.testers import cluster_based_act_func_tester
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
 from src.utils import util
@@ -77,16 +79,16 @@ if __name__ == "__main__":
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
 	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
-	 #for dbscan
-	 'eps' : [0.2, 0.3, 0.5], 'min_samples': [5],  #min_samples 3, 5, 7, 10
+	 #for hdbscan
+	 'min_samples': [5],  #min_samples 5, 10, 15
 
-	 'technique_names' : ['dbscan']}#'baseline', 'knn', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['hdbscan']}#'baseline', 'knn', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
-	save_experiments = True
+	save_experiments = False
 	parallel_execution = False
 	repetitions = 1
-	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	percentage_of_data = 0.1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
@@ -129,8 +131,8 @@ if __name__ == "__main__":
 			monitors = None
 
 			if technique == 'baseline':
-				experiment.evaluator = baseline_evaluator
-				experiment.tester = baseline_tester
+				experiment.evaluator = dnn_baseline_evaluator
+				experiment.tester = dnn_baseline_tester
 
 			elif 'oob' in technique:
 				monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor, PARAMS)
@@ -143,10 +145,15 @@ if __name__ == "__main__":
 					experiment.tester = dnn_oob_tester
 					experiment.evaluator = dnn_oob_evaluator
 
-			elif 'knn' == technique or 'dbscan' == technique:
+			elif 'knn' == technique:
 				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = cluster_based_act_func_evaluator
-				experiment.tester = cluster_based_act_func_tester
+				experiment.evaluator = dnn_knn_act_func_evaluator
+				experiment.tester = dnn_knn_act_func_tester
+
+			elif 'hdbscan' == technique:
+				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
+				experiment.evaluator = dnn_dbscan_act_func_evaluator
+				experiment.tester = dnn_dbscan_act_func_tester
 
 			experiment.monitors = monitors
 			

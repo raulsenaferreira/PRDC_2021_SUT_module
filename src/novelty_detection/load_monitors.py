@@ -3,7 +3,6 @@ from src.utils import util
 from sklearn import manifold
 from src.Classes.monitor import Monitor
 from src.novelty_detection.methods import abstraction_box
-from src.novelty_detection.methods import act_func_based_monitor
 from sklearn.decomposition import PCA
 import pickle
 import numpy as np
@@ -14,7 +13,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 root_path = dir_path+sep+'bin'+sep+'monitors'
 
 
-def create_monitor(dataset_name, monitoring_characteristics):
+def create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics):
 	monitor = Monitor(monitor_name)
 
 	# for class_to_monitor in range(classes_to_monitor):
@@ -27,7 +26,7 @@ def create_monitor(dataset_name, monitoring_characteristics):
 	return monitor
 
 
-def load_cluster_based_monitors(dataset_name, technique, params):
+def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 	monitoring_characteristics = 'dnn_internals'
 	monitors = []
 
@@ -36,18 +35,18 @@ def load_cluster_based_monitors(dataset_name, technique, params):
 
 		for n_clusters in arr_n_clusters:
 			monitor_name = technique+'_{}_clusters'.format(n_clusters)
-			monitor = create_monitor(technique, n_clusters, dataset_name, monitoring_characteristics)
+			monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
+			monitor.n_clusters = n_clusters
 			monitors.append(monitor)
 
-	elif 'dbscan' == technique:
-		arr_eps = PARAMS['eps']
+	elif 'hdbscan' == technique:
 		arr_min_samples = PARAMS['min_samples']
 
-		for eps in arr_eps:
-			for min_samples in arr_min_samples:
-				monitor_name = technique+'_{}_eps_{}_min_samples'.format(eps, min_samples)
-				monitor = create_monitor(technique, eps, dataset_name, monitoring_characteristics)
-				monitors.append(monitor)
+		for min_samples in arr_min_samples:
+			monitor_name = technique+'_{}_min_samples'.format(min_samples)
+			monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
+			monitor.min_samples = min_samples
+			monitors.append(monitor)
 
 	return np.array(monitors)
 
@@ -88,7 +87,7 @@ def load_box_based_monitors(dataset_name, technique, classes_to_monitor, params)
 			
 		elif 'oob_isomap' == technique or 'oob_pca' == technique or 'oob_pca_isomap' == technique:
 			arr_n_components = params['arr_n_components']
-			
+
 			for n_components in arr_n_components:
 				boxes = {}
 				dim_reduc_method = []

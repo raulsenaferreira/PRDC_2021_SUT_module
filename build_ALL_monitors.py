@@ -97,10 +97,10 @@ if __name__ == "__main__":
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
 	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
-	 #for dbscan
-	 'eps' : [0.2, 0.3, 0.5], 'min_samples': [5],  #min_samples 3, 5, 7, 10
+	 #for hdbscan
+	 'min_samples': [5, 10, 15],  #min_samples 5, 10, 15
 
-	 'technique_names' : ['dbscan']}#'baseline', 'knn', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['hdbscan']}#'baseline', 'knn', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	num_classes_to_monitor = [43]# 10, 43
 	is_build_monitors_by_class = False
