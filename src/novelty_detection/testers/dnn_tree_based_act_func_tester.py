@@ -4,7 +4,6 @@ import pickle
 import psutil
 from src.utils import util
 import matplotlib.pyplot as plt
-import hdbscan
 
 
 
@@ -83,14 +82,11 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         arrPred.append(yPred)
         intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
         
-        #yPred_by_monitor = cluster_based_monitor.predict(np.reshape(intermediateValues, (1, -1)))
-        #print("[intermediateValues]", np.shape([intermediateValues]))
-        yPred_by_monitor, strengths = hdbscan.approximate_predict(cluster_based_monitor, [intermediateValues])
-        print("yPred_by_monitor", yPred_by_monitor)
-        #print("strengths", np.shape(strengths))
+        yPred_by_monitor = cluster_based_monitor.predict(np.reshape(intermediateValues, (1, -1)))
+        #print(np.shape(yPred_by_monitor))
         
         if lbl < experiment.classes_to_monitor: # OOD label numbers starts after the ID label numbers
-            if yPred_by_monitor != -1:
+            if yPred_by_monitor == yPred:
                 if yPred != lbl:
                     arrFalseNegative_ID[yPred] += 1 #False negative 
                     #counter_DNN+=1

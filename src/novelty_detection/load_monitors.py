@@ -51,9 +51,18 @@ def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 	return np.array(monitors)
 
 
+def load_tree_based_monitors(dataset_name, technique, PARAMS):
+	monitoring_characteristics = 'dnn_internals'
+	if 'random_forest' == technique:
+		#monitor_name = technique+'_not_optimized'
+		monitor_name = technique+'_optimized'
+		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
+		
+		return np.array([monitor])
+
+
 def load_box_based_monitors(dataset_name, technique, classes_to_monitor, params):
 
-	monitoring_characteristics = 'dnn_internals'
 	monitors = []
 	arr_n_clusters_oob = params['arr_n_clusters']
 	

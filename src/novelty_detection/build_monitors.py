@@ -4,6 +4,7 @@ from src.Classes.monitor import Monitor
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
 from src.novelty_detection.methods import clustered_act_function_monitor
+from src.novelty_detection.methods import tree_based_act_function_monitor
 from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 
@@ -46,33 +47,57 @@ def build_cluster_based_monitor(technique, monitor_name, monitor_folder):
 	return monitor
 
 
-def prepare_cluster_based_monitors(root_path, dataset_name, PARAMS):
-	monitoring_characteristics = 'dnn_internals'
+def build_tree_based_monitor(technique, monitor_name, monitor_folder):
+	monitor = Monitor(monitor_name)
+	monitor.trainer = tree_based_act_function_monitor
+	monitor.method = technique
+	monitor.filename = 'monitor_'+monitor_name+'.p'
+	monitor.monitors_folder = monitor_folder
+
+	return monitor
+
+
+def prepare_tree_based_monitors(technique, monitor_folder, dataset_name, PARAMS):
 	monitors = []
-	technique_names = PARAMS['technique_names']
-	
-	for technique in technique_names:
-		monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
-		monitor_folder += technique +sep
+	if technique  == 'random_forest':
+		use_grid_search = PARAMS['use_grid_search']
+		monitor = None
 
-		if technique  == 'knn':
-			arr_n_clusters = PARAMS['n_clusters']
-			for n_clusters in arr_n_clusters:
-				monitor_name = technique+'_{}_clusters'.format(n_clusters)			
-				monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
-				monitor.n_clusters = n_clusters
+		if use_grid_search:
+			monitor = build_tree_based_monitor(technique, technique+'_optimized', monitor_folder)
+		else:
+			monitor = build_tree_based_monitor(technique, technique+'_not_optimized', monitor_folder)
 
-				monitors.append(monitor)
+		monitor.use_grid_search = use_grid_search
 
-		elif technique == 'hdbscan':
-			arr_min_samples = PARAMS['min_samples']
+		monitors.append(monitor)
 
-			for min_samples in arr_min_samples:
-				monitor_name = technique+'_{}_min_samples'.format(min_samples)
-				monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
-				monitor.min_samples = min_samples
+	elif technique == '':
+		pass
 
-				monitors.append(monitor)
+	return monitors
+
+
+def prepare_cluster_based_monitors(technique, monitor_folder, dataset_name, PARAMS):
+	monitors = []
+	if technique  == 'knn':
+		arr_n_clusters = PARAMS['n_clusters']
+		for n_clusters in arr_n_clusters:
+			monitor_name = technique+'_{}_clusters'.format(n_clusters)			
+			monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
+			monitor.n_clusters = n_clusters
+
+			monitors.append(monitor)
+
+	elif technique == 'hdbscan':
+		arr_min_samples = PARAMS['min_samples']
+
+		for min_samples in arr_min_samples:
+			monitor_name = technique+'_{}_min_samples'.format(min_samples)
+			monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
+			monitor.min_samples = min_samples
+
+			monitors.append(monitor)
 
 	return monitors
 
@@ -138,3 +163,21 @@ def prepare_box_based_monitors(root_path, dataset_name, PARAMS, class_to_monitor
 					monitors.append(monitor)
 
 	return monitors
+
+
+def prepare_monitors(root_path, dataset_name, params):
+	monitoring_characteristics = 'dnn_internals'
+	arr_monitors = []
+	technique_names = params['technique_names']
+	
+	for technique in technique_names:
+		monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
+		monitor_folder += technique +sep
+
+		if technique  == 'knn':
+			monitors = prepare_cluster_based_monitors(technique, monitor_folder, dataset_name, params)
+		elif technique == 'random_forest':
+			monitors = prepare_tree_based_monitors(technique, monitor_folder, dataset_name, params)
+
+		arr_monitors.extend(monitors)
+	return arr_monitors

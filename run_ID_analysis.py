@@ -12,6 +12,8 @@ from src.novelty_detection.evaluators import dnn_knn_act_func_evaluator
 from src.novelty_detection.testers import dnn_knn_act_func_tester
 from src.novelty_detection.evaluators import dnn_dbscan_act_func_evaluator
 from src.novelty_detection.testers import dnn_dbscan_act_func_tester
+from src.novelty_detection.evaluators import dnn_tree_based_act_func_evaluator
+from src.novelty_detection.testers import dnn_tree_based_act_func_tester
 from src.novelty_detection.testers import en_dnn_oob_tester
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
@@ -82,13 +84,13 @@ if __name__ == "__main__":
 	 #for hdbscan
 	 'min_samples': [5],  #min_samples 5, 10, 15
 
-	 'technique_names' : ['hdbscan']}#'baseline', 'knn', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['random_forest']}#'baseline', 'knn', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
-	save_experiments = False
+	save_experiments = True
 	parallel_execution = False
 	repetitions = 1
-	percentage_of_data = 0.1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
@@ -154,6 +156,11 @@ if __name__ == "__main__":
 				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
 				experiment.evaluator = dnn_dbscan_act_func_evaluator
 				experiment.tester = dnn_dbscan_act_func_tester
+
+			elif 'random_forest' == technique:
+				monitors = load_monitors.load_tree_based_monitors(dataset_name, technique, PARAMS)
+				experiment.evaluator = dnn_tree_based_act_func_evaluator
+				experiment.tester = dnn_tree_based_act_func_tester
 
 			experiment.monitors = monitors
 			

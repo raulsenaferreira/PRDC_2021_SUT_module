@@ -91,7 +91,7 @@ if __name__ == "__main__":
 	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
 	 #for hdbscan
 	 'min_samples': [5],  #min_samples 5, 10, 15
-	 'technique_names' : ['knn']}#'baseline', 'knn', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['random_forest']}#'baseline', 'knn', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
 	save_experiments = True
@@ -174,6 +174,11 @@ if __name__ == "__main__":
 				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
 				experiment.evaluator = dnn_dbscan_act_func_evaluator
 				experiment.tester = dnn_dbscan_act_func_tester
+
+			elif 'random_forest' == technique:
+				monitors = load_monitors.load_tree_based_monitors(dataset_name, technique, PARAMS)
+				experiment.evaluator = dnn_tree_based_act_func_evaluator
+				experiment.tester = dnn_tree_based_act_func_tester
 
 			experiment.monitors = monitors
 			
