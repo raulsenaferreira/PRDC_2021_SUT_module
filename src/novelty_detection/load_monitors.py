@@ -61,6 +61,16 @@ def load_tree_based_monitors(dataset_name, technique, PARAMS):
 		return np.array([monitor])
 
 
+def load_linear_based_monitors(dataset_name, technique, PARAMS):
+	monitoring_characteristics = 'dnn_internals'
+	if 'sgd' == technique:
+		#monitor_name = technique+'_not_optimized'
+		monitor_name = technique+'_optimized'
+		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
+		
+		return np.array([monitor])
+
+
 def load_box_based_monitors(dataset_name, technique, classes_to_monitor, params):
 
 	monitors = []

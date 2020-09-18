@@ -374,13 +374,13 @@ if __name__ == '__main__':
 	#names = ['oob_3_cluster','oob_isomap_3_cluster', 'oob_pca_3_cluster',
 	# 'oob_3_cluster_KDE_v2', 'oob_isomap_3_cluster_KDE_v2', 'oob_pca_3_cluster_KDE_v2']
 
-	#experiments = ['PHD-69', 'PHD-70', 'PHD-71', 'PHD-72'] # in distribution experiments using GTSRB dataset
-	#names = ['knn_2_cluster','knn_3_cluster', 'knn_5_cluster', 'knn_10_cluster']
-	title = 'ID=GTSRB; KNN variants'
+	#experiments = ['PHD-69', 'PHD-70', 'PHD-71', 'PHD-72', 'PHD-77'] # in distribution experiments using GTSRB dataset
+	#names = ['knn_2_cluster','knn_3_cluster', 'knn_5_cluster', 'knn_10_cluster', 'Random Forest']
+	#title = 'ID=GTSRB; KNN variants & Random Forest'
 
-	experiments = ['PHD-73', 'PHD-74', 'PHD-75', 'PHD-76'] # out of distribution experiments using 100% of BTSC dataset + 30% GTSRB
-	names = ['knn_2_cluster','knn_3_cluster', 'knn_5_cluster', 'knn_10_cluster']
-	title = 'ID=GTSRB; OOD=BTSC; KNN variants'
+	experiments = ['PHD-73', 'PHD-74', 'PHD-75', 'PHD-76', 'PHD-78'] # out of distribution experiments using 100% of BTSC dataset + 30% GTSRB
+	names = ['knn_2_cluster','knn_3_cluster', 'knn_5_cluster', 'knn_10_cluster', 'Random Forest']
+	title = 'ID=GTSRB; OOD=BTSC; KNN variants & Random Forest'
 
 	visualize_experiments(experiments, names, title, classes_to_monitor)
 

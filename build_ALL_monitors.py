@@ -12,6 +12,7 @@ from timeit import default_timer as timer
 from keras.models import load_model
 
 
+
 def set_tf_loglevel(level):
 	if level >= logging.FATAL:
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -102,10 +103,10 @@ if __name__ == "__main__":
 	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
 	 #for hdbscan
 	 'min_samples': [5, 10, 15],  #min_samples 5, 10, 15
-	 #for random forest
+	 #for random forest and linear classifiers
 	 'use_grid_search' : True, 
 	 #all methods
-	 'technique_names' : ['random_forest']} #'baseline', 'knn', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['sgd']} #'baseline', 'knn', 'random_forest', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	num_classes_to_monitor = [43]# 10, 43
 	is_build_monitors_by_class = False

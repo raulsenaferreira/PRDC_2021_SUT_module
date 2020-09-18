@@ -5,6 +5,7 @@ from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
 from src.novelty_detection.methods import clustered_act_function_monitor
 from src.novelty_detection.methods import tree_based_act_function_monitor
+from src.novelty_detection.methods import linear_based_act_function_monitor
 from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 
@@ -57,6 +58,16 @@ def build_tree_based_monitor(technique, monitor_name, monitor_folder):
 	return monitor
 
 
+def build_linear_based_monitor(technique, monitor_name, monitor_folder):
+	monitor = Monitor(monitor_name)
+	monitor.trainer = linear_based_act_function_monitor
+	monitor.method = technique
+	monitor.filename = 'monitor_'+monitor_name+'.p'
+	monitor.monitors_folder = monitor_folder
+
+	return monitor
+
+
 def prepare_tree_based_monitors(technique, monitor_folder, dataset_name, PARAMS):
 	monitors = []
 	if technique  == 'random_forest':
@@ -67,6 +78,27 @@ def prepare_tree_based_monitors(technique, monitor_folder, dataset_name, PARAMS)
 			monitor = build_tree_based_monitor(technique, technique+'_optimized', monitor_folder)
 		else:
 			monitor = build_tree_based_monitor(technique, technique+'_not_optimized', monitor_folder)
+
+		monitor.use_grid_search = use_grid_search
+
+		monitors.append(monitor)
+
+	elif technique == '':
+		pass
+
+	return monitors
+
+
+def prepare_linear_based_monitors(technique, monitor_folder, dataset_name, PARAMS):
+	monitors = []
+	if technique  == 'sgd':
+		use_grid_search = PARAMS['use_grid_search']
+		monitor = None
+
+		if use_grid_search:
+			monitor = build_linear_based_monitor(technique, technique+'_optimized', monitor_folder)
+		else:
+			monitor = build_linear_based_monitor(technique, technique+'_not_optimized', monitor_folder)
 
 		monitor.use_grid_search = use_grid_search
 
@@ -171,6 +203,7 @@ def prepare_monitors(root_path, dataset_name, params):
 	technique_names = params['technique_names']
 	
 	for technique in technique_names:
+		monitors = None
 		monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
 		monitor_folder += technique +sep
 
@@ -178,6 +211,8 @@ def prepare_monitors(root_path, dataset_name, params):
 			monitors = prepare_cluster_based_monitors(technique, monitor_folder, dataset_name, params)
 		elif technique == 'random_forest':
 			monitors = prepare_tree_based_monitors(technique, monitor_folder, dataset_name, params)
+		elif technique == 'sgd':
+			monitors = prepare_linear_based_monitors(technique, monitor_folder, dataset_name, params)
 
 		arr_monitors.extend(monitors)
 	return arr_monitors

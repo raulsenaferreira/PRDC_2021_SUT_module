@@ -12,6 +12,10 @@ from src.novelty_detection.evaluators import dnn_knn_act_func_evaluator
 from src.novelty_detection.testers import dnn_knn_act_func_tester
 from src.novelty_detection.evaluators import dnn_dbscan_act_func_evaluator
 from src.novelty_detection.testers import dnn_dbscan_act_func_tester
+from src.novelty_detection.evaluators import dnn_tree_based_act_func_evaluator
+from src.novelty_detection.testers import dnn_tree_based_act_func_tester
+from src.novelty_detection.testers import dnn_linear_based_act_func_tester
+from src.novelty_detection.evaluators import dnn_linear_based_act_func_evaluator
 from src.novelty_detection.testers import en_dnn_oob_tester
 from src.novelty_detection.methods import abstraction_box
 from src.novelty_detection.methods import act_func_based_monitor
@@ -179,6 +183,11 @@ if __name__ == "__main__":
 				monitors = load_monitors.load_tree_based_monitors(dataset_name, technique, PARAMS)
 				experiment.evaluator = dnn_tree_based_act_func_evaluator
 				experiment.tester = dnn_tree_based_act_func_tester
+
+			elif 'sgd' == technique:
+				monitors = load_monitors.load_linear_based_monitors(dataset_name, technique, PARAMS)
+				experiment.evaluator = dnn_linear_based_act_func_evaluator
+				experiment.tester = dnn_linear_based_act_func_tester
 
 			experiment.monitors = monitors
 			
