@@ -4,21 +4,15 @@ from src import model_config
 from src.Classes.model_builder import ModelBuilder
 from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
-from src.novelty_detection.evaluators import dnn_oob_evaluator
-from src.novelty_detection.testers import dnn_oob_tester
+from src.novelty_detection.evaluators import ood_monitor_evaluator
 from src.novelty_detection.evaluators import dnn_baseline_evaluator
+from src.novelty_detection.testers import dnn_oob_tester
 from src.novelty_detection.testers import dnn_baseline_tester
-from src.novelty_detection.evaluators import dnn_knn_act_func_evaluator
 from src.novelty_detection.testers import dnn_knn_act_func_tester
-from src.novelty_detection.evaluators import dnn_dbscan_act_func_evaluator
 from src.novelty_detection.testers import dnn_dbscan_act_func_tester
-from src.novelty_detection.evaluators import dnn_tree_based_act_func_evaluator
 from src.novelty_detection.testers import dnn_tree_based_act_func_tester
 from src.novelty_detection.testers import dnn_linear_based_act_func_tester
-from src.novelty_detection.evaluators import dnn_linear_based_act_func_evaluator
 from src.novelty_detection.testers import en_dnn_oob_tester
-from src.novelty_detection.methods import abstraction_box
-from src.novelty_detection.methods import act_func_based_monitor
 from src.utils import util
 from src.utils import metrics
 from pathos.multiprocessing import ProcessingPool as Pool
@@ -30,6 +24,7 @@ from sklearn import manifold
 import pickle
 import numpy as np
 import neptune
+import argparse
 
 
 sep = util.get_separator()
@@ -80,6 +75,11 @@ def unison_shuffled_copies(a, b):
 
 
 if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	parser.add_argument("experiment_type_arg", help="Type of experiment (ID or OOD)")
+	args = parser.parse_args()
+	#print(args.experiment_type_arg)
+	
 	# variables regarding Novelty-Detection runtime-monitoring experiments
 	sub_field = 'novelty_detection'
 
@@ -150,7 +150,7 @@ if __name__ == "__main__":
 		# loading monitors for Novelty Detection
 		for technique in PARAMS['technique_names']:
 			experiment = Experiment(model_name+'_'+dataset_name)
-			experiment.experiment_type = 'OOD'
+			experiment.experiment_type = args.experiment_type_arg #'OOD' or 'ID'
 			experiment.sub_field = sub_field
 			experiment.model = model
 			experiment.classes_to_monitor = classes_to_monitor
@@ -171,26 +171,26 @@ if __name__ == "__main__":
 					experiment.tester = en_dnn_oob_tester
 				else:
 					experiment.tester = dnn_oob_tester
-					experiment.evaluator = dnn_oob_evaluator
+					experiment.evaluator = ood_monitor_evaluator
 
 			elif 'knn' == technique:
 				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = dnn_knn_act_func_evaluator
+				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = dnn_knn_act_func_tester
 
 			elif 'hdbscan' == technique:
 				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = dnn_dbscan_act_func_evaluator
+				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = dnn_dbscan_act_func_tester
 
 			elif 'random_forest' == technique:
 				monitors = load_monitors.load_tree_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = dnn_tree_based_act_func_evaluator
+				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = dnn_tree_based_act_func_tester
 
 			elif 'sgd' == technique:
 				monitors = load_monitors.load_linear_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = dnn_linear_based_act_func_evaluator
+				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = dnn_linear_based_act_func_tester
 
 			experiment.monitors = monitors
@@ -219,6 +219,3 @@ if __name__ == "__main__":
 				print('len(arr_readouts)', len(arr_readouts))
 				save_results(experiment, arr_readouts, plot=False)
 		'''
-
-#print('Class {} with {} monitors on dataset {}'.format(class_to_monitor, len(arr_monitors), dataset_name))
-#cd Users\rsenaferre\Desktop\GITHUB\phd_experiments

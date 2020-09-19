@@ -106,7 +106,7 @@ if __name__ == "__main__":
 	 #for random forest and linear classifiers
 	 'use_grid_search' : True, 
 	 #for knn and sgd classifiers
-	 'use_scaler': True,
+	 'use_scaler': False,
 	 #all methods
 	 'use_alternative_monitor': False, # True = label -> act func; False = label -> act func if label == predicted
 	 'technique_names' : ['sgd']} #'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
