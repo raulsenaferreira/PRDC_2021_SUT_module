@@ -2,11 +2,6 @@ from src import model_config
 from src.Classes.model_builder import ModelBuilder
 from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
-from src.novelty_detection.evaluators import dnn_oob_evaluator
-from src.novelty_detection.testers import dnn_oob_tester
-from src.novelty_detection.testers import en_dnn_oob_tester
-from src.novelty_detection.methods import abstraction_box
-from src.novelty_detection.methods import act_func_based_monitor
 from src.utils import util
 
 
@@ -21,29 +16,6 @@ def load_file_names():
 	f1_file_name = 'f1.csv'
 
 	return [index_file, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name]
-
-
-def load_settings(monitor_acronym, dataset):
-	monitor = None
-	if dataset == 'MNIST':
-		monitor = Monitor('novelty_detection', load_var("e1_d1_mn"))
-	elif dataset == 'GTSRB':
-		monitor = Monitor('novelty_detection', load_var("e1_d2_mn"))
-	
-	if monitor_acronym == 'oob':
-		monitor.trainer = act_func_based_monitor
-		monitor.method = abstraction_box.make_abstraction
-		monitor.n_clusters = 3
-		
-	elif monitor_acronym == 'oob_isomap':
-		monitor.trainer = act_func_based_monitor
-		monitor.method = abstraction_box.make_abstraction
-		monitor.n_clusters = 3
-		monitor.dim_reduc_method = 'isomap'
-		monitor.file_dim_reduc_method = monitor.dim_reduc_method+'_'+dataset
-		monitor.n_components = 2
-
-	return monitor
 
 
 
