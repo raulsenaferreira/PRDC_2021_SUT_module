@@ -4,21 +4,15 @@ from src import model_config
 from src.Classes.model_builder import ModelBuilder
 from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
-from src.novelty_detection.evaluators import dnn_oob_evaluator
-from src.novelty_detection.testers import dnn_oob_tester
+from src.novelty_detection.evaluators import ood_monitor_evaluator
 from src.novelty_detection.evaluators import dnn_baseline_evaluator
+from src.novelty_detection.testers import dnn_oob_tester
 from src.novelty_detection.testers import dnn_baseline_tester
-from src.novelty_detection.evaluators import dnn_knn_act_func_evaluator
 from src.novelty_detection.testers import dnn_knn_act_func_tester
-from src.novelty_detection.evaluators import dnn_dbscan_act_func_evaluator
 from src.novelty_detection.testers import dnn_dbscan_act_func_tester
-from src.novelty_detection.evaluators import dnn_tree_based_act_func_evaluator
-from src.novelty_detection.testers import dnn_linear_based_act_func_tester
-from src.novelty_detection.evaluators import dnn_linear_based_act_func_evaluator
 from src.novelty_detection.testers import dnn_tree_based_act_func_tester
+from src.novelty_detection.testers import dnn_linear_based_act_func_tester
 from src.novelty_detection.testers import en_dnn_oob_tester
-from src.novelty_detection.methods import abstraction_box
-from src.novelty_detection.methods import act_func_based_monitor
 from src.utils import util
 from src.utils import metrics
 from pathos.multiprocessing import ProcessingPool as Pool
@@ -30,6 +24,7 @@ from sklearn import manifold
 import pickle
 import numpy as np
 import neptune
+import argparse
 
 
 sep = util.get_separator()
@@ -73,20 +68,32 @@ def save_results(PARAMS, classes_to_monitor, sub_field, name, technique, arr_rea
 		metrics.plot_pos_neg_rate_stacked_bars(name, arr_readouts, img_folder_path+'all_images.pdf')
 
 
-if __name__ == "__main__":
-	# variables regarding Novelty-Detection runtime-monitoring experiments
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = np.random.permutation(len(a))
+    return a[p], b[p]
+
+
+
+def start(experiment_type_arg):
+	
+	# experiments regarding Novelty-Detection runtime-monitoring experiments
 	sub_field = 'novelty_detection'
+
 	dataset_names = ['GTSRB'] #'MNIST', 'GTSRB'
-	validation_size = 0.3
-	model_names = ['leNet'] #, 'leNet'
 	num_classes_to_monitor = [43] #10, 
+
+	ood_dataset_name = 'BTSC'
+	ood_num_classes_to_monitor = 62
+
+	model_names = ['leNet'] #, 'leNet'
 	
 	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
 	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
 	 #for hdbscan
 	 'min_samples': [5],  #min_samples 5, 10, 15
 	 #for knn and sgd classifiers
-	 'use_scaler': True,
+	 'use_scaler': False,
 	 #for all methods
 	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
 	 'technique_names' : ['sgd']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
@@ -111,9 +118,21 @@ if __name__ == "__main__":
 		arr_monitors =  np.array([])
 		arr_readouts = []
 
-		# loading dataset
+		# loading ID dataset
 		dataset = Dataset(dataset_name)
 		X, y = dataset.load_dataset(mode='test')
+
+		#loading OOD dataset
+		OOD_dataset = Dataset(ood_dataset_name)
+		ood_X, ood_y = OOD_dataset.load_dataset(mode='test_entire_data')
+		ood_y += num_classes_to_monitor #avoiding same class numbers for the two datasets
+
+		#concatenate and shuffling ID and OOD datasets
+		X = np.vstack([X, ood_X])
+		y = np.hstack([y, ood_y])
+		X, y = unison_shuffled_copies(X, y)
+
+		print("Final dataset shape", X.shape, y.shape)
 		
 		# for one that wants speeding up tests using part of data
 		X_limit = int(len(X)*percentage_of_data)
@@ -127,9 +146,8 @@ if __name__ == "__main__":
 		#for class_to_monitor in range(classes_to_monitor):
 		# loading monitors for Novelty Detection
 		for technique in PARAMS['technique_names']:
-			# creating an instance of an experiment
 			experiment = Experiment(model_name+'_'+dataset_name)
-			experiment.experiment_type = 'ID'
+			experiment.experiment_type = experiment_type_arg #'OOD' or 'ID'
 			experiment.sub_field = sub_field
 			experiment.model = model
 			experiment.classes_to_monitor = classes_to_monitor
@@ -150,31 +168,31 @@ if __name__ == "__main__":
 					experiment.tester = en_dnn_oob_tester
 				else:
 					experiment.tester = dnn_oob_tester
-					experiment.evaluator = dnn_oob_evaluator
+					experiment.evaluator = ood_monitor_evaluator
 
 			elif 'knn' == technique:
 				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = dnn_knn_act_func_evaluator
+				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = dnn_knn_act_func_tester
 
 			elif 'hdbscan' == technique:
 				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = dnn_dbscan_act_func_evaluator
+				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = dnn_dbscan_act_func_tester
 
 			elif 'random_forest' == technique:
 				monitors = load_monitors.load_tree_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = dnn_tree_based_act_func_evaluator
+				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = dnn_tree_based_act_func_tester
 
 			elif 'sgd' == technique:
 				monitors = load_monitors.load_linear_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = dnn_linear_based_act_func_evaluator
+				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = dnn_linear_based_act_func_tester
 
 			experiment.monitors = monitors
 			
-			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)
+			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments) 
 			#print('len(arr_readouts)', len(readouts))
 			#arr_readouts.append(readouts)
 		
@@ -198,3 +216,8 @@ if __name__ == "__main__":
 				print('len(arr_readouts)', len(arr_readouts))
 				save_results(experiment, arr_readouts, plot=False)
 		'''
+
+
+
+#if __name__ == "__main__":
+#	start()
