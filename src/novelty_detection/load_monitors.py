@@ -27,8 +27,8 @@ def create_monitor(technique, dataset_name, monitor_name, monitoring_characteris
 	else:
 		monitor.filename = 'monitor_'+monitor_name+'.p'
 
-	if PARAMS['use_scaler']:
-		monitor.filename = '(scaled_input_version)'+monitor.filename
+	#if PARAMS['use_scaler']:
+	#	monitor.filename = '(scaled_input_version)'+monitor.filename
 
 	monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
 	monitor.use_scaler = PARAMS['use_scaler']
@@ -59,7 +59,7 @@ def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 			monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
 			monitor.min_samples = min_samples
 			monitor.use_scaler = PARAMS['use_scaler']
-			
+
 			monitors.append(monitor)
 
 	return np.array(monitors)

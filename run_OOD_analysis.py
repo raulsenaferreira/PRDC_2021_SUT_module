@@ -99,7 +99,7 @@ if __name__ == "__main__":
 	 'use_scaler': True,
 	 #for all methods
 	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
-	 'technique_names' : ['random_forest']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['sgd']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
 	save_experiments = True
