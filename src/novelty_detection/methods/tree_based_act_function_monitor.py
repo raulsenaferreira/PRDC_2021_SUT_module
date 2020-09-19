@@ -69,18 +69,26 @@ def run(monitor, model, X, y, save):
         rfc=RandomForestClassifier(random_state=42)
 
         if optimize_parameters:
+            text_best_params = None
+
             param_grid = { 
                 'n_estimators': [100, 200],
                 'max_features': ['sqrt', 'log2'],
                 'criterion' :['gini', 'entropy']
             }
+
             CV_rfc = GridSearchCV(estimator=rfc, param_grid=param_grid, cv= 5)
             CV_rfc.fit(arrWeights, np.ravel(arrLabels))
             trained_monitor = CV_rfc.best_estimator_
 
-            file1 = open(monitor.monitors_folder+"best_params.txt","w")#write mode 
-            file1.write(str(CV_rfc.best_params_)) 
-            file1.close()
+            if monitor.use_alternative_monitor:
+                text_best_params = "best_params_2.txt"
+            else:
+                text_best_params = "best_params.txt"
+
+            file = open(monitor.monitors_folder+text_best_params,"w")#write mode 
+            file.write(str(CV_rfc.best_params_)) 
+            file.close()
 
         else:
             trained_monitor = rfc.fit(arrWeights, np.ravel(arrLabels))

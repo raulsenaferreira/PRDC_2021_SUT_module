@@ -1,17 +1,18 @@
 import os
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import matthews_corrcoef
-from sklearn.metrics import precision_score
-from sklearn.metrics import recall_score
-from sklearn.metrics import f1_score
 from math import sqrt
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_pdf import PdfPages
-from sklearn.metrics import roc_auc_score
 from src.utils import util
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_auc_score
 
 
 sep = util.get_separator()
@@ -172,8 +173,6 @@ def plot_statistics(title, tn, tp, fp, fn):
 	total_instances = tn + tp + fp + fn
 	#print("total instances = ", total_instances)
 
-	tnr = tn/(tn+fp)
-	tpr = tp/(tp+fn)
 	#print("TNR @ TPR 95% =", )
 
 	print("monitors accuracy =",(tn+tp)/(tn+tp+fp+fn))
@@ -187,11 +186,30 @@ def plot_statistics(title, tn, tp, fp, fn):
 	confidence_score = 1.96 * math.sqrt((error * (1 - error)) / total_instances) # Wilson score with 95% confidence interval (1.96)
 	print("confidence interval = [{}, {}]".format(error-confidence_score, error+confidence_score)) 
 
+	tnr = tn/(tn+fp) # specificity
+	print("monitors specificity =", tnr)
+
 	precision = tp/(tp+fp)
 	print("monitors precision =", precision)
 
-	recall = tp/(tp+fn)
+	recall = tp/(tp+fn) # sensitivity or TPR
 	print("monitors recall =", recall)
 
 	F1 = 2 * (precision * recall) / (precision + recall)
 	print("monitors F1 score =", F1)
+
+
+def AUROC(CF_ID, CF_OOD):
+	pass
+
+
+def ROC_curve():
+	pass
+
+
+def tnr_at_tpr():
+	pass
+
+
+def save_statistics():
+	pass

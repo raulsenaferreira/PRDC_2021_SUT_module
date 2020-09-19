@@ -85,8 +85,11 @@ if __name__ == "__main__":
 	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
 	 #for hdbscan
 	 'min_samples': [5],  #min_samples 5, 10, 15
-	 'use_alternative_monitor': True,
-	 'technique_names' : ['random_forest']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 #for knn and sgd classifiers
+	 'use_scaler': True,
+	 #for all methods
+	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
+	 'technique_names' : ['sgd']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# other settings
 	save_experiments = True

@@ -53,8 +53,9 @@ def build_monitor_2(model, X, y, layer_index):
 
 
 def run(monitor, model, X, y, save):
+    text_best_params = "best_params"
     arrWeights, arrLabels = None, None
-    
+    scaler = None
     trained_monitor = None
     layer_index = monitor.layer_index
 
@@ -65,9 +66,19 @@ def run(monitor, model, X, y, save):
         arrWeights, arrLabels = build_monitor(model, X, y, layer_index)
     #print("arrLabels:", np.shape(arrLabels))
     if monitor.use_scaler:
-        arrWeights = StandardScaler().fit_transform(arrWeights)
+        scaler = StandardScaler().fit(arrWeights)
+        scaler_file = monitor.monitors_folder+'saved_scaler_'+monitor.filename
+
+        print("Saving standard scaler object in", scaler_file)
+        os.makedirs(monitor.monitors_folder, exist_ok=True)
+        pickle.dump(scaler, open( scaler_file, "wb" ))
+
+        arrWeights = scaler.transform(arrWeights)
+        monitor.filename = '(scaled_input_version)'+monitor.filename
+        text_best_params = '(scaled_input_version)'+text_best_params
 
     if monitor.method == "sgd":
+
         sgdc=SGDClassifier(random_state=42)
 
         if monitor.use_grid_search:
@@ -82,9 +93,14 @@ def run(monitor, model, X, y, save):
             CV_sgdc.fit(arrWeights, np.ravel(arrLabels))
             trained_monitor = CV_sgdc.best_estimator_
 
-            file1 = open(monitor.monitors_folder+"best_params.txt","w")#write mode 
-            file1.write(str(CV_sgdc.best_params_)) 
-            file1.close()             
+            if monitor.use_alternative_monitor:
+                text_best_params += "_2.txt"
+            else:
+                text_best_params += ".txt"
+
+            file = open(monitor.monitors_folder+text_best_params,"w")#write mode 
+            file.write(str(CV_sgdc.best_params_)) 
+            file.close()             
 
         else:
             trained_monitor = sgdc.fit(arrWeights, np.ravel(arrLabels))

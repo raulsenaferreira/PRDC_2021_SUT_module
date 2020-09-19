@@ -70,7 +70,14 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
     missclassified_images_DNN = []
     missclassified_image_labels_DNN = []
 
-    # loading cluster-baed monitor
+    # if you want to scale act func values 
+    scaler = None
+    if monitor.use_scaler:
+        monitor.filename = '(scaled_input_version)'+monitor.filename
+        scaler_file = monitor.monitors_folder+'saved_scaler_'+monitor.filename
+        scaler = pickle.load(open(monitor_path, "rb"))
+
+    # loading cluster-based monitor
     monitor_path = monitor.monitors_folder +sep+ monitor.filename
     cluster_based_monitor = pickle.load(open(monitor_path, "rb"))
 
@@ -81,6 +88,10 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         yPred = np.argmax(model.predict(img))
         arrPred.append(yPred)
         intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
+
+        # if you want to scale act func values
+        if scaler != None:
+            intermediateValues = scaler.transform(intermediateValues)
         
         yPred_by_monitor = cluster_based_monitor.predict(np.reshape(intermediateValues, (1, -1)))
         #print(np.shape(yPred_by_monitor))

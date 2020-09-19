@@ -53,6 +53,7 @@ def build_monitor_2(model, X, y, layer_index):
 
 def run(monitor, model, X, y, save):
     trained_monitor = None
+    scaler = None
     layer_index = monitor.layer_index
 
     #building monitor with training set
@@ -60,7 +61,15 @@ def run(monitor, model, X, y, save):
     #print("arrWeights:", np.shape(arrWeights))
     #print("arrLabels:", np.shape(arrLabels))
     if monitor.use_scaler:
-        arrWeights = StandardScaler().fit_transform(arrWeights)
+        scaler = StandardScaler().fit(arrWeights)
+        scaler_file = monitor.monitors_folder+'saved_scaler_'+monitor.filename
+        
+        print("Saving standard scaler object in", scaler_file)
+        os.makedirs(monitor.monitors_folder, exist_ok=True)
+        pickle.dump(scaler, open( scaler_file, "wb" ))
+
+        arrWeights = scaler.transform(arrWeights)
+        monitor.filename = '(scaled_input_version)'+monitor.filename
 
     if monitor.method == "knn":
         if monitor.use_alternative_monitor:
@@ -74,6 +83,7 @@ def run(monitor, model, X, y, save):
         trained_monitor = hdbscan.HDBSCAN(min_cluster_size=monitor.min_samples, prediction_data=True).fit(arrWeights)
 
     file_path = None
+
     if monitor.use_alternative_monitor:
         file_path = monitor.monitors_folder+monitor.filename+'_2'
     else:

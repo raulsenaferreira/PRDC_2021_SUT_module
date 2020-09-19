@@ -108,8 +108,8 @@ if __name__ == "__main__":
 	 #for knn and sgd classifiers
 	 'use_scaler': True,
 	 #all methods
-	 'use_alternative_monitor': True,
-	 'technique_names' : ['random_forest']} #'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'use_alternative_monitor': False, # True = label -> act func; False = label -> act func if label == predicted
+	 'technique_names' : ['sgd']} #'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	num_classes_to_monitor = [43]# 10, 43
 	is_build_monitors_by_class = False

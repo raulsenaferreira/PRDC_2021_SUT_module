@@ -382,13 +382,23 @@ if __name__ == '__main__':
 	#names = ['knn_2_cluster','knn_3_cluster', 'knn_5_cluster', 'knn_10_cluster', 'Random Forest', 'SGD']
 	#title = 'ID=GTSRB; OOD=BTSC; KNN variants & Random Forest & SGD'
 
-	experiments = ['PHD-82', 'PHD-86'] # in distribution experiments using GTSRB dataset
-	names = ['SGD v2','Random Forest v2']
-	title = 'ID=GTSRB; KNN variants & Random Forest & SGD'
+	#experiments = ['PHD-82', 'PHD-86'] # in distribution experiments using GTSRB dataset
+	#names = ['SGD v2','Random Forest v2']
+	#title = 'ID=GTSRB; KNN variants & Random Forest & SGD'
 
 	#experiments = ['PHD-83', 'PHD-87'] # out of distribution experiments using 100% of BTSC dataset + 30% GTSRB
 	#names = ['SGD v2','Random Forest v2']
 	#title = 'ID=GTSRB; OOD=BTSC; KNN variants & Random Forest & SGD'
+
+	experiments = ['PHD-79', 'PHD-88'] #in distribution 
+	names = ['SGD','scaled SGD']
+	title = 'ID=GTSRB; SGD'
+
+	visualize_experiments(experiments, names, title, classes_to_monitor)
+
+	experiments = ['PHD-81', 'PHD-89'] # out of distribution
+	names = ['SGD','scaled SGD']
+	title = 'ID=GTSRB; OOD=BTSC; SGD'
 
 	visualize_experiments(experiments, names, title, classes_to_monitor)
 

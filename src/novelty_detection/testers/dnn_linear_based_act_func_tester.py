@@ -70,6 +70,13 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
     missclassified_images_DNN = []
     missclassified_image_labels_DNN = []
 
+    # if you want to scale act func values 
+    scaler = None
+    if monitor.use_scaler:
+        scaler_file = monitor.monitors_folder+'saved_scaler_'+monitor.filename
+        scaler = pickle.load(open(scaler_file, "rb"))
+        monitor.filename = '(scaled_input_version)'+monitor.filename
+
     # loading cluster-baed monitor
     monitor_path = monitor.monitors_folder +sep+ monitor.filename
     linear_based_monitor = pickle.load(open(monitor_path, "rb"))
@@ -81,8 +88,14 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         yPred = np.argmax(model.predict(img))
         arrPred.append(yPred)
         intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
+
+        intermediateValues = np.reshape(intermediateValues, (1, -1))
+
+        # if you want to scale act func values
+        if scaler != None:
+            intermediateValues = scaler.transform(intermediateValues)
         
-        yPred_by_monitor = linear_based_monitor.predict(np.reshape(intermediateValues, (1, -1)))
+        yPred_by_monitor = linear_based_monitor.predict(intermediateValues)
         #print(np.shape(yPred_by_monitor))
         
         if lbl < experiment.classes_to_monitor: # OOD label numbers starts after the ID label numbers

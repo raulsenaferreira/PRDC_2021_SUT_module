@@ -13,7 +13,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 root_path = dir_path+sep+'bin'+sep+'monitors'
 
 
-def create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, use_alternative_monitor=False):
+def create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS):
 	monitor = Monitor(monitor_name)
 
 	# for class_to_monitor in range(classes_to_monitor):
@@ -22,10 +22,16 @@ def create_monitor(technique, dataset_name, monitor_name, monitoring_characteris
 	monitor_folder += technique +sep
 	monitor.monitors_folder = monitor_folder
 	
-	if use_alternative_monitor:
+	if PARAMS['use_alternative_monitor']:
 		monitor.filename = 'monitor_'+monitor_name+'.p_2'
 	else:
 		monitor.filename = 'monitor_'+monitor_name+'.p'
+
+	if PARAMS['use_scaler']:
+		monitor.filename = '(scaled_input_version)'+monitor.filename
+
+	monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
+	monitor.use_scaler = PARAMS['use_scaler']
 
 	return monitor
 
@@ -41,6 +47,8 @@ def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 			monitor_name = technique+'_{}_clusters'.format(n_clusters)
 			monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
 			monitor.n_clusters = n_clusters
+			monitor.use_scaler = PARAMS['use_scaler']
+
 			monitors.append(monitor)
 
 	elif 'hdbscan' == technique:
@@ -50,6 +58,8 @@ def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 			monitor_name = technique+'_{}_min_samples'.format(min_samples)
 			monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
 			monitor.min_samples = min_samples
+			monitor.use_scaler = PARAMS['use_scaler']
+			
 			monitors.append(monitor)
 
 	return np.array(monitors)
@@ -57,22 +67,22 @@ def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 
 def load_tree_based_monitors(dataset_name, technique, PARAMS):
 	monitoring_characteristics = 'dnn_internals'
-	use_alternative_monitor = PARAMS['use_alternative_monitor']
+	
 	if 'random_forest' == technique:
 		#monitor_name = technique+'_not_optimized'
 		monitor_name = technique+'_optimized'
-		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, use_alternative_monitor)
+		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
 		
 		return np.array([monitor])
 
 
 def load_linear_based_monitors(dataset_name, technique, PARAMS):
 	monitoring_characteristics = 'dnn_internals'
-	use_alternative_monitor = PARAMS['use_alternative_monitor']
+	
 	if 'sgd' == technique:
 		#monitor_name = technique+'_not_optimized'
 		monitor_name = technique+'_optimized'
-		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, use_alternative_monitor)
+		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
 		
 		return np.array([monitor])
 
