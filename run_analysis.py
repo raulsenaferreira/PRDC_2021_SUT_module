@@ -1,6 +1,7 @@
 import os
 import run_ND_analysis as nd
 from src.utils import util
+import argparse
 
 
 sep = util.get_separator()
@@ -17,4 +18,4 @@ if __name__ == "__main__":
 	print('Starting {} experiments on {} data...'.format(args.sub_field_arg, args.experiment_type_arg))
 
 	if args.sub_field_arg == 'novelty_detection':
-		nd.start(experiment_type_arg)
+		nd.start(args.experiment_type_arg)
