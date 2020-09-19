@@ -80,6 +80,8 @@ def prepare_tree_based_monitors(technique, monitor_folder, dataset_name, PARAMS)
 			monitor = build_tree_based_monitor(technique, technique+'_not_optimized', monitor_folder)
 
 		monitor.use_grid_search = use_grid_search
+		monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
+		monitor.use_scaler = PARAMS['use_scaler']
 
 		monitors.append(monitor)
 
@@ -93,6 +95,7 @@ def prepare_linear_based_monitors(technique, monitor_folder, dataset_name, PARAM
 	monitors = []
 	if technique  == 'sgd':
 		use_grid_search = PARAMS['use_grid_search']
+
 		monitor = None
 
 		if use_grid_search:
@@ -101,6 +104,8 @@ def prepare_linear_based_monitors(technique, monitor_folder, dataset_name, PARAM
 			monitor = build_linear_based_monitor(technique, technique+'_not_optimized', monitor_folder)
 
 		monitor.use_grid_search = use_grid_search
+		monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
+		monitor.use_scaler = PARAMS['use_scaler']
 
 		monitors.append(monitor)
 
@@ -113,11 +118,14 @@ def prepare_linear_based_monitors(technique, monitor_folder, dataset_name, PARAM
 def prepare_cluster_based_monitors(technique, monitor_folder, dataset_name, PARAMS):
 	monitors = []
 	if technique  == 'knn':
-		arr_n_clusters = PARAMS['n_clusters']
+		arr_n_clusters = PARAMS['arr_n_clusters']
 		for n_clusters in arr_n_clusters:
 			monitor_name = technique+'_{}_clusters'.format(n_clusters)			
 			monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
 			monitor.n_clusters = n_clusters
+
+			monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
+			monitor.use_scaler = PARAMS['use_scaler']
 
 			monitors.append(monitor)
 

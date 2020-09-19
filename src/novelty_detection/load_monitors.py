@@ -13,7 +13,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 root_path = dir_path+sep+'bin'+sep+'monitors'
 
 
-def create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics):
+def create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, use_alternative_monitor=False):
 	monitor = Monitor(monitor_name)
 
 	# for class_to_monitor in range(classes_to_monitor):
@@ -21,7 +21,11 @@ def create_monitor(technique, dataset_name, monitor_name, monitoring_characteris
 	# monitor_folder += technique +sep+ 'class_'+str(class_to_monitor) +sep
 	monitor_folder += technique +sep
 	monitor.monitors_folder = monitor_folder
-	monitor.filename = 'monitor_'+monitor_name+'.p'
+	
+	if use_alternative_monitor:
+		monitor.filename = 'monitor_'+monitor_name+'.p_2'
+	else:
+		monitor.filename = 'monitor_'+monitor_name+'.p'
 
 	return monitor
 
@@ -53,20 +57,22 @@ def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 
 def load_tree_based_monitors(dataset_name, technique, PARAMS):
 	monitoring_characteristics = 'dnn_internals'
+	use_alternative_monitor = PARAMS['use_alternative_monitor']
 	if 'random_forest' == technique:
 		#monitor_name = technique+'_not_optimized'
 		monitor_name = technique+'_optimized'
-		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
+		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, use_alternative_monitor)
 		
 		return np.array([monitor])
 
 
 def load_linear_based_monitors(dataset_name, technique, PARAMS):
 	monitoring_characteristics = 'dnn_internals'
+	use_alternative_monitor = PARAMS['use_alternative_monitor']
 	if 'sgd' == technique:
 		#monitor_name = technique+'_not_optimized'
 		monitor_name = technique+'_optimized'
-		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
+		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, use_alternative_monitor)
 		
 		return np.array([monitor])
 

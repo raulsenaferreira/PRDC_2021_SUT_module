@@ -105,8 +105,11 @@ if __name__ == "__main__":
 	 'min_samples': [5, 10, 15],  #min_samples 5, 10, 15
 	 #for random forest and linear classifiers
 	 'use_grid_search' : True, 
+	 #for knn and sgd classifiers
+	 'use_scaler': True,
 	 #all methods
-	 'technique_names' : ['sgd']} #'baseline', 'knn', 'random_forest', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'use_alternative_monitor': True,
+	 'technique_names' : ['random_forest']} #'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	num_classes_to_monitor = [43]# 10, 43
 	is_build_monitors_by_class = False
