@@ -390,15 +390,13 @@ if __name__ == '__main__':
 	#names = ['SGD v2','Random Forest v2']
 	#title = 'ID=GTSRB; OOD=BTSC; KNN variants & Random Forest & SGD'
 
-	experiments = ['PHD-79', 'PHD-92', 'PHD-90'] #in distribution 
-	names = ['SGD','not scaled SGD','scaled SGD']
-	title = 'ID=GTSRB; SGD'
+	#experiments = ['PHD-79', 'PHD-92', 'PHD-90'] #in distribution 
+	#names = ['SGD (scale train/ not scale test)','not scaled SGD','scaled SGD']
+	#title = 'ID=GTSRB; SGD'
 
-	visualize_experiments(experiments, names, title, classes_to_monitor)
-
-	experiments = ['PHD-81', 'PHD-93', 'PHD-91'] # out of distribution
-	names = ['SGD','not scaled SGD','scaled SGD']
-	title = 'ID=GTSRB; OOD=BTSC; SGD'
+	#experiments = ['PHD-81', 'PHD-93', 'PHD-91'] # out of distribution
+	#names = ['SGD (scale train/ not scale test)','not scaled SGD','scaled SGD']
+	#title = 'ID=GTSRB; OOD=BTSC; SGD'
 
 	visualize_experiments(experiments, names, title, classes_to_monitor)
 
