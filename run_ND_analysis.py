@@ -75,7 +75,7 @@ def unison_shuffled_copies(a, b):
 
 
 
-def start(experiment_type_arg):
+def start(experiment_type_arg, save_experiments, parallel_execution, repetitions, percentage_of_data):
 	
 	# experiments regarding Novelty-Detection runtime-monitoring experiments
 	sub_field = 'novelty_detection'
@@ -94,15 +94,10 @@ def start(experiment_type_arg):
 	 'min_samples': [5],  #min_samples 5, 10, 15
 	 #for knn and sgd classifiers
 	 'use_scaler': False,
+	 'OOD_approach': 'equality',
 	 #for all methods
 	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
 	 'technique_names' : ['sgd']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
-
-	# other settings
-	save_experiments = True
-	parallel_execution = False
-	repetitions = 1
-	percentage_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
@@ -193,31 +188,6 @@ def start(experiment_type_arg):
 			experiment.monitors = monitors
 			
 			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments) 
-			#print('len(arr_readouts)', len(readouts))
-			#arr_readouts.append(readouts)
-		
-			#save_results(PARAMS, classes_to_monitor, experiment.sub_field, experiment.name, technique, arr_readouts, plot=False)
-
-		'''
-		if  parallel_execution:
-			processes_pool.append(pool.apipe(experiment.evaluator.evaluate, repetitions, experiment))
-		else:
-			processes_pool.append(experiment)
-
-		if parallel_execution:
-			timeout = 60 * len(experiment.monitors)
-			print("\nMax seconds to run each experiment:", timeout)
-
-			for process in processes_pool:
-				arr_readouts = process.get(timeout=timeout)	
-		else:
-			for experiment in processes_pool:
-				arr_readouts = experiment.evaluator.evaluate(repetitions, experiment) 
-				print('len(arr_readouts)', len(arr_readouts))
-				save_results(experiment, arr_readouts, plot=False)
-		'''
-
-
 
 #if __name__ == "__main__":
 #	start()

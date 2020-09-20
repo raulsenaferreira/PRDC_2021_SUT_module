@@ -60,10 +60,10 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 	
 		for class_to_monitor in range(experiment.classes_to_monitor):
 			# ID
-			arr_cf_ID[class_to_monitor][0].append(arrFP_ID[class_to_monitor])
-			arr_cf_ID[class_to_monitor][1].append(arrFN_ID[class_to_monitor])
-			arr_cf_ID[class_to_monitor][2].append(arrTP_ID[class_to_monitor])
-			arr_cf_ID[class_to_monitor][3].append(arrTN_ID[class_to_monitor])
+			arr_cf_ID[class_to_monitor][0].append(len(arrFP_ID[class_to_monitor]))
+			arr_cf_ID[class_to_monitor][1].append(len(arrFN_ID[class_to_monitor]))
+			arr_cf_ID[class_to_monitor][2].append(len(arrTP_ID[class_to_monitor]))
+			arr_cf_ID[class_to_monitor][3].append(len(arrTN_ID[class_to_monitor]))
 
 			if experiment_type == 'OOD':
 				# OOD

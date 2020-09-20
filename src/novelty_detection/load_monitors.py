@@ -83,6 +83,7 @@ def load_linear_based_monitors(dataset_name, technique, PARAMS):
 		#monitor_name = technique+'_not_optimized'
 		monitor_name = technique+'_optimized'
 		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
+		monitor.OOD_approach = PARAMS['OOD_approach']
 		
 		return np.array([monitor])
 
