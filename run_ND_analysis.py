@@ -54,14 +54,14 @@ def set_tf_loglevel(level):
     logging.getLogger('tensorflow').setLevel(level)
 
 
-def save_results(PARAMS, classes_to_monitor, sub_field, name, technique, arr_readouts, plot=False):
+def save_results(PARAMS, classes_to_monitor_ID, sub_field, name, technique, arr_readouts, plot=False):
 	print("saving experiments", name)
 	filenames = config_ND.load_file_names()
 	csvs_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'csv'+sep+sub_field+sep+name+sep+'_'+technique+sep
 	img_folder_path = 'src'+sep+'tests'+sep+'results'+sep+'img'+sep+sub_field+sep+name+sep+'_'+technique+sep
 
 	#metrics.save_results(arr_readouts, csvs_folder_path, filenames, ',')
-	metrics.save_results_in_neptune(PARAMS, arr_readouts, classes_to_monitor)
+	metrics.save_results_in_neptune(PARAMS, arr_readouts, classes_to_monitor_ID)
 	
 	if plot:
 		os.makedirs(img_folder_path, exist_ok=True)
@@ -81,7 +81,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 	sub_field = 'novelty_detection'
 
 	dataset_names = ['GTSRB'] #'MNIST', 'GTSRB'
-	num_classes_to_monitor = [43] #10, 
+	arr_classes_to_monitor_ID = [43] #10, 
 
 	ood_dataset_name = 'BTSC'
 	ood_num_classes_to_monitor = 62
@@ -109,7 +109,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 		neptune.init('raulsenaferreira/PhD')
 
 	## loading experiments
-	for model_name, dataset_name, classes_to_monitor in zip(model_names, dataset_names, num_classes_to_monitor):
+	for model_name, dataset_name, classes_to_monitor_ID in zip(model_names, dataset_names, arr_classes_to_monitor_ID):
 		arr_monitors =  np.array([])
 		arr_readouts = []
 
@@ -120,7 +120,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 		#loading OOD dataset
 		OOD_dataset = Dataset(ood_dataset_name)
 		ood_X, ood_y = OOD_dataset.load_dataset(mode='test_entire_data')
-		ood_y += num_classes_to_monitor #avoiding same class numbers for the two datasets
+		ood_y += classes_to_monitor_ID #avoiding same class numbers for the two datasets
 
 		#concatenate and shuffling ID and OOD datasets
 		X = np.vstack([X, ood_X])
@@ -145,7 +145,8 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 			experiment.experiment_type = experiment_type_arg #'OOD' or 'ID'
 			experiment.sub_field = sub_field
 			experiment.model = model
-			experiment.classes_to_monitor = classes_to_monitor
+			experiment.classes_to_monitor_ID = classes_to_monitor_ID
+			experiment.classes_to_monitor_OOD = ood_num_classes_to_monitor
 			experiment.dataset = dataset
 
 			monitors = None
@@ -155,7 +156,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 				experiment.tester = dnn_baseline_tester
 
 			elif 'oob' in technique:
-				monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor, PARAMS)
+				monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor_ID, PARAMS)
 
 				## diferent evaluator and tester, if ensemble or standalone model
 				if 'ensemble' in model_name:

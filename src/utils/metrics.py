@@ -197,24 +197,27 @@ def plot_statistics(title, tn, tp, fp, fn):
 
 	F1 = 2 * (precision * recall) / (precision + recall)
 	print("monitors F1 score =", F1)
+	
+
+def AUROC_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD):
+	fpr_id, tpr_id, _ = roc_curve(y_test_ID, y_score_ID)
+	fpr_ood, tpr_ood, _ = roc_curve(y_test_OOD, y_score_OOD)
+
+	return fpr_id, tpr_ood
 
 
-def AUROC(CF_ID, CF_OOD):
-	pass
+def plot_ROC_curve_ID_OOD(fpr_id, tpr_ood):
+	roc_auc = auc(fpr_id, tpr_ood)
 
-
-def ROC_curve(y_test, y_score):
-	fpr, tpr, _ = roc_curve(y_test, y_score)
-	roc_auc = auc(fpr, tpr)
 	plt.figure()
 	lw = 2
-	plt.plot(fpr, tpr, color='darkorange',
+	plt.plot(fpr_id, tpr_ood, color='darkorange',
 	         lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
 	plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
 	plt.xlim([0.0, 1.0])
 	plt.ylim([0.0, 1.05])
-	plt.xlabel('False Positive Rate')
-	plt.ylabel('True Positive Rate')
+	plt.xlabel('False Positive Rate ID')
+	plt.ylabel('True Positive Rate OOD')
 	plt.title('Receiver operating characteristic example')
 	plt.legend(loc="lower right")
 	plt.show()

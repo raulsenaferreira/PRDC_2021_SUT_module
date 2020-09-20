@@ -29,6 +29,9 @@ def plot_images(title, data, labels, similarities, num_row, num_col):
 
 def run(X_test, y_test, experiment, monitor, dataset_name):
     arrPred = []
+    monitor.arr_pred_monitor_ID, monitor.arr_lbl_monitor_ID = [], []
+    monitor.arr_pred_monitor_OOD, monitor.arr_lbl_monitor_OOD = [], []
+
     monitor.arrFalseNegative_ID = {}
     monitor.arrTrueNegative_ID = {}
     monitor.arrFalsePositive_ID = {}
@@ -42,15 +45,17 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
     loading_percentage = 0.1
     loaded = int(loading_percentage*len(y_test))
 
-    for class_to_monitor in range(experiment.classes_to_monitor):
+    for class_to_monitor in range(experiment.classes_to_monitor_ID):
         # ID
         monitor.arrFalseNegative_ID.update({class_to_monitor: []})
         monitor.arrTrueNegative_ID.update({class_to_monitor: []})
         monitor.arrFalsePositive_ID.update({class_to_monitor: []})
         monitor.arrTruePositive_ID.update({class_to_monitor: []})
+
+    for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
         # OOD
-        monitor.arrFalseNegative_OOD.update({class_to_monitor: []})
-        monitor.arrTruePositive_OOD.update({class_to_monitor: []})
+        monitor.arrFalseNegative_OOD.update({class_OOD: []})
+        monitor.arrTruePositive_OOD.update({class_OOD: []})
     
     model = experiment.model
 
@@ -78,10 +83,13 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
         intermediateValues = np.reshape(intermediateValues, (1, -1))
         
-        monitor = safety_approaches.safety_monitor_decision(monitor, yPred, lbl, experiment.classes_to_monitor,
+        monitor = safety_approaches.safety_monitor_decision(monitor, yPred, lbl, experiment.classes_to_monitor_ID,
          intermediateValues, scaler, linear_based_monitor)           
 
     memory = process.memory_info().rss / 1024 / 1024
 
-    return arrPred, y_test, memory, monitor.arrFalsePositive_ID,\
-     monitor.arrFalseNegative_ID, monitor.arrTruePositive_ID, monitor.arrTrueNegative_ID, monitor.arrFalseNegative_OOD, monitor.arrTruePositive_OOD
+    
+    return arrPred, y_test, monitor.arr_pred_monitor_ID, monitor.arr_lbl_monitor_ID,\
+     monitor.arr_pred_monitor_OOD, monitor.arr_lbl_monitor_OOD, memory, monitor.arrFalsePositive_ID, \
+     monitor.arrFalseNegative_ID, monitor.arrTruePositive_ID, monitor.arrTrueNegative_ID, \
+     monitor.arrFalseNegative_OOD, monitor.arrTruePositive_OOD
