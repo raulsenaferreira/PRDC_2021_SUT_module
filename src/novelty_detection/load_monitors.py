@@ -8,9 +8,11 @@ import pickle
 import numpy as np
 
 
+
 sep = util.get_separator()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 root_path = dir_path+sep+'bin'+sep+'monitors'
+monitoring_characteristics = 'dnn_internals'
 
 
 def create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS):
@@ -37,7 +39,7 @@ def create_monitor(technique, dataset_name, monitor_name, monitoring_characteris
 
 
 def load_cluster_based_monitors(dataset_name, technique, PARAMS):
-	monitoring_characteristics = 'dnn_internals'
+
 	monitors = []
 
 	if 'knn' == technique:
@@ -51,22 +53,10 @@ def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 
 			monitors.append(monitor)
 
-	elif 'hdbscan' == technique:
-		arr_min_samples = PARAMS['min_samples']
-
-		for min_samples in arr_min_samples:
-			monitor_name = technique+'_{}_min_samples'.format(min_samples)
-			monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics)
-			monitor.min_samples = min_samples
-			monitor.use_scaler = PARAMS['use_scaler']
-
-			monitors.append(monitor)
-
 	return np.array(monitors)
 
 
 def load_tree_based_monitors(dataset_name, technique, PARAMS):
-	monitoring_characteristics = 'dnn_internals'
 	
 	if 'random_forest' == technique:
 		#monitor_name = technique+'_not_optimized'
@@ -77,14 +67,24 @@ def load_tree_based_monitors(dataset_name, technique, PARAMS):
 
 
 def load_linear_based_monitors(dataset_name, technique, PARAMS):
-	monitoring_characteristics = 'dnn_internals'
 	
 	if 'sgd' == technique:
 		#monitor_name = technique+'_not_optimized'
 		monitor_name = technique+'_optimized'
 		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
 		monitor.OOD_approach = PARAMS['OOD_approach']
-		
+
+		return np.array([monitor])
+
+
+def load_svm_based_monitors(dataset_name, technique, PARAMS):
+	
+	if 'ocsvm' == technique:
+		#monitor_name = technique+'_not_optimized'
+		monitor_name = technique+'_optimized'
+		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
+		monitor.OOD_approach = 'outlier' # only possible using the outlier approach
+
 		return np.array([monitor])
 
 

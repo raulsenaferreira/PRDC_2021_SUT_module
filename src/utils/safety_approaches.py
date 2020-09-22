@@ -21,6 +21,17 @@ def is_pred_neg(yPred, intermediateValues, loaded_monitor):
     return False
 
 
+def map_btsc_gtsrb(y_gtsrb, y_btsc):
+    # BTSC and GTSRB have 18 classes in common
+    GTSRB_to_BTSC = {14:21, 22:0, 19:3, 20:4, 21:5, 25:10, 28:7, 26:11, 18:13,\
+    24:16, 11:17, 13:19, 17:22, 15:28, 4:32, 35:34, 36:36, 12:61}
+
+    if GTSRB_to_BTSC[y_gtsrb]+43 == y_btsc:
+        return y_gtsrb
+
+    return y_btsc
+
+
 def safety_monitor_decision(monitor, yPred, lbl, classes_to_monitor, intermediateValues,
  scaler, loaded_monitor):
     
@@ -28,19 +39,22 @@ def safety_monitor_decision(monitor, yPred, lbl, classes_to_monitor, intermediat
     if scaler != None:
         intermediateValues = scaler.transform(intermediateValues)
 
-    is_ood = False
+    raise_alarm = False
 
     if monitor.OOD_approach == 'equality':
         # if monitor acceptance approach is based on two equal predictions
-        is_ood = is_pred_diff(yPred, intermediateValues, loaded_monitor)
+        raise_alarm = is_pred_diff(yPred, intermediateValues, loaded_monitor)
 
     elif monitor.OOD_approach == 'outlier':
-        is_ood = is_pred_neg(yPred, intermediateValues, loaded_monitor)
+        raise_alarm = is_pred_neg(yPred, intermediateValues, loaded_monitor)
 
+    # just when GTSRB = ID and BTSC = OOD, otherwise comment the line below
+    lbl = map_btsc_gtsrb(yPred)
+    
     # OOD label numbers starts after the ID label numbers
     if lbl < classes_to_monitor: 
          
-        if is_ood: 
+        if raise_alarm: 
             # it is not OOD but the monitor correctly detected a missclassification       
             if yPred != lbl: 
                 monitor.arrTruePositive_ID[lbl].append(yPred) #True positives for missclassification in ID
@@ -66,7 +80,7 @@ def safety_monitor_decision(monitor, yPred, lbl, classes_to_monitor, intermediat
                 monitor.arr_lbl_monitor_ID.append(0)
     else:
         
-        if is_ood: # it is OOD and the monitor correctly detected it
+        if raise_alarm: # it is OOD and the monitor correctly detected it
             monitor.arrTruePositive_OOD[lbl].append(yPred) #True positives for OOD
             monitor.arr_pred_monitor_OOD.append(1)
             monitor.arr_lbl_monitor_OOD.append(1)

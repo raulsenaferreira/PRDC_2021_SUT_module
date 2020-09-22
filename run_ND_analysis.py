@@ -8,10 +8,7 @@ from src.novelty_detection.evaluators import ood_monitor_evaluator
 from src.novelty_detection.evaluators import dnn_baseline_evaluator
 from src.novelty_detection.testers import dnn_oob_tester
 from src.novelty_detection.testers import dnn_baseline_tester
-from src.novelty_detection.testers import dnn_knn_act_func_tester
-from src.novelty_detection.testers import dnn_dbscan_act_func_tester
-from src.novelty_detection.testers import dnn_tree_based_act_func_tester
-from src.novelty_detection.testers import dnn_linear_based_act_func_tester
+from src.novelty_detection.testers import classifier_based_on_act_func_tester
 from src.novelty_detection.testers import en_dnn_oob_tester
 from src.utils import util
 from src.utils import metrics
@@ -94,10 +91,10 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 	 'min_samples': [5],  #min_samples 5, 10, 15
 	 #for knn and sgd classifiers
 	 'use_scaler': False,
-	 'OOD_approach': 'equality',
+	 'OOD_approach': 'equality', # 'equality', 'outlier'
 	 #for all methods
 	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
-	 'technique_names' : ['sgd']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['ocsvm']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
@@ -119,12 +116,6 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 
 		#loading OOD dataset
 		OOD_dataset = Dataset(ood_dataset_name)
-		if ood_dataset_name == 'BTSC' and dataset_name == 'GTSRB':
-			# BTSC and GTSRB have 18 classes in common
-			BTSC_to_GTSRB = [{21:14}, {0:22}, {3:19}, {4:20}, {5:21}, {10:25}, {7:28}, {11:26}, {13:18},\
-			{16:24}, {17:11}, {19:13}, {22:17}, {28:15}, {32:4}, {34:35}, {36:36}, {61:12}]
-			#indices = np.where(y == 1)
-			#image = np.asarray(X[indices][5])
 		
 		ood_X, ood_y = OOD_dataset.load_dataset(mode='test_entire_data')
 		ood_y += classes_to_monitor_ID #avoiding same class numbers for the two datasets
@@ -158,7 +149,22 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 
 			monitors = None
 
-			if technique == 'baseline':
+			if 'knn' == technique:
+				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
+
+			elif 'ocsvm' == technique:
+				monitors = load_monitors.load_svm_based_monitors(dataset_name, technique, PARAMS)
+
+			elif 'random_forest' == technique:
+				monitors = load_monitors.load_tree_based_monitors(dataset_name, technique, PARAMS)
+
+			elif 'sgd' == technique:
+				monitors = load_monitors.load_linear_based_monitors(dataset_name, technique, PARAMS)
+
+			experiment.evaluator = ood_monitor_evaluator
+			experiment.tester = classifier_based_on_act_func_tester
+
+			elif technique == 'baseline':
 				experiment.evaluator = dnn_baseline_evaluator
 				experiment.tester = dnn_baseline_tester
 
@@ -172,26 +178,6 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 				else:
 					experiment.tester = dnn_oob_tester
 					experiment.evaluator = ood_monitor_evaluator
-
-			elif 'knn' == technique:
-				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = ood_monitor_evaluator
-				experiment.tester = dnn_knn_act_func_tester
-
-			elif 'hdbscan' == technique:
-				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = ood_monitor_evaluator
-				experiment.tester = dnn_dbscan_act_func_tester
-
-			elif 'random_forest' == technique:
-				monitors = load_monitors.load_tree_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = ood_monitor_evaluator
-				experiment.tester = dnn_tree_based_act_func_tester
-
-			elif 'sgd' == technique:
-				monitors = load_monitors.load_linear_based_monitors(dataset_name, technique, PARAMS)
-				experiment.evaluator = ood_monitor_evaluator
-				experiment.tester = dnn_linear_based_act_func_tester
 
 			experiment.monitors = monitors
 			

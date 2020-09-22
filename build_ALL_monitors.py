@@ -57,7 +57,7 @@ def build_monitors_by_class(root_path, parallel_execution, dataset_name, params,
 
 def build_monitors_all_classes(root_path, parallel_execution, dataset_name, params, model_file, X, y, save):
 	# Generate monitors for all classes for a specific dataset
-	arr_monitors = build_monitors.prepare_monitors(root_path, dataset_name, params)
+	arr_monitors = build_monitors.build_monitors(root_path, dataset_name, params)
 	
 	#Parallelizing the experiments (optional): one experiment per Core
 	if parallel_execution:
@@ -92,24 +92,24 @@ if __name__ == "__main__":
 	parallel_execution = False
 
 	sub_field = 'novelty_detection'
-	dataset_names = ['GTSRB']# 'MNIST',
+	dataset_names = ['GTSRB']# 'MNIST', 'CIFAR-10'
 	validation_size = 0.3
-	model_names = ['leNet'] #, 'leNet'
+	model_names = ['leNet'] # 'leNet', 'vgg16', 'resnet'
 	
 	PARAMS = {
 	 #for oob variations
 	 'arr_n_components' : [2], #2, 3, 5, 10
 	 #for oob variations and knn
 	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
-	 #for hdbscan
+	 #for ocsvm
 	 'min_samples': [5, 10, 15],  #min_samples 5, 10, 15
 	 #for random forest and linear classifiers
 	 'use_grid_search' : True, 
 	 #for knn and sgd classifiers
 	 'use_scaler': False,
 	 #all methods
-	 'use_alternative_monitor': False, # True = label -> act func; False = label -> act func if label == predicted
-	 'technique_names' : ['sgd']} #'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'use_alternative_monitor': False, # True = label -> act func -> save in the monitor; False = label -> act func if label == predicted -> save in the monitor
+	 'technique_names' : ['ocsvm']} #'baseline', 'knn', 'random_forest', 'sgd', 'ocsvm', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	num_classes_to_monitor = [43]# 10, 43
 	is_build_monitors_by_class = False

@@ -6,6 +6,7 @@ from src.novelty_detection.methods import act_func_based_monitor
 from src.novelty_detection.methods import clustered_act_function_monitor
 from src.novelty_detection.methods import tree_based_act_function_monitor
 from src.novelty_detection.methods import linear_based_act_function_monitor
+from src.novelty_detection.methods import ocsvm_based_act_function_monitor
 from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 
@@ -38,9 +39,9 @@ def build_gradient_based_monitor(class_to_monitor, monitor_name, n_clusters_oob,
 	return monitor
 
 
-def build_cluster_based_monitor(technique, monitor_name, monitor_folder):
+def build_classifier_based_monitor(technique, trainer, monitor_name, monitor_folder):
 	monitor = Monitor(monitor_name)
-	monitor.trainer = clustered_act_function_monitor
+	monitor.trainer = trainer
 	monitor.method = technique
 	monitor.filename = 'monitor_'+monitor_name+'.p'
 	monitor.monitors_folder = monitor_folder
@@ -48,69 +49,22 @@ def build_cluster_based_monitor(technique, monitor_name, monitor_folder):
 	return monitor
 
 
-def build_tree_based_monitor(technique, monitor_name, monitor_folder):
-	monitor = Monitor(monitor_name)
-	monitor.trainer = tree_based_act_function_monitor
-	monitor.method = technique
-	monitor.filename = 'monitor_'+monitor_name+'.p'
-	monitor.monitors_folder = monitor_folder
-
-	return monitor
-
-
-def build_linear_based_monitor(technique, monitor_name, monitor_folder):
-	monitor = Monitor(monitor_name)
-	monitor.trainer = linear_based_act_function_monitor
-	monitor.method = technique
-	monitor.filename = 'monitor_'+monitor_name+'.p'
-	monitor.monitors_folder = monitor_folder
-
-	return monitor
-
-
-def prepare_tree_based_monitors(technique, monitor_folder, dataset_name, PARAMS):
+def prepare_monitors(technique, trainer, monitor_folder, dataset_name, PARAMS):
 	monitors = []
-	if technique  == 'random_forest':
-		use_grid_search = PARAMS['use_grid_search']
-		monitor = None
+	
+	use_grid_search = PARAMS['use_grid_search']
+	monitor_name = technique+'_not_optimized'
 
-		if use_grid_search:
-			monitor = build_tree_based_monitor(technique, technique+'_optimized', monitor_folder)
-		else:
-			monitor = build_tree_based_monitor(technique, technique+'_not_optimized', monitor_folder)
+	if use_grid_search:
+		monitor_name = technique+'_optimized'
 
-		monitor.use_grid_search = use_grid_search
-		monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
-		monitor.use_scaler = PARAMS['use_scaler']
+	monitor = build_classifier_based_monitor(technique, trainer, monitor_name, monitor_folder)
 
-		monitors.append(monitor)
+	monitor.use_grid_search = use_grid_search
+	monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
+	monitor.use_scaler = PARAMS['use_scaler']
 
-	elif technique == '':
-		pass
-
-	return monitors
-
-
-def prepare_linear_based_monitors(technique, monitor_folder, dataset_name, PARAMS):
-	monitors = []
-	if technique  == 'sgd':
-		use_grid_search = PARAMS['use_grid_search']
-
-		monitor = None
-
-		if use_grid_search:
-			monitor = build_linear_based_monitor(technique, technique+'_optimized', monitor_folder)
-		else:
-			monitor = build_linear_based_monitor(technique, technique+'_not_optimized', monitor_folder)
-
-		monitor.use_grid_search = use_grid_search
-		monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
-		monitor.use_scaler = PARAMS['use_scaler']
-
-		monitors.append(monitor)
-
-	elif technique == '':
-		pass
+	monitors.append(monitor)
 
 	return monitors
 
@@ -121,21 +75,11 @@ def prepare_cluster_based_monitors(technique, monitor_folder, dataset_name, PARA
 		arr_n_clusters = PARAMS['arr_n_clusters']
 		for n_clusters in arr_n_clusters:
 			monitor_name = technique+'_{}_clusters'.format(n_clusters)			
-			monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
+			monitor = build_classifier_based_monitor(technique, clustered_act_function_monitor, monitor_name, monitor_folder)
 			monitor.n_clusters = n_clusters
 
 			monitor.use_alternative_monitor = PARAMS['use_alternative_monitor']
 			monitor.use_scaler = PARAMS['use_scaler']
-
-			monitors.append(monitor)
-
-	elif technique == 'hdbscan':
-		arr_min_samples = PARAMS['min_samples']
-
-		for min_samples in arr_min_samples:
-			monitor_name = technique+'_{}_min_samples'.format(min_samples)
-			monitor = build_cluster_based_monitor(technique, monitor_name, monitor_folder)
-			monitor.min_samples = min_samples
 
 			monitors.append(monitor)
 
@@ -205,22 +149,26 @@ def prepare_box_based_monitors(root_path, dataset_name, PARAMS, class_to_monitor
 	return monitors
 
 
-def prepare_monitors(root_path, dataset_name, params):
+def build_monitors(root_path, dataset_name, params):
 	monitoring_characteristics = 'dnn_internals'
 	arr_monitors = []
 	technique_names = params['technique_names']
 	
 	for technique in technique_names:
-		monitors = None
+		trainer = None
 		monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
 		monitor_folder += technique +sep
 
 		if technique  == 'knn':
-			monitors = prepare_cluster_based_monitors(technique, monitor_folder, dataset_name, params)
+			trainer = clustered_act_function_monitor
 		elif technique == 'random_forest':
-			monitors = prepare_tree_based_monitors(technique, monitor_folder, dataset_name, params)
+			trainer = tree_based_act_function_monitor
 		elif technique == 'sgd':
-			monitors = prepare_linear_based_monitors(technique, monitor_folder, dataset_name, params)
+			trainer = linear_based_act_function_monitor
+		elif technique == 'ocsvm':
+			trainer = ocsvm_based_act_function_monitor
+
+		monitors = prepare_monitors(technique, trainer, monitor_folder, dataset_name, params)
 
 		arr_monitors.extend(monitors)
 	return arr_monitors

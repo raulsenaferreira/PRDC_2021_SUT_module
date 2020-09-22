@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 sep = util.get_separator()
-
+        
 
 def run(X_test, y_test, experiment, monitor, dataset_name):
     arrPred = []
@@ -55,7 +55,7 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
 
     # loading cluster-baed monitor
     monitor_path = monitor.monitors_folder +sep+ monitor.filename
-    linear_based_monitor = pickle.load(open(monitor_path, "rb"))
+    loaded_monitor = pickle.load(open(monitor_path, "rb"))
 
     for img, lbl in zip(X_test, y_test):
                 
@@ -68,7 +68,7 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         intermediateValues = np.reshape(intermediateValues, (1, -1))
         
         monitor = safety_approaches.safety_monitor_decision(monitor, yPred, lbl, experiment.classes_to_monitor_ID,
-         intermediateValues, scaler, linear_based_monitor)           
+         intermediateValues, scaler, loaded_monitor)           
 
     memory = process.memory_info().rss / 1024 / 1024
 
