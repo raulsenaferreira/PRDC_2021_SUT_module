@@ -13,6 +13,7 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import precision_recall_curve
 
 
 sep = util.get_separator()
@@ -199,33 +200,69 @@ def plot_statistics(title, tn, tp, fp, fn):
 	print("monitors F1 score =", F1)
 	
 
-def AUROC_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD):
+def ROC_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD):
 	fpr_id, tpr_id, _ = roc_curve(y_test_ID, y_score_ID)
 	fpr_ood, tpr_ood, _ = roc_curve(y_test_OOD, y_score_OOD)
 
-	return fpr_id, tpr_ood
+	return fpr_id, tpr_id, fpr_ood, tpr_ood
 
 
-def plot_ROC_curve_ID_OOD(fpr_id, tpr_ood):
-	roc_auc = auc(fpr_id, tpr_ood)
+def plot_ROC_curve_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD):
+	y_test = np.hstack([y_test_ID, y_test_OOD])
+	y_score = np.hstack([y_score_ID, y_score_OOD])
+	fpr, tpr, _ = roc_curve(y_test, y_score)
 
+	#fpr_id, tpr_id, fpr_ood, tpr_ood = ROC_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD)
+	# fpr id x tpr ood
+	roc_auc = auc(fpr, tpr)
 	plt.figure()
 	lw = 2
-	plt.plot(fpr_id, tpr_ood, color='darkorange',
+	plt.plot(fpr, tpr, color='darkorange',
 	         lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
 	plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
 	plt.xlim([0.0, 1.0])
 	plt.ylim([0.0, 1.05])
-	plt.xlabel('False Positive Rate ID')
-	plt.ylabel('True Positive Rate OOD')
+	plt.xlabel('False Positive Rate')
+	plt.ylabel('True Positive Rate')
 	plt.title('Receiver operating characteristic example')
 	plt.legend(loc="lower right")
 	plt.show()
 
+	area = get_AUPR(y_test, y_score)
+	print ("Area Under PR Curve(AP): %0.2f" % area)
+	print('AUROC', roc_auc_score(y_test, y_score))
 
-def tnr_at_tpr():
+	'''
+	roc_auc = auc(tnr_id, tpr_ood)
+	plt.figure()
+	lw = 2
+	plt.plot(tpr_id, fpr_ood, color='darkorange',
+	         lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+	plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+	plt.xlim([0.0, 1.0])
+	plt.ylim([0.0, 1.05])
+	plt.xlabel('True Positive Rate ID')
+	plt.ylabel('False Positive Rate OOD')
+	plt.title('Receiver operating characteristic example')
+	plt.legend(loc="lower right")
+	plt.show()
+	'''
+
+	#area = get_AUPR(y_test_ID, y_score_ID)
+	#print ("Area Under PR Curve(AP) ID: %0.2f" % area)
+
+	#area = get_AUPR(y_test_OOD, y_score_OOD)
+	#print ("Area Under PR Curve(AP) OOD: %0.2f" % area)
+
+	#print('AUROC (ID)', roc_auc_score(y_test_ID, y_score_ID))
+	#print('AUROC (OOD)', roc_auc_score(y_test_OOD, y_score_OOD))
+
+
+def tpr_ID_at_fpr_OOD(tpr_rate=0.95):
 	pass
 
 
-def save_statistics():
-	pass
+def get_AUPR(labels, predicted):
+	precision, recall, thresholds = precision_recall_curve(labels, predicted)
+	area = auc(recall, precision)
+	return area

@@ -119,6 +119,13 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 
 		#loading OOD dataset
 		OOD_dataset = Dataset(ood_dataset_name)
+		if ood_dataset_name == 'BTSC' and dataset_name == 'GTSRB':
+			# BTSC and GTSRB have 18 classes in common
+			BTSC_to_GTSRB = [{21:14}, {0:22}, {3:19}, {4:20}, {5:21}, {10:25}, {7:28}, {11:26}, {13:18},\
+			{16:24}, {17:11}, {19:13}, {22:17}, {28:15}, {32:4}, {34:35}, {36:36}, {61:12}]
+			#indices = np.where(y == 1)
+			#image = np.asarray(X[indices][5])
+		
 		ood_X, ood_y = OOD_dataset.load_dataset(mode='test_entire_data')
 		ood_y += classes_to_monitor_ID #avoiding same class numbers for the two datasets
 

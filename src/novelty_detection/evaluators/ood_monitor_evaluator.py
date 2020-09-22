@@ -79,10 +79,10 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 				arr_cf_OOD[class_OOD][1].append(len(arrTP_OOD[class_OOD]))
 
 
-	fpr_id, tpr_ood = metrics.AUROC_ID_OOD(arr_lbl_monitor_ID, arr_pred_monitor_ID, \
-		arr_lbl_monitor_OOD, arr_pred_monitor_OOD) 
-
-	metrics.plot_ROC_curve_ID_OOD(fpr_id, tpr_ood)
+	# plot ROC and AUC
+	
+	metrics.plot_ROC_curve_ID_OOD(arr_lbl_monitor_ID, arr_pred_monitor_ID, \
+		arr_lbl_monitor_OOD, arr_pred_monitor_OOD)
 
 	if save_experiments:
 		neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))

@@ -10,6 +10,17 @@ def is_pred_diff(yPred, intermediateValues, loaded_monitor):
     return True
 
 
+def is_pred_neg(yPred, intermediateValues, loaded_monitor):
+    
+    yPred_by_monitor = loaded_monitor.predict(intermediateValues)
+    #print(np.shape(yPred_by_monitor))
+
+    if yPred_by_monitor == -1:
+        return True
+    
+    return False
+
+
 def safety_monitor_decision(monitor, yPred, lbl, classes_to_monitor, intermediateValues,
  scaler, loaded_monitor):
     
@@ -23,42 +34,59 @@ def safety_monitor_decision(monitor, yPred, lbl, classes_to_monitor, intermediat
         # if monitor acceptance approach is based on two equal predictions
         is_ood = is_pred_diff(yPred, intermediateValues, loaded_monitor)
 
-    elif monitor.OOD_approach == '':
-        pass
+    elif monitor.OOD_approach == 'outlier':
+        is_ood = is_pred_neg(yPred, intermediateValues, loaded_monitor)
 
     # OOD label numbers starts after the ID label numbers
     if lbl < classes_to_monitor: 
          
-        if is_ood:        
+        if is_ood: 
+            # it is not OOD but the monitor correctly detected a missclassification       
             if yPred != lbl: 
-                monitor.arrTruePositive_ID[lbl].append(yPred) #True positives
+                monitor.arrTruePositive_ID[lbl].append(yPred) #True positives for missclassification in ID
                 monitor.arr_pred_monitor_ID.append(1)
                 monitor.arr_lbl_monitor_ID.append(1)
                 
+            # it is not OOD and the monitor wrongly detected a missclassification
             if yPred == lbl: 
-                monitor.arrFalsePositive_ID[lbl].append(yPred) #False positives
+                monitor.arrFalsePositive_ID[lbl].append(yPred) #False positives for missclassification in ID
                 monitor.arr_pred_monitor_ID.append(1)
                 monitor.arr_lbl_monitor_ID.append(0)
         else:
+            # it is not OOD and the monitor wrongly missed a missclassification
             if yPred != lbl:
-                monitor.arrFalseNegative_ID[lbl].append(yPred) #False negative
+                monitor.arrFalseNegative_ID[lbl].append(yPred) #False negative for missclassification in ID
                 monitor.arr_pred_monitor_ID.append(0)
                 monitor.arr_lbl_monitor_ID.append(1) 
                         
+            # it is not OOD and not a missclassification and the monitor correctly did nothing
             if yPred == lbl: 
-                monitor.arrTrueNegative_ID[lbl].append(yPred) #True negatives
+                monitor.arrTrueNegative_ID[lbl].append(yPred) #True negatives for missclassification in ID
                 monitor.arr_pred_monitor_ID.append(0)
                 monitor.arr_lbl_monitor_ID.append(0)
     else:
-
-        if is_ood:
-            monitor.arrTruePositive_OOD[lbl].append(yPred) #True positives
+        
+        if is_ood: # it is OOD and the monitor correctly detected it
+            monitor.arrTruePositive_OOD[lbl].append(yPred) #True positives for OOD
             monitor.arr_pred_monitor_OOD.append(1)
             monitor.arr_lbl_monitor_OOD.append(1)
-            
-        else:
-            monitor.arrFalseNegative_OOD[lbl].append(yPred) #False negative
+           
+        else: # it is OOD and the monitor wrongly detected it
+            monitor.arrFalseNegative_OOD[lbl].append(yPred) #False negatives for OOD
             monitor.arr_pred_monitor_OOD.append(0)
             monitor.arr_lbl_monitor_OOD.append(1)
 
     return monitor
+
+
+### False positive and true negative rates for OOD data are not comptabilized here.
+### Since we are working with novelty class detection and all classes contained in the OOD dataset are unknown to the classifier. That is, all data is considered positive. 
+### Therefore, the only possible monitors outcome are true positive (monitor detects it is OOD and it is OOD indeed) or false negative (monitor do not detect it is OOD despite it is OOD).  
+
+## true negative rate ID at 95% of true positive rate OOD = verifies how much the monitor avoided false alarms in ID data when it reached 95% of the achieved detection on OOD data.
+# It helps to understand if the monitor is capable of not interfering the performance of the classifier in known classes when trying to detect unknown classes. 
+
+## false positive rate ID at 95% of true positive rate OOD = verifies how much the monitor raised false alarms in ID data when it reached 95% of the achieved detection on OOD data.
+# It helps to understand if the monitor hinders the performance of the classifier in known classes when trying to detect unknown classes.
+
+## 

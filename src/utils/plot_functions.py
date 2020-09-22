@@ -304,15 +304,17 @@ def plotBars4(baseline, listOfAccuracies, listOfMethods):
     plt.show()
 
 
-def plot_images(temporal_data, temporal_labels, num_row, num_col, mode=None):
+def plot_images(title, data, labels, similarities, num_row, num_col):
 
     fig, axes = plt.subplots(num_row, num_col, figsize=(1.5*num_col,2*num_row))
-    
     for i in range(num_row*num_col):
-        ax = axes[i//num_col, i%num_col]            
-        ax.imshow(np.squeeze(temporal_data[i]), cmap='gray')
-        ax.set_title('{}'.format(temporal_labels[i]))
-        ax.set_axis_off()
-
+        try:
+            ax = axes[i//num_col, i%num_col]
+            ax.imshow(np.squeeze(data[i]), cmap='gray')
+            ax.set_title('{}-Sim={}'.format(labels[i], similarities[i]))
+            ax.set_axis_off()
+        except Exception as e:
+            pass    
+    fig.suptitle(title)    
     plt.tight_layout(pad=3.0)
     plt.show()

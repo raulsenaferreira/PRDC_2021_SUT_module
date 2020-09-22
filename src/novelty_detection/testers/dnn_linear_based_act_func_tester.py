@@ -11,22 +11,6 @@ import matplotlib.pyplot as plt
 sep = util.get_separator()
 
 
-def plot_images(title, data, labels, similarities, num_row, num_col):
-
-    fig, axes = plt.subplots(num_row, num_col, figsize=(1.5*num_col,2*num_row))
-    for i in range(num_row*num_col):
-        try:
-            ax = axes[i//num_col, i%num_col]
-            ax.imshow(np.squeeze(data[i]), cmap='gray')
-            ax.set_title('{}-Sim={}'.format(labels[i], similarities[i]))
-            ax.set_axis_off()
-        except Exception as e:
-            pass    
-    fig.suptitle(title)    
-    plt.tight_layout(pad=3.0)
-    plt.show()
-
-
 def run(X_test, y_test, experiment, monitor, dataset_name):
     arrPred = []
     monitor.arr_pred_monitor_ID, monitor.arr_lbl_monitor_ID = [], []
