@@ -398,8 +398,8 @@ if __name__ == '__main__':
 	#names = ['SGD (scale train/ not scale test)','not scaled SGD','scaled SGD']
 	#title = 'ID=GTSRB; OOD=BTSC; SGD'
 
-	experiments = ['PHD-93', 'PHD-95'] # out of distribution
-	names = ['SGD antigo','SGD novo']
+	experiments = ['PHD-93', 'PHD-95', 'PHD-96'] # out of distribution
+	names = ['SGD antigo','SGD (tester modificado)', 'SGD (BTSC x GTSRB mapeado)']
 	title = 'ID=GTSRB; OOD=BTSC; SGD'
 
 	visualize_experiments(experiments, names, title, classes_to_monitor)

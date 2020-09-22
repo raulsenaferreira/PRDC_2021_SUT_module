@@ -94,7 +94,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 	 'OOD_approach': 'equality', # 'equality', 'outlier'
 	 #for all methods
 	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
-	 'technique_names' : ['ocsvm']}#'baseline', 'knn', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['ocsvm']}#'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
@@ -146,6 +146,8 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 			experiment.classes_to_monitor_ID = classes_to_monitor_ID
 			experiment.classes_to_monitor_OOD = ood_num_classes_to_monitor
 			experiment.dataset = dataset
+			experiment.evaluator = ood_monitor_evaluator
+			experiment.tester = classifier_based_on_act_func_tester
 
 			monitors = None
 
@@ -160,9 +162,6 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 
 			elif 'sgd' == technique:
 				monitors = load_monitors.load_linear_based_monitors(dataset_name, technique, PARAMS)
-
-			experiment.evaluator = ood_monitor_evaluator
-			experiment.tester = classifier_based_on_act_func_tester
 
 			elif technique == 'baseline':
 				experiment.evaluator = dnn_baseline_evaluator

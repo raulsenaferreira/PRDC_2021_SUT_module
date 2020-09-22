@@ -77,10 +77,10 @@ def run(monitor, model, X, y, save):
         monitor.filename = '(scaled_input_version)'+monitor.filename
         text_best_params = '(scaled_input_version)'+text_best_params    
 
-    
+    ocsvm = ocsvm=OneClassSVM()
 
     if monitor.use_grid_search:
-        ocsvm = None
+        
         print("optimizing with Grid Search")
         param_grid = { 
             'shrinking': [False, True],

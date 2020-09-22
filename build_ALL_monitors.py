@@ -104,7 +104,7 @@ if __name__ == "__main__":
 	 #for ocsvm
 	 'min_samples': [5, 10, 15],  #min_samples 5, 10, 15
 	 #for random forest and linear classifiers
-	 'use_grid_search' : True, 
+	 'use_grid_search' : False, 
 	 #for knn and sgd classifiers
 	 'use_scaler': False,
 	 #all methods

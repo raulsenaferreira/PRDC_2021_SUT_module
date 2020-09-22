@@ -232,31 +232,6 @@ def plot_ROC_curve_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD):
 	print ("Area Under PR Curve(AP): %0.2f" % area)
 	print('AUROC', roc_auc_score(y_test, y_score))
 
-	'''
-	roc_auc = auc(tnr_id, tpr_ood)
-	plt.figure()
-	lw = 2
-	plt.plot(tpr_id, fpr_ood, color='darkorange',
-	         lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
-	plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-	plt.xlim([0.0, 1.0])
-	plt.ylim([0.0, 1.05])
-	plt.xlabel('True Positive Rate ID')
-	plt.ylabel('False Positive Rate OOD')
-	plt.title('Receiver operating characteristic example')
-	plt.legend(loc="lower right")
-	plt.show()
-	'''
-
-	#area = get_AUPR(y_test_ID, y_score_ID)
-	#print ("Area Under PR Curve(AP) ID: %0.2f" % area)
-
-	#area = get_AUPR(y_test_OOD, y_score_OOD)
-	#print ("Area Under PR Curve(AP) OOD: %0.2f" % area)
-
-	#print('AUROC (ID)', roc_auc_score(y_test_ID, y_score_ID))
-	#print('AUROC (OOD)', roc_auc_score(y_test_OOD, y_score_OOD))
-
 
 def tpr_ID_at_fpr_OOD(tpr_rate=0.95):
 	pass

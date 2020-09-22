@@ -80,8 +80,8 @@ def load_linear_based_monitors(dataset_name, technique, PARAMS):
 def load_svm_based_monitors(dataset_name, technique, PARAMS):
 	
 	if 'ocsvm' == technique:
-		#monitor_name = technique+'_not_optimized'
-		monitor_name = technique+'_optimized'
+		monitor_name = technique+'_not_optimized'
+		#monitor_name = technique+'_optimized'
 		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
 		monitor.OOD_approach = 'outlier' # only possible using the outlier approach
 
