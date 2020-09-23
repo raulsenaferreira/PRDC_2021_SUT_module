@@ -52,8 +52,9 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
     loaded_monitor = pickle.load(open(monitor_path, "rb"))
 
     for img, lbl in zip(X_test, y_test):
-                
-        counter, loading_percentage = util.loading_info(counter, loaded, loading_percentage) #log
+        if experiment.verbose:
+            counter, loading_percentage = util.loading_info(counter, loaded, loading_percentage) #log
+        
         img = np.asarray([img])
         yPred = np.argmax(model.predict(img))
         arrPred.append(yPred)

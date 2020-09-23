@@ -78,14 +78,13 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 				arr_cf_OOD[class_OOD][3].append(len(readout.arr_true_negative_OOD[class_OOD]))
 
 	if save_experiments:
-		tag1 = experiment.model.name
-		tag2 = monitor.monitor_name
-		tag3 = 'ID = {}'.format(dataset.dataset_ID_name)
-		tag4 = 'OOD = {}'.format(dataset.dataset_OOD_name)
+		tag1 = monitor.monitor_name
+		tag2 = 'ID = {}'.format(dataset.dataset_ID_name)
+		tag3 = 'OOD = {}'.format(dataset.dataset_OOD_name)
 
 		neptune.create_experiment(name='{}'.format(experiment.name),
-									tags=[tag1, tag2, tag3, tag4],
-									params=experiment.PARAMS)
+										tags=[tag1, tag2, tag3],
+										params=experiment.PARAMS)
 
 		neptune.log_metric('ML_accuracy', np.mean(arr_acc)) 
 		neptune.log_metric('Process_time', np.mean(arr_t)) 
@@ -93,8 +92,9 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		neptune.log_metric('ML_F1', np.mean(arr_f1))
 
 		# ID
-		neptune.log_metric('Pos_Neg_Classified_ID', arr_pos_neg_ID_pred)
-		neptune.log_metric('Pos_Neg_Labels_ID', arr_pos_neg_ID_true)
+		for p, t in zip(arr_pos_neg_ID_pred, arr_pos_neg_ID_true):
+			neptune.log_metric('Pos_Neg_Classified_ID', p)
+			neptune.log_metric('Pos_Neg_Labels_ID', t)
 
 		for monitored_class in range(experiment.classes_to_monitor_ID):
 			neptune.log_metric('False_Positive_ID_{}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][0])))
@@ -104,8 +104,9 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 
 		# OOD
 		if experiment_type == 'OOD':
-			neptune.log_metric('Pos_Neg_Classified_OOD', arr_pos_neg_OOD_pred)
-			neptune.log_metric('Pos_Neg_Labels_OOD', arr_pos_neg_OOD_true)
+			for p, t in zip(arr_pos_neg_OOD_pred, arr_pos_neg_OOD_true):
+				neptune.log_metric('Pos_Neg_Classified_OOD', p)
+				neptune.log_metric('Pos_Neg_Labels_OOD', t)
 
 			for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
 				neptune.log_metric('False_Positive_OOD_{}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][0])))

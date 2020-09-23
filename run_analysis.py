@@ -19,6 +19,8 @@ if __name__ == "__main__":
 	parser.add_argument("parallel_execution", type=int, help="Parallelize experiments up to the number of physical \
 		cores in the machine (1 for True or 0 for False)")
 
+	parser.add_argument("verbose", type=int, help="Print the processing progress (1 for True or 0 for False)")
+
 	args = parser.parse_args()
 
 	text_parallel = 'serial'
@@ -26,7 +28,7 @@ if __name__ == "__main__":
 	if args.parallel_execution:
 		text_parallel = 'parallel'
 
-	print('Starting {} processing of {} experiments on {} data...'.format(text_parallel,
+	print('Starting {} processing of {} experiments on {} data ...'.format(text_parallel,
 	 args.sub_field_arg, args.experiment_type_arg))
 	
 	if args.save_experiments:
@@ -35,9 +37,10 @@ if __name__ == "__main__":
 		print('The results will not be saved')
 	
 	repetitions = 1
-	percentage_of_data = 0.1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	percentage_of_data = 0.05 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	if args.sub_field_arg == 'novelty_detection':
-		nd.start(args.experiment_type_arg, args.save_experiments, args.parallel_execution, repetitions, percentage_of_data)
+		nd.start(args.experiment_type_arg, args.save_experiments, args.parallel_execution, \
+			args.verbose, repetitions, percentage_of_data)
 	elif args.sub_field_arg == 'distributional_shift':
 		pass

@@ -71,42 +71,58 @@ def unison_shuffled_copies(a, b):
     return a[p], b[p]
 
 
-def get_params(method_name):
-	# experiments regarding Novelty-Detection runtime-monitoring experiments
+def get_params(technique):
+	# Default
+	PARAMS = {'use_alternative_monitor': False}# True = label -> act func; False = label -> act func if label == predicted
+	PARAMS.update({'OOD_approach': 'equality'})
+	PARAMS.update({'use_scaler': False})
+	PARAMS.update({'grid_search': False})
+
+	if 'sgd' == technique:
+		PARAMS.update({'use_scaler': True})
+		PARAMS.update({'grid_search': True})
+
+	elif 'random_forest' ==  technique:
+		PARAMS.update({'grid_search': True})
+
+	elif 'ocsvm':
+		PARAMS.update({'OOD_approach': 'outlier'})
+	
+	elif 'oob' in technique:
+		PARAMS.update({'arr_n_components': 2}) 
+		PARAMS.update({'OOD_approach': 'outside_of_box'})
+
+	elif 'knn' == technique:
+		PARAMS.update({'arr_n_clusters': [2, 3, 5, 10]})
+		PARAMS.update({'use_scaler': True})
+		
+	elif 'hdbscan' == technique:
+		PARAMS.update({'min_samples': [5, 10, 15]})  #min_samples 5, 10, 15
+	
+	return PARAMS
+
+
+def start(experiment_type_arg, save_experiments, parallel_execution, verbose, repetitions, percentage_of_data, log_lvl=logging.FATAL):
+	
 	sub_field = 'novelty_detection'
 
 	dataset_names = ['GTSRB'] #'MNIST', 'GTSRB'
-	arr_classes_to_monitor_ID = [43] #10, 
+	arr_classes_to_monitor_ID = [43] #10, 43
 
 	ood_dataset_name = 'BTSC'
 	ood_num_classes_to_monitor = 62
 
-	model_names = ['leNet'] #, 'leNet'
-	
-	PARAMS = {'arr_n_components' : [2], #2, 3, 5, 10
-	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
-	 #for hdbscan
-	 'min_samples': [5],  #min_samples 5, 10, 15
-	 #for knn and sgd classifiers
-	 'use_scaler': False,
-	 'OOD_approach': 'equality', # 'equality', 'outlier'
-	 #for all methods
-	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
-	 'technique_names' : ['sgd']}#'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
-	return PARAMS
+	model_names = ['leNet'] # 'leNet', 'vgg16'
 
-
-def start(experiment_type_arg, save_experiments, parallel_execution, repetitions, percentage_of_data):
-	technique_names = []
+	technique_names = ['sgd'] #'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# disabling tensorflow logs
-	set_tf_loglevel(logging.FATAL)
+	set_tf_loglevel(log_lvl)
 	# re-enabling tensorflow logs
 	#set_tf_loglevel(logging.INFO)
 
 	if save_experiments:
-		#saving experiments in the cloud (optional)
-		neptune.init('raulsenaferreira/PhD')
+		neptune.init('raulsenaferreira/PhD') # saving experiments in the cloud (optional)
 
 	## loading experiments
 	for model_name, dataset_name, classes_to_monitor_ID in zip(model_names, dataset_names, arr_classes_to_monitor_ID):
@@ -130,7 +146,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 
 		print("Final dataset shape", X.shape, y.shape)
 		dataset.dataset_ID_name = dataset_name
-		dataset.dataset_OOD_name = OOD_dataset
+		dataset.dataset_OOD_name = ood_dataset_name
 		
 		# for one that wants speeding up tests using part of data
 		X_limit = int(len(X)*percentage_of_data)
@@ -141,14 +157,12 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 		model = ModelBuilder(model_name)
 		model = load_model(model.models_folder+model_name+'_'+dataset_name+'.h5')
 
-		#for class_to_monitor in range(classes_to_monitor):
 		# loading monitors for Novelty Detection
-		for technique in PARAMS['technique_names']:
+		for technique in technique_names:
 			
-			PARAMS = get_params('sgd')	
+			PARAMS = get_params(technique)	
 			
 			experiment = Experiment(model_name+'_'+technique)
-			experiment.PARAMS = PARAMS
 			experiment.experiment_type = experiment_type_arg #'OOD' or 'ID'
 			experiment.sub_field = sub_field
 			experiment.model = model
@@ -157,6 +171,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 			experiment.dataset = dataset
 			experiment.evaluator = ood_monitor_evaluator
 			experiment.tester = classifier_based_on_act_func_tester
+			experiment.verbose = verbose
 
 			monitors = None
 
@@ -188,8 +203,6 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 					experiment.evaluator = ood_monitor_evaluator
 
 			experiment.monitors = monitors
+			experiment.PARAMS = PARAMS
 			
-			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments) 
-
-#if __name__ == "__main__":
-#	start()
+			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)

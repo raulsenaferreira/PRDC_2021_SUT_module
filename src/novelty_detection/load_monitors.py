@@ -59,8 +59,10 @@ def load_cluster_based_monitors(dataset_name, technique, PARAMS):
 def load_tree_based_monitors(dataset_name, technique, PARAMS):
 	
 	if 'random_forest' == technique:
-		#monitor_name = technique+'_not_optimized'
-		monitor_name = technique+'_optimized'
+		if PARAMS['grid_search']:
+			monitor_name = technique+'_optimized'
+		else:
+			monitor_name = technique+'_not_optimized'
 		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
 		
 		return np.array([monitor])
@@ -69,8 +71,10 @@ def load_tree_based_monitors(dataset_name, technique, PARAMS):
 def load_linear_based_monitors(dataset_name, technique, PARAMS):
 	
 	if 'sgd' == technique:
-		#monitor_name = technique+'_not_optimized'
-		monitor_name = technique+'_optimized'
+		if PARAMS['grid_search']:
+			monitor_name = technique+'_optimized'
+		else:
+			monitor_name = technique+'_not_optimized'
 		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
 		monitor.OOD_approach = PARAMS['OOD_approach']
 
@@ -80,8 +84,10 @@ def load_linear_based_monitors(dataset_name, technique, PARAMS):
 def load_svm_based_monitors(dataset_name, technique, PARAMS):
 	
 	if 'ocsvm' == technique:
-		monitor_name = technique+'_not_optimized'
-		#monitor_name = technique+'_optimized'
+		if PARAMS['grid_search']:
+			monitor_name = technique+'_optimized'
+		else:
+			monitor_name = technique+'_not_optimized'
 		monitor = create_monitor(technique, dataset_name, monitor_name, monitoring_characteristics, PARAMS)
 		monitor.OOD_approach = 'outlier' # only possible using the outlier approach
 
