@@ -27,21 +27,19 @@ def save_results(experiment, arr_readouts, plot=False):
 
 
 def run_evaluation(monitor, experiment, repetitions, save_experiments):
-	arr_pred_monitor_ID, arr_lbl_monitor_ID = [], []
-	arr_pred_monitor_OOD, arr_lbl_monitor_OOD = [], []
 
 	arr_acc = [] #accuracy
-	arr_cf_ID = {} #confusion matrix by class for ID data
-	arr_cf_OOD = {} #confusion matrix by class for OOD data
 	arr_t = [] #time
 	arr_mem = [] #memory
 	arr_f1 = [] #F1
+	arr_cf_ID = {} #confusion matrix by class for ID data
+	arr_cf_OOD = {} #confusion matrix by class for OOD data
 
 	for class_to_monitor in range(experiment.classes_to_monitor_ID):
 		arr_cf_ID.update({class_to_monitor: [[],[],[],[]]})
 
 	for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
-		arr_cf_OOD.update({class_OOD: [[],[]]})
+		arr_cf_OOD.update({class_OOD: [[],[],[],[]]})
 
 	dataset = experiment.dataset
 	experiment_type = experiment.experiment_type
@@ -50,39 +48,33 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		print("Evaluating {} on {} data with {} monitor: {} of {} repetitions...\n".format(experiment.name, experiment_type, monitor.monitor_name, i+1, repetitions))
 		
 		ini = timer()
-		if experiment_type == 'ID':
-			arrPred, arrLabel, arr_pred_monitor_ID, arr_lbl_monitor_ID, _, _, \
-			memory, arrFP_ID, arrFN_ID, arrTP_ID, arrTN_ID,	_, _ = experiment.tester.run(
-				dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
-		else:
-			arrPred, arrLabel, arr_pred_monitor_ID, arr_lbl_monitor_ID, arr_pred_monitor_OOD, arr_lbl_monitor_OOD, \
-			memory, arrFP_ID, arrFN_ID, arrTP_ID, arrTN_ID, arrFN_OOD, arrTP_OOD = experiment.tester.run(
-				dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
+		arrPred, arrLabel, readout = experiment.tester.run(
+			dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
 		end = timer()
 
 		arr_acc.append(metrics.evaluate(arrLabel, arrPred, 'accuracy'))
-		arr_t.append(end-ini)
-		arr_mem.append(memory)
 		arr_f1.append(metrics.evaluate(arrLabel, arrPred, 'F1'))
-	
+		arr_t.append(end-ini)
+		arr_mem.append(readout.memory)
+		
 		for class_to_monitor in range(experiment.classes_to_monitor_ID):
 			# ID
-			arr_cf_ID[class_to_monitor][0].append(len(arrFP_ID[class_to_monitor]))
-			arr_cf_ID[class_to_monitor][1].append(len(arrFN_ID[class_to_monitor]))
-			arr_cf_ID[class_to_monitor][2].append(len(arrTP_ID[class_to_monitor]))
-			arr_cf_ID[class_to_monitor][3].append(len(arrTN_ID[class_to_monitor]))
+			arr_cf_ID[class_to_monitor][0].append(len(readout.arr_false_positive_ID[class_to_monitor]))
+			arr_cf_ID[class_to_monitor][1].append(len(readout.arr_false_negative_ID[class_to_monitor]))
+			arr_cf_ID[class_to_monitor][2].append(len(readout.arr_true_positive_ID[class_to_monitor]))
+			arr_cf_ID[class_to_monitor][3].append(len(readout.arr_true_negative_ID[class_to_monitor]))
 
 		if experiment_type == 'OOD':
 			for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
 				# OOD
-				arr_cf_OOD[class_OOD][0].append(len(arrFN_OOD[class_OOD]))
-				arr_cf_OOD[class_OOD][1].append(len(arrTP_OOD[class_OOD]))
+				arr_cf_OOD[class_OOD][0].append(len(readout.arr_false_positive_OOD[class_OOD]))
+				arr_cf_OOD[class_OOD][1].append(len(readout.arr_false_negative_OOD[class_OOD]))
+				arr_cf_OOD[class_OOD][2].append(len(readout.arr_true_positive_OOD[class_OOD]))
+				arr_cf_OOD[class_OOD][3].append(len(readout.arr_true_negative_OOD[class_OOD]))
 
-
-	# plot ROC and AUC
-	
-	metrics.plot_ROC_curve_ID_OOD(arr_lbl_monitor_ID, arr_pred_monitor_ID, \
-		arr_lbl_monitor_OOD, arr_pred_monitor_OOD)
+		# plot ROC and AUC
+		metrics.plot_ROC_curve_ID_OOD(readout.arr_pos_neg_ID_true, readout.arr_pos_neg_ID_pred, \
+			readout.arr_pos_neg_OOD_true, readout.arr_pos_neg_OOD_pred)
 
 	if save_experiments:
 		neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))
@@ -92,8 +84,7 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		neptune.log_metric('F1', np.mean(arr_f1))
 
 		for monitored_class in range(experiment.classes_to_monitor_ID):
-			fn_OOD, tp_OOD = 0, 0
-
+			# ID
 			neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][0])))
 			neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][1])))
 			neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][2])))
@@ -102,8 +93,10 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		if experiment_type == 'OOD':
 			# OOD
 			for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
-				neptune.log_metric('False Negative OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][0])))
-				neptune.log_metric('True Positive OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][1])))
+				neptune.log_metric('False Positive OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][0])))
+				neptune.log_metric('False Negative OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][1])))
+				neptune.log_metric('True Positive OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][2])))
+				neptune.log_metric('True Negative OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][3])))
 
 	return True
 
@@ -124,17 +117,12 @@ def evaluate(repetitions, experiment, parallel_execution, save_experiments):
 
 		for process in processes_pool:
 			success = process.get(timeout=timeout)
-			#arr_readouts.append(readout)
 	else:
 		print("\nserial execution")
 		for monitor in experiment.monitors:
 			success = run_evaluation(monitor, experiment, repetitions, save_experiments)
-
-	#print('len(arr_readouts)', len(arr_readouts))
-	#if save:
-	#save_results(experiment, arr_readouts, plot=False)	
+	
 	return success
-	#return arr_readouts
 
 
 if __name__ == "__main__":

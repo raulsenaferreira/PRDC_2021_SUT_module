@@ -94,7 +94,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 	 'OOD_approach': 'equality', # 'equality', 'outlier'
 	 #for all methods
 	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
-	 'technique_names' : ['ocsvm']}#'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['sgd']}#'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)

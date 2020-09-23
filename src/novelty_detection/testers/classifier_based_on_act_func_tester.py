@@ -4,6 +4,7 @@ import pickle
 import psutil
 from src.utils import util
 from src.utils import safety_approaches
+from src.Classes.readout import Readout
 import matplotlib.pyplot as plt
 
 
@@ -12,17 +13,8 @@ sep = util.get_separator()
         
 
 def run(X_test, y_test, experiment, monitor, dataset_name):
+    readout = Readout()
     arrPred = []
-    monitor.arr_pred_monitor_ID, monitor.arr_lbl_monitor_ID = [], []
-    monitor.arr_pred_monitor_OOD, monitor.arr_lbl_monitor_OOD = [], []
-
-    monitor.arrFalseNegative_ID = {}
-    monitor.arrTrueNegative_ID = {}
-    monitor.arrFalsePositive_ID = {}
-    monitor.arrTruePositive_ID = {}
-
-    monitor.arrFalseNegative_OOD = {}
-    monitor.arrTruePositive_OOD = {}
 
     #3 variables for log (optional)
     counter = 0
@@ -31,15 +23,17 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
 
     for class_to_monitor in range(experiment.classes_to_monitor_ID):
         # ID
-        monitor.arrFalseNegative_ID.update({class_to_monitor: []})
-        monitor.arrTrueNegative_ID.update({class_to_monitor: []})
-        monitor.arrFalsePositive_ID.update({class_to_monitor: []})
-        monitor.arrTruePositive_ID.update({class_to_monitor: []})
+        readout.arr_false_negative_ID.update({class_to_monitor: []})
+        readout.arr_true_negative_ID.update({class_to_monitor: []})
+        readout.arr_false_positive_ID.update({class_to_monitor: []})
+        readout.arr_true_positive_ID.update({class_to_monitor: []})
 
     for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
         # OOD
-        monitor.arrFalseNegative_OOD.update({class_OOD: []})
-        monitor.arrTruePositive_OOD.update({class_OOD: []})
+        readout.arr_false_negative_OOD.update({class_OOD: []})
+        readout.arr_true_negative_OOD.update({class_OOD: []})
+        readout.arr_false_positive_OOD.update({class_OOD: []})
+        readout.arr_true_positive_OOD.update({class_OOD: []})
     
     model = experiment.model
 
@@ -67,13 +61,9 @@ def run(X_test, y_test, experiment, monitor, dataset_name):
         intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
         intermediateValues = np.reshape(intermediateValues, (1, -1))
         
-        monitor = safety_approaches.safety_monitor_decision(monitor, yPred, lbl, experiment.classes_to_monitor_ID,
+        readout = safety_approaches.safety_monitor_decision(readout, monitor, yPred, lbl, experiment.classes_to_monitor_ID,
          intermediateValues, scaler, loaded_monitor)           
 
-    memory = process.memory_info().rss / 1024 / 1024
-
+    readout.memory = process.memory_info().rss / 1024 / 1024
     
-    return arrPred, y_test, monitor.arr_pred_monitor_ID, monitor.arr_lbl_monitor_ID,\
-     monitor.arr_pred_monitor_OOD, monitor.arr_lbl_monitor_OOD, memory, monitor.arrFalsePositive_ID, \
-     monitor.arrFalseNegative_ID, monitor.arrTruePositive_ID, monitor.arrTrueNegative_ID, \
-     monitor.arrFalseNegative_OOD, monitor.arrTruePositive_OOD
+    return arrPred, y_test, readout
