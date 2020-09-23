@@ -27,7 +27,8 @@ def save_results(experiment, arr_readouts, plot=False):
 
 
 def run_evaluation(monitor, experiment, repetitions, save_experiments):
-
+	arr_pos_neg_ID_pred, arr_pos_neg_ID_true = None, None
+	arr_pos_neg_OOD_true, arr_pos_neg_OOD_pred = None, None
 	arr_acc = [] #accuracy
 	arr_t = [] #time
 	arr_mem = [] #memory
@@ -56,6 +57,10 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		arr_f1.append(metrics.evaluate(arrLabel, arrPred, 'F1'))
 		arr_t.append(end-ini)
 		arr_mem.append(readout.memory)
+		arr_pos_neg_ID_pred = readout.arr_pos_neg_ID_pred
+		arr_pos_neg_ID_true = readout.arr_pos_neg_ID_true
+		arr_pos_neg_OOD_true = readout.arr_pos_neg_OOD_true
+		arr_pos_neg_OOD_pred = readout.arr_pos_neg_OOD_pred
 		
 		for class_to_monitor in range(experiment.classes_to_monitor_ID):
 			# ID
@@ -72,31 +77,41 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 				arr_cf_OOD[class_OOD][2].append(len(readout.arr_true_positive_OOD[class_OOD]))
 				arr_cf_OOD[class_OOD][3].append(len(readout.arr_true_negative_OOD[class_OOD]))
 
-		# plot ROC and AUC
-		metrics.plot_ROC_curve_ID_OOD(readout.arr_pos_neg_ID_true, readout.arr_pos_neg_ID_pred, \
-			readout.arr_pos_neg_OOD_true, readout.arr_pos_neg_OOD_pred)
-
 	if save_experiments:
-		neptune.create_experiment('hyper_parameter/{}'.format(monitor.monitor_name))
-		neptune.log_metric('Accuracy', np.mean(arr_acc)) 
-		neptune.log_metric('Process time', np.mean(arr_t)) 
+		tag1 = experiment.model.name
+		tag2 = monitor.monitor_name
+		tag3 = 'ID = {}'.format(dataset.dataset_ID_name)
+		tag4 = 'OOD = {}'.format(dataset.dataset_OOD_name)
+
+		neptune.create_experiment(name='{}'.format(experiment.name),
+									tags=[tag1, tag2, tag3, tag4],
+									params=experiment.PARAMS)
+
+		neptune.log_metric('ML_accuracy', np.mean(arr_acc)) 
+		neptune.log_metric('Process_time', np.mean(arr_t)) 
 		neptune.log_metric('Memory', np.mean(arr_mem))
-		neptune.log_metric('F1', np.mean(arr_f1))
+		neptune.log_metric('ML_F1', np.mean(arr_f1))
+
+		# ID
+		neptune.log_metric('Pos_Neg_Classified_ID', arr_pos_neg_ID_pred)
+		neptune.log_metric('Pos_Neg_Labels_ID', arr_pos_neg_ID_true)
 
 		for monitored_class in range(experiment.classes_to_monitor_ID):
-			# ID
-			neptune.log_metric('False Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][0])))
-			neptune.log_metric('False Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][1])))
-			neptune.log_metric('True Positive - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][2])))
-			neptune.log_metric('True Negative - Class {}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][3])))
+			neptune.log_metric('False_Positive_ID_{}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][0])))
+			neptune.log_metric('False_Negative_ID_{}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][1])))
+			neptune.log_metric('True_Positive_ID_{}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][2])))
+			neptune.log_metric('True_Negative_ID_{}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][3])))
 
+		# OOD
 		if experiment_type == 'OOD':
-			# OOD
+			neptune.log_metric('Pos_Neg_Classified_OOD', arr_pos_neg_OOD_pred)
+			neptune.log_metric('Pos_Neg_Labels_OOD', arr_pos_neg_OOD_true)
+
 			for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
-				neptune.log_metric('False Positive OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][0])))
-				neptune.log_metric('False Negative OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][1])))
-				neptune.log_metric('True Positive OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][2])))
-				neptune.log_metric('True Negative OOD - Class {}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][3])))
+				neptune.log_metric('False_Positive_OOD_{}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][0])))
+				neptune.log_metric('False_Negative_OOD_{}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][1])))
+				neptune.log_metric('True_Positive_OOD_{}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][2])))
+				neptune.log_metric('True_Negative_OOD_{}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][3])))
 
 	return True
 

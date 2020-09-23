@@ -71,9 +71,7 @@ def unison_shuffled_copies(a, b):
     return a[p], b[p]
 
 
-
-def start(experiment_type_arg, save_experiments, parallel_execution, repetitions, percentage_of_data):
-	
+def get_params(method_name):
 	# experiments regarding Novelty-Detection runtime-monitoring experiments
 	sub_field = 'novelty_detection'
 
@@ -95,6 +93,11 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 	 #for all methods
 	 'use_alternative_monitor': False,# True = label -> act func; False = label -> act func if label == predicted
 	 'technique_names' : ['sgd']}#'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	return PARAMS
+
+
+def start(experiment_type_arg, save_experiments, parallel_execution, repetitions, percentage_of_data):
+	technique_names = []
 
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
@@ -126,6 +129,8 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 		X, y = unison_shuffled_copies(X, y)
 
 		print("Final dataset shape", X.shape, y.shape)
+		dataset.dataset_ID_name = dataset_name
+		dataset.dataset_OOD_name = OOD_dataset
 		
 		# for one that wants speeding up tests using part of data
 		X_limit = int(len(X)*percentage_of_data)
@@ -133,13 +138,17 @@ def start(experiment_type_arg, save_experiments, parallel_execution, repetitions
 		dataset.X, dataset.y = X[: X_limit], y[: y_limit]
 
 		# loading model
-		model = ModelBuilder()
+		model = ModelBuilder(model_name)
 		model = load_model(model.models_folder+model_name+'_'+dataset_name+'.h5')
 
 		#for class_to_monitor in range(classes_to_monitor):
 		# loading monitors for Novelty Detection
 		for technique in PARAMS['technique_names']:
-			experiment = Experiment(model_name+'_'+dataset_name)
+			
+			PARAMS = get_params('sgd')	
+			
+			experiment = Experiment(model_name+'_'+technique)
+			experiment.PARAMS = PARAMS
 			experiment.experiment_type = experiment_type_arg #'OOD' or 'ID'
 			experiment.sub_field = sub_field
 			experiment.model = model
