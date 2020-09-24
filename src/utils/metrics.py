@@ -14,6 +14,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import classification_report
 
 
 sep = util.get_separator()
@@ -201,39 +202,90 @@ def plot_statistics(title, tn, tp, fp, fn):
 	
 
 def ROC_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD):
-	fpr_id, tpr_id, _ = roc_curve(y_test_ID, y_score_ID)
-	fpr_ood, tpr_ood, _ = roc_curve(y_test_OOD, y_score_OOD)
+	fpr_id, tpr_id, thresholds_id = roc_curve(y_test_ID, y_score_ID, drop_intermediate=False)
+	fpr_ood, tpr_ood, thresholds_ood = roc_curve(y_test_OOD, y_score_OOD, drop_intermediate=False)
 
-	return fpr_id, tpr_id, fpr_ood, tpr_ood
+	return fpr_id, tpr_id, thresholds_id, fpr_ood, tpr_ood, thresholds_ood
 
 
-def plot_ROC_curve_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD):
-	y_test = np.hstack([y_test_ID, y_test_OOD])
-	y_score = np.hstack([y_score_ID, y_score_OOD])
-	fpr, tpr, _ = roc_curve(y_test, y_score)
-
-	#fpr_id, tpr_id, fpr_ood, tpr_ood = ROC_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD)
-	# fpr id x tpr ood
-	roc_auc = auc(fpr, tpr)
+def plot_ROC_curve_ID_OOD(list_of_readouts, mode):
+	#(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD)
+	#y_test = np.hstack([y_test_ID, y_test_OOD])
+	#y_score = np.hstack([y_score_ID, y_score_OOD])
+	#fpr, tpr, _ = roc_curve(y_test, y_score)
 	plt.figure()
 	lw = 2
-	plt.plot(fpr, tpr, color='darkorange',
-	         lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
 	plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
 	plt.xlim([0.0, 1.0])
 	plt.ylim([0.0, 1.05])
-	plt.xlabel('False Positive Rate')
-	plt.ylabel('True Positive Rate')
-	plt.title('Receiver operating characteristic example')
-	plt.legend(loc="lower right")
+	plt.title('ROC Curves')
+	
+
+	for readout in list_of_readouts:
+		
+		y_test_ID = readout.arr_pos_neg_ID_true
+		y_score_ID = readout.arr_pos_neg_ID_pred
+		y_test_OOD = readout.arr_pos_neg_OOD_true
+		y_score_OOD = readout.arr_pos_neg_OOD_pred
+		title = readout.title
+		target_names = ['Negative', 'Positive']
+		print(metrics.classification_report(y_test_ID, y_score_ID, target_names=target_names))
+		print(metrics.classification_report(y_test_OOD, y_score_OOD, target_names=target_names))
+
+		disp = metrics.plot_confusion_matrix(classifier, X_test, y_test)
+		disp.figure_.suptitle("Confusion Matrix")
+		print("Confusion matrix:\n%s" % disp.confusion_matrix)
+
+		plt.show()
+	'''
+		fpr_id, tpr_id, thresholds_id, fpr_ood, tpr_ood, thresholds_ood = ROC_ID_OOD(y_test_ID, y_score_ID, y_test_OOD, y_score_OOD)
+	
+		if mode == 'fp_tp':
+			# fpr ood x tpr id 
+			# True positive rate in ID over false positive rate in OOD = verifies how much the monitor
+			# helps the classifier in avoiding missclassification on known data while avoiding raising false alarms on OOD
+			roc_auc = auc(fpr_ood, tpr_id)
+			label = '{} (area = {})'.format(title, round(roc_auc, 2))
+			
+			plt.plot(fpr_ood, tpr_id, #color='darkorange',
+			         lw=lw, label=label)
+			plt.legend(loc="lower right")
+
+			plt.xlabel('FPR on {}'.format(readout.ood_dataset))
+			plt.ylabel('TPR on {}'.format(readout.id_dataset))
+			
+		elif mode == 'tp_fp':
+			# tpr ood x fpr id
+			# False positive rate in ID over true positive rate in OOD = verifies how much the monitor
+			# raises false alarms on known data while correctly identifying OOD data
+			roc_auc = auc(tpr_ood, fpr_id)
+			label = '{} (area = {})'.format(title, round(roc_auc, 2))
+			
+			plt.plot(tpr_ood, fpr_id, lw=lw, label=label)
+			plt.legend(loc="lower right")
+
+			plt.xlabel('TPR on {}'.format(readout.ood_dataset))
+			plt.ylabel('FPR on {}'.format(readout.id_dataset))
+
+		area = get_AUPR(y_test_ID, y_score_ID)
+		print ("Area Under PR Curve(AP) ID: %0.2f" % area)
+		print('AUROC ID', roc_auc_score(y_test_ID, y_score_ID))
+
+		area = get_AUPR(y_test_OOD, y_score_OOD)
+		print ("Area Under PR Curve(AP) OOD: %0.2f" % area)
+		print('AUROC OOD', roc_auc_score(y_test_OOD, y_score_OOD))
+
+		print('thresholds_ood', thresholds_ood)
+		print('thresholds_id', thresholds_id)
+		ind = np.where(tpr_ood==0.95)
+
+		print('FPR at 95% TPR:', fpr_id[ind])
+
 	plt.show()
-
-	area = get_AUPR(y_test, y_score)
-	print ("Area Under PR Curve(AP): %0.2f" % area)
-	print('AUROC', roc_auc_score(y_test, y_score))
+	'''
 
 
-def tpr_ID_at_fpr_OOD(tpr_rate=0.95):
+def plot_FPR_at_TPR(fpr, tpr, tpr_rate=0.95):
 	pass
 
 
@@ -241,3 +293,36 @@ def get_AUPR(labels, predicted):
 	precision, recall, thresholds = precision_recall_curve(labels, predicted)
 	area = auc(recall, precision)
 	return area
+
+
+def plot_box_analysis(boxes_monitor, point):
+	pass
+
+
+def plot_monitored_instances():
+	pass
+
+
+def confusion_matrix():
+	import seaborn as sn
+	import pandas as pd
+	import matplotlib.pyplot as plt
+	
+
+	array = [[13,1,1,0,2,0],
+	         [3,9,6,0,1,0],
+	         [0,0,16,2,0,0],
+	         [0,0,0,13,0,0],
+	         [0,0,0,0,15,0],
+	         [0,0,1,0,0,15]]
+
+	df_cm = pd.DataFrame(array, range(6), range(6))
+	plt.figure(figsize=(15,10))
+	sn.set(font_scale=1) # for label size
+	sn.heatmap(df_cm, annot=True, annot_kws={"size": 12}) # font size
+
+	plt.show()
+
+
+if __name__ == '__main__':
+	confusion_matrix()

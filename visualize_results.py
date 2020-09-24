@@ -19,6 +19,10 @@ from sklearn.model_selection import GridSearchCV
 from skimage.feature import hog
 from skimage import data, exposure
 from skimage.color import rgb2gray
+#import plotly
+import pandas as pd
+#import plotly.express as px
+import matplotlib
 
 
 sns.set()
@@ -398,11 +402,17 @@ if __name__ == '__main__':
 	#names = ['SGD (scale train/ not scale test)','not scaled SGD','scaled SGD']
 	#title = 'ID=GTSRB; OOD=BTSC; SGD'
 
-	experiments = ['PHD-93', 'PHD-95', 'PHD-96'] # out of distribution
-	names = ['SGD antigo','SGD (tester modificado)', 'SGD (BTSC x GTSRB mapeado)']
-	title = 'ID=GTSRB; OOD=BTSC; SGD'
+	#experiments = ['PHD-93', 'PHD-95', 'PHD-96'] # out of distribution
+	#names = ['SGD antigo','SGD (tester modificado)', 'SGD (BTSC x GTSRB mapeado)']
+	#title = 'ID=GTSRB; OOD=BTSC; SGD'
 
-	visualize_experiments(experiments, names, title, classes_to_monitor)
+	#visualize_experiments(experiments, names, title, classes_to_monitor)
+	
+	#project = neptune.init('raulsenaferreira/PhD')
+	#experiment = project.get_experiments(id='PHD-103')[0]
+	#logs = experiment.get_logs()
+	#r = logs['Pos_Neg_Classified_OOD']
+	#print(r)
 
 	total_instances = 19725
 	dataset = Dataset(dataset_name)
@@ -466,13 +476,12 @@ if __name__ == '__main__':
 	#visualize_experiments(experiments, names, 'ID=GTSRB; OOD=BTSC', classes_to_monitor)
 	'''
 
-	'''
-	dataset = Dataset(dataset_name)
+	
 	#X, y, _, _ = dataset.load_dataset(mode='train')
 	#y = np.argmax(y, axis=1) #if using training data
 
 	X, y = dataset.load_dataset(mode='test')
-	img = np.asarray([X[0]])
+	#img = np.asarray([X[0]])
 
 	#path to load the model
 	models_folder = "src"+sep+"bin"+sep+"models"+sep
@@ -481,8 +490,8 @@ if __name__ == '__main__':
 	# loading model
 	model = load_model(model_file)
 
-	arrWeights = util.get_activ_func(model, img, layerIndex=0)[0]
-	print(np.shape(arrWeights))
+	
+	'''
 	plt.matshow(img[0, :, :, :])
 	plt.show()
 	plt.matshow(arrWeights[ :, :, np.shape()], cmap='viridis')
@@ -499,3 +508,26 @@ if __name__ == '__main__':
 
 	cv2.destroyAllWindows()
 	'''
+	import matplotlib.animation as ani
+
+	fig = plt.figure()
+	def plot_act_func(i):
+		plt.clf()
+		uniform_data = []
+		for c in range(classes_to_monitor):
+			ind_class = np.where(y == c)
+			image = np.asarray([X[ind_class][i]])
+			arrWeights = util.get_activ_func(model, image, layerIndex=-1)[0]
+			#print(np.shape(arrWeights))
+			uniform_data.append(arrWeights)
+		#'''
+		ax = sns.heatmap(uniform_data)#, annot=True
+		bottom, top = ax.get_ylim()
+		ax.set_ylim(bottom + 0.5, top - 0.5)
+		#'''
+		#plt.imshow(uniform_data, cmap='hot', interpolation='nearest')
+		#plt.colorbar()
+
+	animator = ani.FuncAnimation(fig, plot_act_func, interval = 100)
+	
+	plt.show()

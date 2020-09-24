@@ -37,7 +37,7 @@ if __name__ == "__main__":
 		print('The results will not be saved')
 	
 	repetitions = 1
-	percentage_of_data = 0.05 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	percentage_of_data = 0.1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	if args.sub_field_arg == 'novelty_detection':
 		nd.start(args.experiment_type_arg, args.save_experiments, args.parallel_execution, \
