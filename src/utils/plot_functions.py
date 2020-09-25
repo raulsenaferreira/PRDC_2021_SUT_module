@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import matplotlib.animation as ani
 import numpy as np
 
 
@@ -317,4 +318,35 @@ def plot_images(title, data, labels, similarities, num_row, num_col):
             pass    
     fig.suptitle(title)    
     plt.tight_layout(pad=3.0)
+    plt.show()
+
+
+
+def run_act_func_animation(dataset_name, instances, labels, first_nth_classes, layerIndex, steps, file):
+    
+    fig = plt.figure()
+
+    def plot_animation(i):
+        plt.clf()
+        uniform_data = []
+        
+        for c in range(first_nth_classes):
+            ind_class = np.where(labels == c)
+            image = np.asarray([instances[ind_class][i]])
+            arrWeights = util.get_activ_func(model, image, layerIndex=layerIndex)[0]
+            #print(np.shape(arrWeights))
+            uniform_data.append(arrWeights[:first_nth_classes])
+        
+        ax = sns.heatmap(uniform_data)#, annot=True
+        bottom, top = ax.get_ylim()
+        ax.set_ylim(bottom + 0.5, top - 0.5)
+        
+        ax.set_xlabel('Neurons')
+        ax.set_ylabel('Classes')
+        title = 'Activation function of instance {} on GTSRB'.format(i, dataset_name)
+        plt.title(title)
+        
+    animator = ani.FuncAnimation(fig, plot_animation, frames=200, interval = steps)
+    animator.save(file, fps=2)
+    #animator.save(r'act_func_animation.gif')
     plt.show()

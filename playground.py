@@ -3,6 +3,7 @@ import neptune
 from src.Classes.readout import Readout
 from src.utils import metrics
 from src.utils import util
+from src.utils import plot_functions
 from src.Classes.dataset import Dataset
 import cv2 as cv
 import numpy as np
@@ -21,7 +22,6 @@ from skimage import data, exposure
 from skimage.color import rgb2gray
 #import plotly
 import pandas as pd
-#import plotly.express as px
 import matplotlib
 
 
@@ -508,26 +508,8 @@ if __name__ == '__main__':
 
 	cv2.destroyAllWindows()
 	'''
-	import matplotlib.animation as ani
-
-	fig = plt.figure()
-	def plot_act_func(i):
-		plt.clf()
-		uniform_data = []
-		for c in range(classes_to_monitor):
-			ind_class = np.where(y == c)
-			image = np.asarray([X[ind_class][i]])
-			arrWeights = util.get_activ_func(model, image, layerIndex=-1)[0]
-			#print(np.shape(arrWeights))
-			uniform_data.append(arrWeights)
-		#'''
-		ax = sns.heatmap(uniform_data)#, annot=True
-		bottom, top = ax.get_ylim()
-		ax.set_ylim(bottom + 0.5, top - 0.5)
-		#'''
-		#plt.imshow(uniform_data, cmap='hot', interpolation='nearest')
-		#plt.colorbar()
-
-	animator = ani.FuncAnimation(fig, plot_act_func, interval = 100)
 	
-	plt.show()
+	
+	# OK
+	#file = 'results\\video\\novelty_detection\\act_func_animation.mp4'
+	#plot_functions.run_act_func_animation(dataset_name, X, y, 20, -1, 50, file)
