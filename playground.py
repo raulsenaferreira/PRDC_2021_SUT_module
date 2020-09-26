@@ -510,6 +510,18 @@ if __name__ == '__main__':
 	'''
 	
 	
-	# OK
+	# video or plot of activation functions OK
 	#file = 'results\\video\\novelty_detection\\act_func_animation.mp4'
-	#plot_functions.run_act_func_animation(dataset_name, X, y, 20, -1, 50, file)
+	#plot_functions.run_act_func_animation(model, dataset_name, X, y, 20, -1, 50, file)
+
+	# video or plot of 2D abstraction boxes
+	first_nth_classes, layerIndex, steps = 3, -2, 50
+	file = 'results\\video\\novelty_detection\\box_abstractions.mp4'
+	technique = 'oob'
+	monitor_path = 'src\\novelty_detection\\bin\\monitors\\dnn_internals\\'+dataset_name
+	monitor_folder = os.path.join(monitor_path, technique)
+	#dim_reduc_obj = 'trained_'
+	
+	plot_functions.run_boxes_animation(model, dataset_name, technique, X, y, first_nth_classes, layerIndex, steps, file, monitor_folder, dim_reduc_obj=None)
+
+	# video or plot of 

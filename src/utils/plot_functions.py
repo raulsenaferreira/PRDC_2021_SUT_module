@@ -1,7 +1,14 @@
+import os
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.animation as ani
 import numpy as np
+import matplotlib.patches as mpatches
+import pickle
+from src.utils import util
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
+
 
 
 def plotDistributions(distributions):
@@ -96,39 +103,6 @@ def plot(X, y, coreX, coreY, t):
     for cl in classes:
         #points
         points = X[np.where(y==cl)[0]]
-        x1 = points[:,0]
-        x2 = points[:,1]
-        handles.append(ax.scatter(x1, x2, c = colors[color]))
-        #core support points
-        color+=1
-        corePoints = coreX[np.where(coreY==cl)[0]]
-        coreX1 = corePoints[:,0]
-        coreX2 = corePoints[:,1]
-        handles.append(ax.scatter(coreX1, coreX2, c = colors[color]))
-        #labels
-        classLabels.append('Class {}'.format(cl))
-        classLabels.append('Core {}'.format(cl))
-        color+=1
-
-    ax.legend(handles, classLabels)
-    title = "Data distribution. Step {}".format(t)
-    plt.title(title)
-    plt.show()
-
-
-def plotAnimation(i):
-    classes = list(set(arrY[i]))
-    fig = plt.figure()
-    handles = []
-    classLabels = []
-    cmx = plt.get_cmap('Paired')
-    colors = cmx(np.linspace(0, 1, (len(classes)*2)+1))
-    #classLabels = ['Class 1', 'Core 1', 'Class 2', 'Core 2']
-    ax = fig.add_subplot(111)
-    color=0
-    for cl in classes:
-        #points
-        points = arrX[i][np.where(y==cl)[0]]
         x1 = points[:,0]
         x2 = points[:,1]
         handles.append(ax.scatter(x1, x2, c = colors[color]))
@@ -321,8 +295,7 @@ def plot_images(title, data, labels, similarities, num_row, num_col):
     plt.show()
 
 
-
-def run_act_func_animation(dataset_name, instances, labels, first_nth_classes, layerIndex, steps, file):
+def run_act_func_animation(model, dataset_name, instances, labels, first_nth_classes, layerIndex, steps, file):
     
     fig = plt.figure()
 
@@ -348,5 +321,128 @@ def run_act_func_animation(dataset_name, instances, labels, first_nth_classes, l
         
     animator = ani.FuncAnimation(fig, plot_animation, frames=200, interval = steps)
     animator.save(file, fps=2)
-    #animator.save(r'act_func_animation.gif')
+    #plt.show()
+
+
+def print_points_boxes_2(ax, c, boxes, arr_points, arr_pred, tau=0.0001, dim_reduc_obj=None):
+    color={0:'yellow', 1:'green', 2:'blue'}
+    arr_polygons = []
+
+    for box in boxes:
+        #print(class_to_monitor, box)
+        x1 = box[0][0]
+        x2 = box[0][1]
+        y1 = box[1][0]
+        y2 = box[1][1]
+
+        x1 = x1*tau-x1 if x1 > 0 else x1-tau
+        x2 = x2*tau+x2 if x2 > 0 else x2+tau
+        y1 = y1*tau-y1 if y1 > 0 else y1-tau
+        y2 = y2*tau+y2 if y2 > 0 else y2+tau
+
+        rectangle = [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
+        #print(rectangle)
+        polygon = Polygon(rectangle)
+        arr_polygons.append(polygon)
+
+        ax.add_patch(mpatches.Polygon(rectangle, alpha=0.2, color=color[c]))
+
+    for ypred, intermediateValues in zip(arr_pred, arr_points):
+        x,y = None, None
+        data = np.asarray(intermediateValues)
+        #print(np.shape(data))
+        
+        if dim_reduc_obj!=None:
+            dim_reduc_obj = pickle.load(open(dim_reduc_obj, "rb"))
+            data = dim_reduc_obj.transform(data.reshape(1, -1))[0] #last version
+            #print(np.shape(data))
+            x = data[0]
+            y = data[1]
+        else:
+            x = data[0]
+            y = data[-1]
+
+        point = Point(x, y)
+        is_outside_of_box = True
+
+        for polygon in arr_polygons:
+            if polygon.contains(point):
+                is_outside_of_box = False
+        
+        if is_outside_of_box:
+            if c != ypred:
+                #true positive
+                plt.plot([x], [y], marker='.', markersize=10, color="red")
+            else:
+                #false positive
+                plt.plot([x], [y], marker='x', markersize=10, color="red")
+        else:
+            if c == ypred:
+                #true negative
+                plt.plot([x], [y], marker='.', markersize=10, color=color[c]) 
+            else:
+                #false negative
+                plt.plot([x], [y], marker='x', markersize=10, color=color[c])
+
+
+def run_boxes_animation(model, dataset_name, technique, instances, labels,\
+ first_nth_classes, layerIndex, steps, file, monitor_folder, dim_reduc_obj):
+    num_instances = 50
+    tau = 0.01 # enlarging factor for abstraction boxes area
+
+    fig, ax = plt.subplots()
+
+    for c in range(first_nth_classes):
+        ind_class = np.where(labels == c)
+        arr_points = []
+        arr_pred = []
+        #dim_reduc_obj = os.path.join(monitor_folder, dim_reduc_obj)
+
+        for i in range(num_instances):
+            image = np.asarray([instances[ind_class][i]])
+            y_pred = np.argmax(model.predict(image))
+            arr_pred.append(y_pred)
+
+            boxes_path = os.path.join(monitor_folder, 'class_{}'.format(c), 'monitor_{}_3_clusters.p'.format(technique))
+            boxes = pickle.load(open(boxes_path, "rb"))
+            #print('boxes shape for class', c, np.shape(boxes))
+            
+            arrWeights = util.get_activ_func(model, image, layerIndex=layerIndex)[0]
+            arr_points.append(arrWeights)
+
+        print_points_boxes_2(ax, c, boxes, arr_points, arr_pred, tau, dim_reduc_obj)
+
+    plt.show()
+
+
+def plotAnimation(i):
+    classes = list(set(arrY[i]))
+    fig = plt.figure()
+    handles = []
+    classLabels = []
+    cmx = plt.get_cmap('Paired')
+    colors = cmx(np.linspace(0, 1, (len(classes)*2)+1))
+    #classLabels = ['Class 1', 'Core 1', 'Class 2', 'Core 2']
+    ax = fig.add_subplot(111)
+    color=0
+    for cl in classes:
+        #points
+        points = arrX[i][np.where(y==cl)[0]]
+        x1 = points[:,0]
+        x2 = points[:,1]
+        handles.append(ax.scatter(x1, x2, c = colors[color]))
+        #core support points
+        color+=1
+        corePoints = coreX[np.where(coreY==cl)[0]]
+        coreX1 = corePoints[:,0]
+        coreX2 = corePoints[:,1]
+        handles.append(ax.scatter(coreX1, coreX2, c = colors[color]))
+        #labels
+        classLabels.append('Class {}'.format(cl))
+        classLabels.append('Core {}'.format(cl))
+        color+=1
+
+    ax.legend(handles, classLabels)
+    title = "Data distribution. Step {}".format(t)
+    plt.title(title)
     plt.show()
