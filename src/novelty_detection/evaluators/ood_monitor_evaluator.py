@@ -47,12 +47,17 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 	dataset = experiment.dataset
 	experiment_type = experiment.experiment_type
 
+	# only for boxes-based monitors enlarged with a constant 'tau' 
+	try: 
+		monitor.monitor_name += '_tau_'+str(monitor.tau)
+	except:
+		pass
+
 	for i in range(repetitions):
 		print("Evaluating {} on {} data with {} monitor: {} of {} repetitions...\n".format(experiment.name, experiment_type, monitor.monitor_name, i+1, repetitions))
 		
 		ini = timer()
-		arrPred, arrLabel, readout = experiment.tester.run(
-			dataset.X, dataset.y, experiment, monitor, dataset.dataset_name)
+		arrPred, arrLabel, readout = experiment.tester.run(dataset, experiment, monitor)
 		end = timer()
 
 		arr_acc.append(metrics.evaluate(arrLabel, arrPred, 'accuracy'))
@@ -78,7 +83,7 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 				arr_cf_OOD[class_OOD][1].append(len(readout.arr_false_negative_OOD[class_OOD]))
 				arr_cf_OOD[class_OOD][2].append(len(readout.arr_true_positive_OOD[class_OOD]))
 				arr_cf_OOD[class_OOD][3].append(len(readout.arr_true_negative_OOD[class_OOD]))
-
+	'''
 	#### for test purposes
 	import random 
 	readout2 = copy.deepcopy(readout)
@@ -89,7 +94,7 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 	readout.ood_dataset, readout2.ood_dataset = 'BTSC', 'BTSC'
 	metrics.plot_ROC_curve_ID_OOD([readout, readout2], 'fp_tp')
 	#### 
-
+	'''
 	if save_experiments:
 		tag1 = monitor.monitor_name
 		tag2 = 'ID = {}'.format(dataset.dataset_ID_name)
@@ -105,8 +110,18 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 		neptune.log_metric('ML_F1', np.mean(arr_f1))
 
 		# ID
-		neptune.log_artifact('Pos_Neg_Classified_ID', arr_pos_neg_ID_pred)
-		neptune.log_artifact('Pos_Neg_Labels_ID', arr_pos_neg_ID_true)
+		tmp_path = os.path.join('results', 'temp')
+		os.makedirs(tmp_path, exist_ok=True)
+
+		tmp_path = os.path.join(tmp_path, 'Pos_Neg_Classified_ID.npy')
+		np.save(tmp_path, arr_pos_neg_ID_pred) #np.load('Pos_Neg_Classified_ID.npy')
+		neptune.log_artifact(tmp_path)
+		os.remove(tmp_path)
+
+		tmp_path = os.path.join('results', 'temp', 'Pos_Neg_Labels_ID.npy')
+		np.save(tmp_path, arr_pos_neg_ID_true) #np.load('Pos_Neg_Labels_ID.npy')
+		neptune.log_artifact(tmp_path)
+		os.remove(tmp_path)
 
 		for monitored_class in range(experiment.classes_to_monitor_ID):
 			neptune.log_metric('False_Positive_ID_{}'.format(monitored_class), int(np.mean(arr_cf_ID[monitored_class][0])))
@@ -116,8 +131,15 @@ def run_evaluation(monitor, experiment, repetitions, save_experiments):
 
 		# OOD
 		if experiment_type == 'OOD':
-			neptune.log_artifact('Pos_Neg_Classified_OOD', arr_pos_neg_OOD_pred)
-			neptune.log_artifact('Pos_Neg_Labels_OOD', arr_pos_neg_OOD_true)
+			tmp_path = os.path.join('results', 'temp', 'Pos_Neg_Classified_OOD.npy')
+			np.save(tmp_path, arr_pos_neg_OOD_pred) #np.load('Pos_Neg_Classified_OOD.npy')
+			neptune.log_artifact(tmp_path)
+			os.remove(tmp_path)
+
+			tmp_path = os.path.join('results', 'temp', 'Pos_Neg_Labels_OOD.npy')
+			np.save(tmp_path, arr_pos_neg_OOD_true) #np.load('Pos_Neg_Labels_OOD.npy')
+			neptune.log_artifact(tmp_path)
+			os.remove(tmp_path)
 
 			for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
 				neptune.log_metric('False_Positive_OOD_{}'.format(class_OOD), int(np.mean(arr_cf_OOD[class_OOD][0])))
@@ -140,7 +162,7 @@ def evaluate(repetitions, experiment, parallel_execution, save_experiments):
 		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in experiment.monitors:
-			processes_pool.append(pool.apipe(run_evaluation, experiment, repetitions, save_experiments))
+			processes_pool.append(pool.apipe(run_evaluation, monitor, experiment, repetitions, save_experiments))
 
 		for process in processes_pool:
 			success = process.get(timeout=timeout)

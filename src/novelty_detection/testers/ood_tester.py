@@ -19,6 +19,7 @@ def run(dataset, experiment, monitor):
     X_test, y_test = dataset.X, dataset.y
     dataset_name = dataset.dataset_name
     arrPred = []
+    loaded_monitor = {}
 
     readout = Readout()
 
@@ -53,9 +54,13 @@ def run(dataset, experiment, monitor):
         scaler = pickle.load(open(scaler_file, "rb"))
         monitor.filename = '(scaled_input_version)'+monitor.filename
 
-    # loading cluster-baed monitor
-    monitor_path = monitor.monitors_folder +sep+ monitor.filename
-    loaded_monitor = pickle.load(open(monitor_path, "rb"))
+    if monitor.OOD_approach == 'outside_of_box':
+        for c in range(experiment.classes_to_monitor_ID): 
+            monitor_path = os.path.join(monitor.monitors_folder+str(c), monitor.filename)
+            loaded_monitor.update({c: pickle.load(open(monitor_path, "rb"))})
+    else:
+        monitor_path = os.path.join(monitor.monitors_folder, monitor.filename)
+        loaded_monitor = pickle.load(open(monitor_path, "rb"))
 
     for img, lbl in zip(X_test, y_test):
         if experiment.verbose:

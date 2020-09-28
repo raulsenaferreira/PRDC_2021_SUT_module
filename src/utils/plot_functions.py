@@ -324,7 +324,8 @@ def run_act_func_animation(model, dataset_name, instances, labels, first_nth_cla
     #plt.show()
 
 
-def print_points_boxes_2(ax, c, boxes, arr_points, arr_pred, tau=0.0001, dim_reduc_obj=None):
+### Helper function for run_boxes_analysis()
+def print_points_boxes(ax, c, boxes, arr_points, arr_pred, tau=0.0001, dim_reduc_obj=None):
     color={0:'yellow', 1:'green', 2:'blue'}
     arr_polygons = []
 
@@ -385,7 +386,8 @@ def print_points_boxes_2(ax, c, boxes, arr_points, arr_pred, tau=0.0001, dim_red
                 plt.plot([x], [y], marker='x', markersize=10, color=color[c])
 
 
-def run_boxes_animation(model, dataset_name, technique, instances, labels,\
+### Function that performs analysis of positives and negatives detections from the OOB-based safety monitors
+def run_boxes_analysis(model, dataset_name, technique, instances, labels,\
  first_nth_classes, layerIndex, steps, file, monitor_folder, dim_reduc_obj):
     num_instances = 50
     tau = 0.01 # enlarging factor for abstraction boxes area
@@ -410,39 +412,127 @@ def run_boxes_animation(model, dataset_name, technique, instances, labels,\
             arrWeights = util.get_activ_func(model, image, layerIndex=layerIndex)[0]
             arr_points.append(arrWeights)
 
-        print_points_boxes_2(ax, c, boxes, arr_points, arr_pred, tau, dim_reduc_obj)
+        print_points_boxes(ax, c, boxes, arr_points, arr_pred, tau, dim_reduc_obj)
 
     plt.show()
 
 
-def plotAnimation(i):
-    classes = list(set(arrY[i]))
+### Helper function for plot_single_clf_pca_actFunc_based_analysis()
+def startAnimation(X, y, yt, clf):
+    X = np.array(X)
+    y = np.array(y)
+    yt = np.array(yt)
+    # First set up the figure, the axis, and the plot element we want to animate
     fig = plt.figure()
-    handles = []
-    classLabels = []
-    cmx = plt.get_cmap('Paired')
-    colors = cmx(np.linspace(0, 1, (len(classes)*2)+1))
-    #classLabels = ['Class 1', 'Core 1', 'Class 2', 'Core 2']
-    ax = fig.add_subplot(111)
-    color=0
-    for cl in classes:
-        #points
-        points = arrX[i][np.where(y==cl)[0]]
-        x1 = points[:,0]
-        x2 = points[:,1]
-        handles.append(ax.scatter(x1, x2, c = colors[color]))
-        #core support points
-        color+=1
-        corePoints = coreX[np.where(coreY==cl)[0]]
-        coreX1 = corePoints[:,0]
-        coreX2 = corePoints[:,1]
-        handles.append(ax.scatter(coreX1, coreX2, c = colors[color]))
-        #labels
-        classLabels.append('Class {}'.format(cl))
-        classLabels.append('Core {}'.format(cl))
-        color+=1
+        
+    # initialization function: plot the background of each frame
+    def init():
+        scatter = plt.scatter([], [], s=20, edgecolor='k')
+        return scatter,
+        
+    # animation function.  This is called sequentially
+    def animate(i):
+        #print('X', np.shape(X))
+        #print('y', np.shape(y))
+        #print('yt', np.shape(yt))
+        
+        #decision boundaries
+        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1), np.arange(y_min, y_max, 0.1))
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        
+        contour = plt.contourf(xx, yy, Z, alpha=0.4)
+        scatter = plt.scatter(X[:, 0], X[:, 1], c=yt, s=30)
+        cores = plt.scatter(X[:, 0], X[:, 1], c=y, s=50, marker ='v', edgecolor='k')
+        plt.title("Class {}".format(i+1))
+        #plt.show()
+        return scatter,
+    
+    anim = ani.FuncAnimation(fig, animate, init_func=init,
+                               frames=100, interval=100, blit=True)
+    anim.save('animation.mp4', fps=1)
+    #plt.show()
 
-    ax.legend(handles, classLabels)
-    title = "Data distribution. Step {}".format(t)
-    plt.title(title)
-    plt.show()
+
+### Function that analyzes single classifiers trained on 2D projections from activation funcs
+def plot_single_clf_pca_actFunc_based_analysis(model, dataset_name, clf, instances, labels,\
+ first_nth_classes, layerIndex, steps, file, dim_reduc_obj):
+    
+    #fig, ax = plt.subplots()
+    #fig, ax = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(10, 8)) 
+    '''
+    for c in range(first_nth_classes):
+        ind_class = np.where(labels == c)
+        arr_pred_CNN = []
+        arr_pred_monitor = []
+        data = []
+
+        for i in range(num_instances):
+            image = np.asarray([instances[ind_class][i]])
+            y_pred = np.argmax(model.predict(image))
+            arr_pred_CNN.append(y_pred)
+            
+            arrWeights = util.get_activ_func(model, image, layerIndex=layerIndex)[0]
+            arrWeights = np.array(arrWeights).reshape(1, -1)
+            
+            reduced_data = dim_reduc_obj.transform(arrWeights)
+            data.append(reduced_data[0])
+            m_pred = clf.predict(reduced_data)
+            arr_pred_monitor.append(m_pred[0])
+    '''
+        #startAnimation(data, arr_pred_CNN, arr_pred_monitor, clf)
+    #X = np.array(data)
+    #y = np.array(arr_pred_CNN)
+    #yt = np.array(arr_pred_monitor)
+    # First set up the figure, the axis, and the plot element we want to animate
+    fig = plt.figure()
+        
+    # initialization function: plot the background of each frame
+    def init():
+        scatter = plt.scatter([], [], s=20, edgecolor='k')
+        return scatter,
+
+    def animate(i):
+        num_instances = 10
+        ind_class = np.where(labels == i)
+        arr_pred_CNN = []
+        arr_pred_monitor = []
+        data = []
+
+        for n in range(num_instances):
+            image = np.asarray([instances[ind_class][n]])
+            y_pred = np.argmax(model.predict(image))
+            arr_pred_CNN.append(y_pred)
+            
+            arrWeights = util.get_activ_func(model, image, layerIndex=layerIndex)[0]
+            arrWeights = np.array(arrWeights).reshape(1, -1)
+            
+            reduced_data = dim_reduc_obj.transform(arrWeights)
+            data.append(reduced_data[0])
+            m_pred = clf.predict(reduced_data)
+            arr_pred_monitor.append(m_pred[0])
+        
+        X = np.array(data)
+        y = np.array(arr_pred_CNN)
+        yt = np.array(arr_pred_monitor)
+        #decision boundaries
+        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1), np.arange(y_min, y_max, 0.1))
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        
+        contour = plt.contourf(xx, yy, Z, alpha=0.4)
+        scatter = plt.scatter(X[:, 0], X[:, 1], c=yt, s=30)
+        cores = plt.scatter(X[:, 0], X[:, 1], c=y, s=50, marker ='v', edgecolor='k')
+        plt.title("Class {}".format(i))
+        plt.show()
+        return scatter,
+    for i in range(3):
+        animate(i)
+    #anim = ani.FuncAnimation(fig, animate, init_func=init, frames=30, interval=first_nth_classes, blit=True)
+    #anim.save('animation.mp4', fps=1)
+
+    #plt.show()

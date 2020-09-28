@@ -23,6 +23,9 @@ from skimage.color import rgb2gray
 #import plotly
 import pandas as pd
 import matplotlib
+from sklearn.cluster import KMeans
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
 
 
 sns.set()
@@ -341,7 +344,20 @@ def hog_test(image):
 	plt.show()
 
 
+def prepare_data(model, X, y):
+	arrWeights = []
+	arr_lbl = []
 
+	for x, lbl in zip(X, y):
+		image = np.asarray([x])
+		y_pred = np.argmax(model.predict(image))
+		
+		if y_pred == lbl:
+			weights = util.get_activ_func(model, image, layerIndex=-2)[0]
+			arrWeights.append(weights)
+			arr_lbl.append(lbl)
+
+	return arrWeights, arr_lbl
 
 
 if __name__ == '__main__':
@@ -408,11 +424,15 @@ if __name__ == '__main__':
 
 	#visualize_experiments(experiments, names, title, classes_to_monitor)
 	
-	#project = neptune.init('raulsenaferreira/PhD')
-	#experiment = project.get_experiments(id='PHD-103')[0]
-	#logs = experiment.get_logs()
-	#r = logs['Pos_Neg_Classified_OOD']
-	#print(r)
+	project = neptune.init('raulsenaferreira/PhD')
+	experiment = project.get_experiments(id='PHD-106')[0]
+	tmp_path = 'results' #os.path.join('results', 'temp')
+	experiment.download_artifact('Pos_Neg_Labels_ID.npy', tmp_path)
+	tmp_path = os.path.join(tmp_path, 'Pos_Neg_Labels_ID.npy')
+	arr = np.load(tmp_path)
+	os.remove(tmp_path)
+
+	print(arr)
 
 	total_instances = 19725
 	dataset = Dataset(dataset_name)
@@ -480,7 +500,7 @@ if __name__ == '__main__':
 	#X, y, _, _ = dataset.load_dataset(mode='train')
 	#y = np.argmax(y, axis=1) #if using training data
 
-	X, y = dataset.load_dataset(mode='test')
+	#X, y = dataset.load_dataset(mode='test')
 	#img = np.asarray([X[0]])
 
 	#path to load the model
@@ -521,7 +541,17 @@ if __name__ == '__main__':
 	monitor_path = 'src\\novelty_detection\\bin\\monitors\\dnn_internals\\'+dataset_name
 	monitor_folder = os.path.join(monitor_path, technique)
 	#dim_reduc_obj = 'trained_'
-	
-	plot_functions.run_boxes_animation(model, dataset_name, technique, X, y, first_nth_classes, layerIndex, steps, file, monitor_folder, dim_reduc_obj=None)
+	#plot_functions.run_boxes_animation(model, dataset_name, technique, X, y, first_nth_classes, layerIndex, steps, file, monitor_folder, dim_reduc_obj=None)
+	'''
+	# video or plot of dim reduction + clf trained on act func values
+	train_size = int(len(X)*0.5)
+	arrWeights, arr_lbl = prepare_data(model, X[:train_size], y[:train_size])
+	dim_reduc_obj = PCA(n_components = 2)
+	data = dim_reduc_obj.fit_transform(arrWeights)
 
-	# video or plot of 
+	clf = KMeans(n_clusters = 3).fit(data, arr_lbl)
+	file = os.path.join('results', 'video', 'novelty_detection', 'pca_kmeans_actFunc.mp4')
+
+	plot_functions.plot_single_clf_pca_actFunc_based_analysis(model, dataset_name, clf, X[train_size:],\
+	 y[train_size:], first_nth_classes, layerIndex, steps, file, dim_reduc_obj)
+	'''

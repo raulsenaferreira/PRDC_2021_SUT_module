@@ -100,7 +100,7 @@ def prepare_box_based_monitors(root_path, dataset_name, PARAMS, class_to_monitor
 		arr_n_clusters_oob = PARAMS['arr_n_clusters']
 
 		for n_clusters_oob in arr_n_clusters_oob:
-
+			
 			if 'oob' == technique:
 				monitor_name = technique+'_{}_clusters'.format(n_clusters_oob)
 				

@@ -1,3 +1,5 @@
+import os
+import pickle
 
 def is_pred_diff(yPred, intermediateValues, loaded_monitor):
     
@@ -46,13 +48,21 @@ def safety_monitor_decision(readout, monitor, yPred, lbl, classes_to_monitor, in
 
     if monitor.OOD_approach == 'equality':
         # if monitor acceptance approach is based on two equal predictions
+        intermediateValues = np.reshape(intermediateValues, (1, -1))
         raise_alarm = is_pred_diff(yPred, intermediateValues, loaded_monitor)
 
     elif monitor.OOD_approach == 'outlier':
+        # if monitor acceptance approach is based on instance classified as outlier "-1"
+        intermediateValues = np.reshape(intermediateValues, (1, -1))
         raise_alarm = is_pred_neg(yPred, intermediateValues, loaded_monitor)
 
+    elif monitor.OOD_approach == 'outside_of_box':
+        raise_alarm = monitor.method(loaded_monitor[yPred], intermediateValues, yPred, monitor.monitors_folder, monitor.dim_reduc_method)
+
     # just when GTSRB = ID and BTSC = OOD, otherwise comment the line below
-    lbl = map_btsc_gtsrb(yPred, lbl)
+    if monitor.map_dataset_classes:
+        #print("mapping some classes between GTSRB and BTSC...")
+        lbl = map_btsc_gtsrb(yPred, lbl)
     
     # OOD label numbers starts after the ID label numbers
     if lbl < classes_to_monitor: 

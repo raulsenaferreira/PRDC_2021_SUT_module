@@ -5,6 +5,8 @@ import pickle
 from sklearn.cluster import KMeans
 from src.utils import util
 from matplotlib.path import Path
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 
 
@@ -66,6 +68,7 @@ def make_abstraction(data, monitor, save):
 
 		else:
 			method = monitor.dim_reduc_method.fit(data)
+			file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix
 
 			if save:
 				print("Saving trained dim reduc method in", file_path)
@@ -167,6 +170,58 @@ def find_point_2(boxes, intermediateValues, class_to_monitor, monitor_folder, di
 	print("return:", index)
 
 	#return result
+
+
+# most accurate version
+def check_outside_of_box(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_reduc_obj, tau=0.0001):
+	is_outside_of_box = True
+	result = False
+	x,y = None, None
+	data = np.asarray(intermediateValues)
+
+	arr_polygons = []
+
+	for box in boxes:
+		x1 = box[0][0]
+		x2 = box[0][1]
+		y1 = box[1][0]
+		y2 = box[1][1]
+
+		x1 = x1*tau-x1 if x1 > 0 else x1-tau
+		x2 = x2*tau+x2 if x2 > 0 else x2+tau
+		y1 = y1*tau-y1 if y1 > 0 else y1-tau
+		y2 = y2*tau+y2 if y2 > 0 else y2+tau
+
+		rectangle = [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
+		polygon = Polygon(rectangle)
+
+		arr_polygons.append(polygon)
+
+	if dim_reduc_obj!=None:
+
+		if type(dim_reduc_obj) == type([]):
+			dim_reduc_obj_1 = pickle.load(open(monitor_folder+str(class_to_monitor) +sep+'trained_'+dim_reduc_obj[0], "rb"))
+			intermediate_data = dim_reduc_obj_1.transform(data.reshape(1, -1))[0]
+			dim_reduc_obj_2 = pickle.load(open(monitor_folder+str(class_to_monitor) +sep+'trained_'+dim_reduc_obj[1], "rb"))
+			data = dim_reduc_obj_2.transform(intermediate_data.reshape(1, -1))[0]
+		else:
+			dim_reduc_obj = pickle.load(open(monitor_folder+str(class_to_monitor)+sep+'trained_'+dim_reduc_obj+'.p', "rb"))
+			data = dim_reduc_obj.transform(data.reshape(1, -1))[0] #last version
+			
+		x = data[0]
+		y = data[1]
+
+	else:
+		x = data[0]
+		y = data[-1]
+
+	point = Point(x, y)
+
+	for polygon in arr_polygons:
+		if polygon.contains(point):
+			is_outside_of_box = False
+	
+	return is_outside_of_box
 
 
 def find_point_box_ensemble(arr_boxes, intermediateValues_all, dim_reduc_obj):

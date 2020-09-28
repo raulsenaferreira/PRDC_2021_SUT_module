@@ -6,10 +6,10 @@ from src.Classes.monitor import Monitor
 from src.Classes.experiment import Experiment
 from src.novelty_detection.evaluators import ood_monitor_evaluator
 from src.novelty_detection.evaluators import dnn_baseline_evaluator
-from src.novelty_detection.testers import dnn_oob_tester
+from src.novelty_detection.testers import ood_tester
 from src.novelty_detection.testers import dnn_baseline_tester
 from src.novelty_detection.testers import classifier_based_on_act_func_tester
-from src.novelty_detection.testers import en_dnn_oob_tester
+from src.novelty_detection.testers import en_ood_tester
 from src.utils import util
 from src.utils import metrics
 from pathos.multiprocessing import ProcessingPool as Pool
@@ -85,11 +85,13 @@ def get_params(technique):
 	elif 'random_forest' ==  technique:
 		PARAMS.update({'grid_search': True})
 
-	elif 'ocsvm':
+	elif 'ocsvm' == technique:
 		PARAMS.update({'OOD_approach': 'outlier'})
 	
 	elif 'oob' in technique:
+		PARAMS.update({'arr_n_clusters': [3]})
 		PARAMS.update({'arr_n_components': 2}) 
+		PARAMS.update({'tau': [0.0001]}) 
 		PARAMS.update({'OOD_approach': 'outside_of_box'})
 
 	elif 'knn' == technique:
@@ -114,7 +116,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, verbose, re
 
 	model_names = ['leNet'] # 'leNet', 'vgg16'
 
-	technique_names = ['sgd'] #'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	technique_names = ['oob'] #'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	# disabling tensorflow logs
 	set_tf_loglevel(log_lvl)
@@ -170,7 +172,8 @@ def start(experiment_type_arg, save_experiments, parallel_execution, verbose, re
 			experiment.classes_to_monitor_OOD = ood_num_classes_to_monitor
 			experiment.dataset = dataset
 			experiment.evaluator = ood_monitor_evaluator
-			experiment.tester = classifier_based_on_act_func_tester
+			experiment.tester = ood_tester
+			#experiment.tester = classifier_based_on_act_func_tester
 			experiment.verbose = verbose
 
 			monitors = None
@@ -197,10 +200,7 @@ def start(experiment_type_arg, save_experiments, parallel_execution, verbose, re
 				## diferent evaluator and tester, if ensemble or standalone model
 				if 'ensemble' in model_name:
 					experiment.evaluator = en_dnn_oob_evaluator
-					experiment.tester = en_dnn_oob_tester
-				else:
-					experiment.tester = dnn_oob_tester
-					experiment.evaluator = ood_monitor_evaluator
+					experiment.tester = en_ood_tester
 
 			experiment.monitors = monitors
 			experiment.PARAMS = PARAMS

@@ -30,7 +30,6 @@ def build_monitors_by_class(root_path, parallel_execution, dataset_name, params,
 
 	# Generate monitors for each class for a specific dataset
 	for class_to_monitor in range(classes_to_monitor):
-		#Building monitors for Novelty Detection
 		monitors = build_monitors.prepare_box_based_monitors(root_path, dataset_name, params, class_to_monitor)
 		arr_monitors.extend(monitors)
 		#arr_monitors = np.append(arr_monitors, monitors)
@@ -45,14 +44,14 @@ def build_monitors_by_class(root_path, parallel_execution, dataset_name, params,
 		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in arr_monitors:
-			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model_file, X, y, save)) 
+			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model_file, X, y, save, params)) 
 		
 		for process in processes_pool:
-			_, _ = process.get(timeout=timeout)
+			_ = process.get(timeout=timeout)
 	else:
 		print("\nSerial execution.")
 		for monitor in arr_monitors:
-			_, _ = monitor.trainer.run(monitor, model_file, X, y, save)
+			_ = monitor.trainer.run(monitor, model_file, X, y, save, params)
 			
 
 def build_monitors_all_classes(root_path, parallel_execution, dataset_name, params, model_file, X, y, save):
@@ -69,14 +68,14 @@ def build_monitors_all_classes(root_path, parallel_execution, dataset_name, para
 		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in arr_monitors:
-			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model_file, X, y, save)) 
+			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model_file, X, y, save, PARAMS['use_alternative_monitor'])) 
 		
 		for process in processes_pool:
 			process.get(timeout=timeout)
 	else:
 		print("\nSerial execution.")
 		for monitor in arr_monitors:
-			monitor.trainer.run(monitor, model_file, X, y, save)
+			monitor.trainer.run(monitor, model_file, X, y, save, PARAMS['use_alternative_monitor'])
 
 
 
@@ -100,7 +99,7 @@ if __name__ == "__main__":
 	 #for oob variations
 	 'arr_n_components' : [2], #2, 3, 5, 10
 	 #for oob variations and knn
-	 'arr_n_clusters' : [2, 3, 5, 10], #1, 2, 3, 4, 5
+	 'arr_n_clusters' : [3], # 2, 3, 5, 10
 	 #for ocsvm
 	 'min_samples': [5, 10, 15],  #min_samples 5, 10, 15
 	 #for random forest and linear classifiers
@@ -108,11 +107,12 @@ if __name__ == "__main__":
 	 #for knn and sgd classifiers
 	 'use_scaler': False,
 	 #all methods
+	 'verbose' : True,
 	 'use_alternative_monitor': False, # True = label -> act func -> save in the monitor; False = label -> act func if label == predicted -> save in the monitor
-	 'technique_names' : ['ocsvm']} #'baseline', 'knn', 'random_forest', 'sgd', 'ocsvm', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['oob_isomap', 'oob_pca']} #'baseline', 'knn', 'random_forest', 'sgd', 'ocsvm', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	num_classes_to_monitor = [43]# 10, 43
-	is_build_monitors_by_class = False
+	is_build_monitors_by_class = True #True just for OOB-based monitors
 	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
 
 	root_path = 'src'+sep+sub_field+sep+'bin'+sep+'monitors'
