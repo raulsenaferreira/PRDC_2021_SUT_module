@@ -78,17 +78,13 @@ def build_monitors_all_classes(root_path, parallel_execution, dataset_name, para
 
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
+def start(sub_field, save, parallel_execution, verbose, root_path, perc_of_data)
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
 	# re-enabling tensorflow logs
 	#set_tf_loglevel(logging.INFO)
 
-	#general settings
-	save = True
-	parallel_execution = False
-
-	sub_field = 'novelty_detection'
 	dataset_names = ['GTSRB']# 'MNIST', 'CIFAR-10'
 	validation_size = 0.3
 	model_names = ['leNet'] # 'leNet', 'vgg16', 'resnet'
@@ -105,15 +101,11 @@ if __name__ == "__main__":
 	 #for knn and sgd classifiers
 	 'use_scaler': False,
 	 #all methods
-	 'verbose' : True,
 	 'use_alternative_monitor': False, # True = label -> act func -> save in the monitor; False = label -> act func if label == predicted -> save in the monitor
 	 'technique_names' : ['oob']} #'baseline', 'knn', 'random_forest', 'sgd', 'ocsvm', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	num_classes_to_monitor = [43]# 10, 43
 	is_build_monitors_by_class = True #True just for OOB-based monitors
-	perc_of_data = 1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
-
-	root_path = os.path.join('src', sub_field, 'bin', 'monitors')
 	
 	for model_name, dataset_name, classes_to_monitor in zip(model_names, dataset_names, num_classes_to_monitor):
 		

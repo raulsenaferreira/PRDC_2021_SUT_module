@@ -1,12 +1,33 @@
+import os
+import argparse
 from pathos.multiprocessing import ProcessingPool as Pool
 from src import model_config as model_cfg
 from src.Classes.dataset import Dataset
 
 
 if __name__ == "__main__":
-	perc_of_data = 0.1 #e.g.: 0.1 = testing with 10% of test data; 1 = testing with all test data
+	parser = argparse.ArgumentParser()
+	
+	parser.add_argument("architecture", help="Type of DNN (lenet, vgg16, resnet)")
 
-	dataset_names = ['MNIST', 'GTSRB', 'CIFAR-10']
+	parser.add_argument("dataset", help="Choose between pre-defined datasets (mnist, gtsrb,\
+	 btsc, cifar-10, cifar-100, imagenet, sum)")
+
+	#parser.add_argument("parallel_execution", type=int, help="Parallelize experiments up to the number of physical \
+	#	cores in the machine (1 for True or 0 for False)")
+
+	parser.add_argument("verbose", type=int, help="Print the processing progress (1 for True or 0 for False)")
+
+	parser.add_argument("percentage_of_data", type=int, default=100, help="e.g.: 10 = testing with 10% of test data; 100 = testing with all test data")
+
+	#parser.add_argument("monitors_folder_root_dir", type=text, default= os.path.join('src', 'threats', args.sub_field_arg, 'bin') , help="number of repetitions for each experiment")
+
+	args = parser.parse_args()
+
+	perc_of_data = args.percentage_of_data / 100
+
+	#dataset_names = ['MNIST', 'GTSRB', 'CIFAR-10']
+	dataset_names = [args.dataset]
 	models_pool = []
 	timeout = 1000
 
