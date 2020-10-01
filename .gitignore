@@ -1,7 +1,8 @@
 data/
-src/novelty_detection/bin
-src/distributional_shift/bin
-src/adversarial_attack/bin
-src/OLD
-src/OLD_2
-src/tests/results
+src/bin/
+src/threats/novelty_detection/bin/
+src/threats/distributional_shift/bin/
+src/threats/adversarial_attack/bin/
+src/deprecated/OLD/
+src/deprecated/OLD_2/
+src/tests/results/

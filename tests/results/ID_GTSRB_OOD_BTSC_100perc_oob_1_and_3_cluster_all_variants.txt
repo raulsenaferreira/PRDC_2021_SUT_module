@@ -1,0 +1,96 @@
+Method: oob 1 cluster
+fp 67
+fn 7171
+tp 361
+tn 12126
+monitors accuracy = 0.6330544993662864
+monitor MCC score =  0.14149999096607888
+monitors error = 0.36694550063371356
+confidence interval = [0.36021931423043374, 0.3736716870369934]
+monitors precision = 0.8434579439252337
+monitors recall = 0.04792883696229421
+monitors F1 score = 0.09070351758793971
+Method: oob 3 clusters
+fp 125
+fn 7058
+tp 474
+tn 12068
+monitors accuracy = 0.6358428390367554
+monitor MCC score =  0.1491517381206685
+monitors error = 0.36415716096324463
+confidence interval = [0.3574418382979488, 0.3708724836285405]
+monitors precision = 0.7913188647746243
+monitors recall = 0.06293149229952204
+monitors F1 score = 0.11659082523674824
+Method: oob_isomap 1 cluster
+fp 92
+fn 6959
+tp 573
+tn 12101
+monitors accuracy = 0.6425348542458809
+monitor MCC score =  0.18446735856352858
+monitors error = 0.35746514575411914
+confidence interval = [0.3507768916877411, 0.36415339982049716]
+monitors precision = 0.8616541353383459
+monitors recall = 0.07607541157727031
+monitors F1 score = 0.13980724655361718
+Method: oob_isomap 3 clusters
+fp 209
+fn 6688
+tp 844
+tn 11984
+monitors accuracy = 0.6503422053231939
+monitor MCC score =  0.20513145053474308
+monitors error = 0.3496577946768061
+confidence interval = [0.34300291600348065, 0.3563126733501315]
+monitors precision = 0.8015194681861348
+monitors recall = 0.11205523101433883
+monitors F1 score = 0.19662201514269076
+Method: oob_pca 1 cluster
+fp 168
+fn 7278
+tp 254
+tn 12025
+monitors accuracy = 0.622509505703422
+monitor MCC score =  0.0669672505269566
+monitors error = 0.37749049429657794
+confidence interval = [0.37072540444441965, 0.38425558414873623]
+monitors precision = 0.6018957345971564
+monitors recall = 0.033722782793414764
+monitors F1 score = 0.06386723661051044
+Method: oob_pca 3 clusters
+fp 335
+fn 6902
+tp 630
+tn 11858
+monitors accuracy = 0.6331051964512041
+monitor MCC score =  0.12650916048469765
+monitors error = 0.36689480354879594
+confidence interval = [0.3601688125019968, 0.3736207945955951]
+monitors precision = 0.6528497409326425
+monitors recall = 0.08364312267657993
+monitors F1 score = 0.14828763092856304
+Method: oob_pca_isomap 1 cluster
+fp 129
+fn 7213
+tp 319
+tn 12064
+monitors accuracy = 0.6277820025348543
+monitor MCC score =  0.1036112791521548
+monitors error = 0.3722179974651458
+confidence interval = [0.365471930000424, 0.37896406492986756]
+monitors precision = 0.7120535714285714
+monitors recall = 0.042352628783855546
+monitors F1 score = 0.07994987468671678
+Method: oob_pca_isomap 3 clusters
+fp 308
+fn 6850
+tp 682
+tn 11885
+monitors accuracy = 0.6371102661596958
+monitor MCC score =  0.14527472975055403
+monitors error = 0.3628897338403042
+confidence interval = [0.35617942964803706, 0.36960003803257135]
+monitors precision = 0.6888888888888889
+monitors recall = 0.09054699946893255
+monitors F1 score = 0.16005632480638346
