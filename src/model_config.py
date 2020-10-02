@@ -1,10 +1,10 @@
 import os
 from src.Classes.model_builder import ModelBuilder
-from src.Classes import dnn_simple_model
-from src.Classes import cnn
-from src.Classes import le_net
-from src.Classes import resnet
-from src.Classes import vgg16
+from src.Classes.ml_architectures import dnn_simple_model
+from src.Classes.ml_architectures import cnn
+from src.Classes.ml_architectures import le_net
+from src.Classes.ml_architectures import resnet
+from src.Classes.ml_architectures import vgg16
 
 
 

@@ -1,5 +1,5 @@
 import os
-from src.threats.novelty_detection import build_ND_experiments as nd
+from src.threats.novelty_detection import build_ND_monitors as nd
 import argparse
 
 

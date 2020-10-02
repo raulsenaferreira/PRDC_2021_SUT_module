@@ -11,7 +11,7 @@ if __name__ == "__main__":
 	parser.add_argument("architecture", help="Type of DNN (lenet, vgg16, resnet)")
 
 	parser.add_argument("dataset", help="Choose between pre-defined datasets (mnist, gtsrb,\
-	 btsc, cifar-10, cifar-100, imagenet, sum)")
+	 btsc, cifar-10, cifar-100, imagenet, lsun)")
 
 	#parser.add_argument("parallel_execution", type=int, help="Parallelize experiments up to the number of physical \
 	#	cores in the machine (1 for True or 0 for False)")

@@ -63,11 +63,13 @@ def run(monitor, model, X, y, save, params):
 
 	trained_monitor = monitor.method(arrWeights, monitor, save)
 
-	file_path = monitor.monitors_folder+monitor.filename
+	file_path = os.path.join(monitor.monitors_folder, monitor.filename)
 
 	if save:
 		print("Saving monitor in", file_path)
 		os.makedirs(monitor.monitors_folder, exist_ok=True)
 		pickle.dump(trained_monitor, open( file_path, "wb" ))
+	else:
+		print("Monitor will not be saved")
 
 	return trained_monitor

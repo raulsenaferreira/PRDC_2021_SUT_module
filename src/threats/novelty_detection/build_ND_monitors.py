@@ -3,10 +3,10 @@ import logging
 import numpy as np
 from src import model_config as model_cfg
 from src.Classes.model_builder import ModelBuilder
-from src.novelty_detection import config as config_ND
+from src.threats.novelty_detection import config as config_ND
 from pathos.multiprocessing import ProcessingPool as Pool
 from src.Classes.dataset import Dataset
-from src.novelty_detection import build_monitors
+from src.threats.novelty_detection.utils import create_monitors
 from timeit import default_timer as timer
 from keras.models import load_model
 
@@ -29,7 +29,7 @@ def build_monitors_by_class(root_path, parallel_execution, dataset_name, params,
 
 	# Generate monitors for each class for a specific dataset
 	for class_to_monitor in range(classes_to_monitor):
-		monitors = build_monitors.prepare_box_based_monitors(root_path, dataset_name, params, class_to_monitor)
+		monitors = create_monitors.prepare_box_based_monitors(root_path, dataset_name, params, class_to_monitor)
 		arr_monitors.extend(monitors)
 		#arr_monitors = np.append(arr_monitors, monitors)
 	
@@ -55,7 +55,7 @@ def build_monitors_by_class(root_path, parallel_execution, dataset_name, params,
 
 def build_monitors_all_classes(root_path, parallel_execution, dataset_name, params, model_file, X, y, save):
 	# Generate monitors for all classes for a specific dataset
-	arr_monitors = build_monitors.build_monitors(root_path, dataset_name, params)
+	arr_monitors = create_monitors.build_monitors(root_path, dataset_name, params)
 	
 	#Parallelizing the experiments (optional): one experiment per Core
 	if parallel_execution:
@@ -79,7 +79,7 @@ def build_monitors_all_classes(root_path, parallel_execution, dataset_name, para
 
 
 #if __name__ == "__main__":
-def start(sub_field, save, parallel_execution, verbose, root_path, perc_of_data)
+def start(sub_field, save, parallel_execution, verbose, root_path, perc_of_data):
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
 	# re-enabling tensorflow logs
@@ -102,16 +102,17 @@ def start(sub_field, save, parallel_execution, verbose, root_path, perc_of_data)
 	 'use_scaler': False,
 	 #all methods
 	 'use_alternative_monitor': False, # True = label -> act func -> save in the monitor; False = label -> act func if label == predicted -> save in the monitor
-	 'technique_names' : ['oob']} #'baseline', 'knn', 'random_forest', 'sgd', 'ocsvm', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	 'technique_names' : ['oob_isomap', 'oob_pca']} #'baseline', 'knn', 'random_forest', 'sgd', 'ocsvm', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 
 	num_classes_to_monitor = [43]# 10, 43
 	is_build_monitors_by_class = True #True just for OOB-based monitors
+	PARAMS.update({'verbose': verbose})
 	
 	for model_name, dataset_name, classes_to_monitor in zip(model_names, dataset_names, num_classes_to_monitor):
 		
 		#path to load the model
 		models_folder = os.path.join("src", "bin", "models")
-		model_file = models_folder+model_name+'_'+dataset_name+'.h5'
+		model_file = os.path.join(models_folder, model_name+'_'+dataset_name+'.h5')
 		# loading model
 		model = load_model(model_file)
 

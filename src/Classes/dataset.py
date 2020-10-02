@@ -169,18 +169,18 @@ class Dataset:
 		n_inputs = self.height * self.width * self.channels
 
 		for i in range(self.num_classes) :
-			path = self.trainPath+str(i)
+			path = os.path.join(self.trainPath, str(i))
 			#print(path)
 			Class=os.listdir(path)
 			for a in Class:
 				try:
-					image=cv2.imread(path+a)
+					image=cv2.imread(os.path.join(path, a))
 					image_from_array = Image.fromarray(image, 'RGB')
 					size_image = image_from_array.resize((self.height, self.width))
 					data.append(np.array(size_image))
 					labels.append(i)
-				except AttributeError:
-					print(" ")
+				except AttributeError as e:
+					print(e)
 		  
 		x_train=np.array(data)
 		x_train= x_train/255.0

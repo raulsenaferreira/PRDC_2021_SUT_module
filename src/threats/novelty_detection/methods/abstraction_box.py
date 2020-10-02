@@ -57,20 +57,22 @@ def make_abstraction(data, monitor, save):
 			data = isomap_method.transform(data1)
 
 			if save:
-				file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix[0]
+				file_path = os.path.join(monitor.monitors_folder, monitor.dim_reduc_filename_prefix[0])
 				print("Saving trained PCA in", file_path)
 				pickle.dump(pca_method, open(file_path, "wb"))
 				print("Saving trained Isomap in", file_path)
-				file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix[1]
+				file_path = os.path.join(monitor.monitors_folder, monitor.dim_reduc_filename_prefix[1])
 				pickle.dump(isomap_method, open(file_path, "wb"))
 
 		else:
 			method = monitor.dim_reduc_method.fit(data)
-			file_path = monitor.monitors_folder + monitor.dim_reduc_filename_prefix
+			file_path = os.path.join(monitor.monitors_folder, monitor.dim_reduc_filename_prefix)
 
 			if save:
 				print("Saving trained dim reduc method in", file_path)
 				pickle.dump(method, open(file_path, "wb"))
+			else:
+				print("trained dim reduc will not be saved.")
 
 			data = method.transform(data)
 	

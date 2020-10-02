@@ -1,11 +1,12 @@
+import os
 import numpy as np
 from src.Classes.monitor import Monitor
-from src.novelty_detection.methods import abstraction_box
-from src.novelty_detection.methods import act_func_based_monitor
-from src.novelty_detection.methods import clustered_act_function_monitor
-from src.novelty_detection.methods import tree_based_act_function_monitor
-from src.novelty_detection.methods import linear_based_act_function_monitor
-from src.novelty_detection.methods import ocsvm_based_act_function_monitor
+from src.threats.novelty_detection.methods import abstraction_box
+from src.threats.novelty_detection.methods import act_func_based_monitor
+from src.threats.novelty_detection.methods import clustered_act_function_monitor
+from src.threats.novelty_detection.methods import tree_based_act_function_monitor
+from src.threats.novelty_detection.methods import linear_based_act_function_monitor
+from src.threats.novelty_detection.methods import ocsvm_based_act_function_monitor
 from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 
@@ -90,8 +91,8 @@ def prepare_box_based_monitors(root_path, dataset_name, PARAMS, class_to_monitor
 	technique_names = PARAMS['technique_names']
 
 	for technique in technique_names:
-		monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
-		monitor_folder += technique +sep+ 'class_'+ c +sep
+		monitor_folder = os.path.join(root_path, monitoring_characteristics, dataset_name, technique, 'class_'+ c)
+		#monitor_folder += technique +sep+ 'class_'+ c +sep
 
 		arr_n_clusters_oob = PARAMS['arr_n_clusters']
 
@@ -152,8 +153,8 @@ def build_monitors(root_path, dataset_name, params):
 	
 	for technique in technique_names:
 		trainer = None
-		monitor_folder = root_path +sep+ monitoring_characteristics +sep+ dataset_name +sep
-		monitor_folder += technique +sep
+		monitor_folder = os.path.join(root_path, monitoring_characteristics, dataset_name, technique)
+		#monitor_folder += technique +sep
 
 		if technique  == 'knn':
 			trainer = clustered_act_function_monitor
