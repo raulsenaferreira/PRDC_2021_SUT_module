@@ -58,37 +58,37 @@ def print_positives_negatives(arrFalsePositive, arrFalseNegative, arrTruePositiv
 
 #image pre-processing methods
 def contrast_normalization(image):
-    X = np.array(image)
-    
-    image_blur = cv2.GaussianBlur(image,(65,65),10)
-    # new_image = cv2.subtract(img,image_blur).astype('float32') # WRONG, the result is not stored in float32 directly
-    new_image = cv2.subtract(image,image_blur, dtype=cv2.CV_32F)
-    out = cv2.normalize(new_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-    #res = np.hstack((X, out)) #stacking images side-by-side
-    #imageio.imwrite('Contrast.jpg', res)
-    return out
+	X = np.array(image)
+	
+	image_blur = cv2.GaussianBlur(image,(65,65),10)
+	# new_image = cv2.subtract(img,image_blur).astype('float32') # WRONG, the result is not stored in float32 directly
+	new_image = cv2.subtract(image,image_blur, dtype=cv2.CV_32F)
+	out = cv2.normalize(new_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+	#res = np.hstack((X, out)) #stacking images side-by-side
+	#imageio.imwrite('Contrast.jpg', res)
+	return out
 
 
 def image_adjustment(image):
-    p2, p98 = np.percentile(image, (2, 98))
-    img_rescale = exposure.rescale_intensity(image, in_range=(p2, p98))
-    #res = np.hstack((image, img_rescale)) #stacking images side-by-side
-    #imageio.imwrite('Imadjust.jpg', res)
-    return img_rescale
+	p2, p98 = np.percentile(image, (2, 98))
+	img_rescale = exposure.rescale_intensity(image, in_range=(p2, p98))
+	#res = np.hstack((image, img_rescale)) #stacking images side-by-side
+	#imageio.imwrite('Imadjust.jpg', res)
+	return img_rescale
 
 
 def histogram_equalization(img):
-    equ =  exposure.equalize_hist(img)
-    res = np.hstack((img,equ)) #stacking images side-by-side
-    #imageio.imwrite('Histeq.jpg',res)
-    return equ
+	equ =  exposure.equalize_hist(img)
+	res = np.hstack((img,equ)) #stacking images side-by-side
+	#imageio.imwrite('Histeq.jpg',res)
+	return equ
 
 
 def adaptive_hist_eq(img):
-    img_adapteq = exposure.equalize_adapthist(img, clip_limit=0.3)
-    #res = np.hstack((img,img_adapteq)) #stacking images side-by-side
-    #imageio.imwrite('Adapthisteq.jpg',res)
-    return img_adapteq
+	img_adapteq = exposure.equalize_adapthist(img, clip_limit=0.3)
+	#res = np.hstack((img,img_adapteq)) #stacking images side-by-side
+	#imageio.imwrite('Adapthisteq.jpg',res)
+	return img_adapteq
 
 
 def rescale(trainX, trainY, model, epochs, batch_size):

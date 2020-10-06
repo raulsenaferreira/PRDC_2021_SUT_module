@@ -1,5 +1,4 @@
-import neptune
-
+import os
 
 '''
 **OK** 1 = outside-of-box paper; 2 = outside-of-box using isomap instead of 2D projection;
@@ -12,8 +11,16 @@ import neptune
 '''
 
 
-def neptune_init(threat='PhD'):
-	neptune.init('raulsenaferreira/{}'.format(threat))
+def glue_dataset_names(datasets, modifications):
+	data = {}
+
+	for d in datasets:
+		data.update({d: []})
+
+		for m in modifications:
+			data[d].append(m)
+
+	return data
 
 
 def get_technique_params(technique):
@@ -51,16 +58,29 @@ def get_technique_params(technique):
 
 def get_experiment_params(setting_id):
 	PARAMS = {}
+	# directory of datasets
+	PARAMS.update({'root_dir': os.path.join('D:','phd_data_generation','data', 'modified')})
 
 	if setting_id == 1:
-		PARAMS.update({'dataset_names': ['GTSRB']}) #'MNIST', 'GTSRB'
-		PARAMS.update({'arr_classes_to_monitor_ID': [43]}) #10, 43
+		# begin data_params
+		datasets = ['GTSRB'] # 'MNIST'
+		PARAMS.update({'arr_classes_to_monitor_ID': [43]}) # 10
 
+		modifications = ['brightness_severity_1', 'brightness_severity_5']
+
+		PARAMS.update({'data': glue_dataset_names(datasets, modifications)})
+		
 		PARAMS.update({'ood_dataset_name': 'BTSC'})
 		PARAMS.update({'ood_num_classes_to_monitor': 62})
+		# end data_params
 
 		PARAMS.update({'model_names': ['leNet']}) # 'leNet', 'vgg16'
 
 		PARAMS.update({'technique_names': ['oob_isomap', 'oob_pca']}) #'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 	
 	return PARAMS
+
+
+# reading from the desc.txt in data folder
+def get_data_params():
+	pass

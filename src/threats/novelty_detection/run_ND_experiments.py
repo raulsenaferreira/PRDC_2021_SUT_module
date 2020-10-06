@@ -11,8 +11,10 @@ from src.threats.novelty_detection.testers import dnn_baseline_tester
 from src.threats.novelty_detection.testers import classifier_based_on_act_func_tester
 from src.threats.novelty_detection.testers import en_ood_tester
 from src.utils import metrics
+from src.utils import util
 from pathos.multiprocessing import ProcessingPool as Pool
 from src.threats.novelty_detection import config
+from src import neptune_config as nptne
 from src.Classes.dataset import Dataset
 from keras.models import load_model
 from src.threats.novelty_detection import load_monitors
@@ -53,12 +55,7 @@ def save_results(PARAMS, classes_to_monitor_ID, sub_field, name, technique, arr_
 	if plot:
 		os.makedirs(img_folder_path, exist_ok=True)
 		metrics.plot_pos_neg_rate_stacked_bars(name, arr_readouts, img_folder_path+'all_images.pdf')
-'''
-
-def unison_shuffled_copies(a, b):
-    assert len(a) == len(b)
-    p = np.random.permutation(len(a))
-    return a[p], b[p]	
+'''	
 
 
 def start(sub_field, save_experiments, parallel_execution, verbose, repetitions, percentage_of_data, log_lvl=logging.FATAL):
@@ -69,85 +66,77 @@ def start(sub_field, save_experiments, parallel_execution, verbose, repetitions,
 	#set_tf_loglevel(logging.INFO)
 
 	if save_experiments:
-		config.neptune_init() # saving experiments in the cloud (optional)
+		nptne.neptune_init(sub_field) # saving experiments in the cloud (optional)
 
 	## loading experiments
-	for model_name, dataset_name, classes_to_monitor_ID in zip(exp_params['model_names'],\
-	 exp_params['dataset_names'], exp_params['arr_classes_to_monitor_ID']):
+	#for model_name, data, classes_to_monitor_ID in zip(exp_params['model_names'],\
+	# exp_params['data'], exp_params['arr_classes_to_monitor_ID']):
+	for original_dataset_name, arr_modifications in exp_params['data'].items():
 		arr_monitors =  np.array([])
 		arr_readouts = []
 
-		# loading ID dataset
-		dataset = Dataset(dataset_name)
-		X, y = dataset.load_dataset(mode='test')
+		for modification in arr_modifications:
+			# loading dataset
+			dataset = Dataset(exp_params['root_dir'])
+			dataset.original_dataset_name = original_dataset_name
+			dataset.modification = modification
+			dataset_path = os.path.join(dataset.original_dataset_name, dataset.modification)
 
-		#loading OOD dataset
-		OOD_dataset = Dataset(ood_dataset_name)
-		
-		ood_X, ood_y = OOD_dataset.load_dataset(mode='test_entire_data')
-		ood_y += classes_to_monitor_ID #avoiding same class numbers for the two datasets
-
-		#concatenate and shuffling ID and OOD datasets
-		X = np.vstack([X, ood_X])
-		y = np.hstack([y, ood_y])
-		X, y = unison_shuffled_copies(X, y)
-
-		print("Final dataset shape", X.shape, y.shape)
-		dataset.dataset_ID_name = dataset_name
-		dataset.dataset_OOD_name = ood_dataset_name
-		
-		# for one that wants speeding up tests using part of data
-		X_limit = int(len(X)*percentage_of_data)
-		y_limit = int(len(y)*percentage_of_data)
-		dataset.X, dataset.y = X[: X_limit], y[: y_limit]
-
-		# loading model
-		model = ModelBuilder(model_name)
-		model = load_model(model.models_folder+'_'+dataset_name+'.h5')
-
-		for technique in exp_params['technique_names']:
+			(x_train, y_train), (x_test, y_test) = dataset.load_dataset(dataset_path)
+			X, y = x_test, y_test
 			
-			PARAMS = config.get_technique_params(technique)	
-			
-			experiment = Experiment(model_name+'_'+technique)
-			#experiment.experiment_type = experiment_type_arg #'OOD' or 'ID'
-			experiment.sub_field = sub_field
-			experiment.model = model
-			experiment.classes_to_monitor_ID = classes_to_monitor_ID
-			experiment.classes_to_monitor_OOD = ood_num_classes_to_monitor
-			experiment.dataset = dataset
-			experiment.evaluator = ood_monitor_evaluator
-			experiment.tester = ood_tester
-			#experiment.tester = classifier_based_on_act_func_tester
-			experiment.verbose = verbose
+			# for one that wants speeding up tests using part of data
+			X_limit = int(len(X)*percentage_of_data)
+			y_limit = int(len(y)*percentage_of_data)
+			dataset.X, dataset.y = X[: X_limit], y[: y_limit]
 
-			monitors = None
+			# loading model
+			model = ModelBuilder(model_name)
+			model = load_model(model.models_folder+'_'+dataset.original_dataset_name+'.h5')
 
-			if 'knn' == technique:
-				monitors = load_monitors.load_cluster_based_monitors(dataset_name, technique, PARAMS)
+			for technique in exp_params['technique_names']:
+				
+				PARAMS = config.get_technique_params(technique)	
+				
+				experiment = Experiment(model_name+'_'+technique)
+				#experiment.experiment_type = experiment_type_arg #'OOD' or 'ID'
+				experiment.sub_field = sub_field
+				experiment.model = model
+				experiment.classes_to_monitor_ID = classes_to_monitor_ID
+				experiment.classes_to_monitor_OOD = ood_num_classes_to_monitor
+				experiment.dataset = dataset
+				experiment.evaluator = ood_monitor_evaluator
+				experiment.tester = ood_tester
+				#experiment.tester = classifier_based_on_act_func_tester
+				experiment.verbose = verbose
 
-			elif 'ocsvm' == technique:
-				monitors = load_monitors.load_svm_based_monitors(dataset_name, technique, PARAMS)
+				monitors = None
 
-			elif 'random_forest' == technique:
-				monitors = load_monitors.load_tree_based_monitors(dataset_name, technique, PARAMS)
+				if 'knn' == technique:
+					monitors = load_monitors.load_cluster_based_monitors(dataset.original_dataset_name, technique, PARAMS)
 
-			elif 'sgd' == technique:
-				monitors = load_monitors.load_linear_based_monitors(dataset_name, technique, PARAMS)
+				elif 'ocsvm' == technique:
+					monitors = load_monitors.load_svm_based_monitors(dataset.original_dataset_name, technique, PARAMS)
 
-			elif technique == 'baseline':
-				experiment.evaluator = dnn_baseline_evaluator
-				experiment.tester = dnn_baseline_tester
+				elif 'random_forest' == technique:
+					monitors = load_monitors.load_tree_based_monitors(dataset.original_dataset_name, technique, PARAMS)
 
-			elif 'oob' in technique:
-				monitors = load_monitors.load_box_based_monitors(dataset_name, technique, classes_to_monitor_ID, PARAMS)
+				elif 'sgd' == technique:
+					monitors = load_monitors.load_linear_based_monitors(dataset.original_dataset_name, technique, PARAMS)
 
-				## diferent evaluator and tester, if ensemble or standalone model
-				if 'ensemble' in model_name:
-					experiment.evaluator = en_dnn_oob_evaluator
-					experiment.tester = en_ood_tester
+				elif technique == 'baseline':
+					experiment.evaluator = dnn_baseline_evaluator
+					experiment.tester = dnn_baseline_tester
 
-			experiment.monitors = monitors
-			experiment.PARAMS = PARAMS
-			
-			experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)
+				elif 'oob' in technique:
+					monitors = load_monitors.load_box_based_monitors(dataset.original_dataset_name, technique, classes_to_monitor_ID, PARAMS)
+
+					## diferent evaluator and tester, if ensemble or standalone model
+					if 'ensemble' in model_name:
+						experiment.evaluator = en_dnn_oob_evaluator
+						experiment.tester = en_ood_tester
+
+				experiment.monitors = monitors
+				experiment.PARAMS = PARAMS
+				
+				experiment.evaluator.evaluate(repetitions, experiment, parallel_execution, save_experiments)

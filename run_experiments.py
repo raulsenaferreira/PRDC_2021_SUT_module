@@ -10,7 +10,7 @@ if __name__ == "__main__":
 	#parser.add_argument("experiment_type_arg", help="Type of experiment (ID or OOD)")
 	
 	parser.add_argument("sub_field_arg", help="Type of ML problem (novelty_detection, distributional_shift,\
-	 anomaly_detection, adversarial_attack)")
+	 anomaly_detection, adversarial_attack, noise)")
 
 	parser.add_argument("save_experiments", type=int, help="Save experiments (1 for True or 0 for False)")
 
