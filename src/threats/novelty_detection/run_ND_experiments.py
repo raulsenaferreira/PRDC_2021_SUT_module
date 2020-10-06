@@ -12,17 +12,14 @@ from src.threats.novelty_detection.testers import classifier_based_on_act_func_t
 from src.threats.novelty_detection.testers import en_ood_tester
 from src.utils import metrics
 from pathos.multiprocessing import ProcessingPool as Pool
-from src.threats.novelty_detection import config as config_ND
+from src.threats.novelty_detection import config
 from src.Classes.dataset import Dataset
 from keras.models import load_model
 from src.threats.novelty_detection import load_monitors
 from sklearn import manifold
 import pickle
 import numpy as np
-import neptune
 import argparse
-
-
 
 '''
 1 = outside-of-box paper; 2 = outside-of-box using isomap instead of 2D projection; 
@@ -43,7 +40,7 @@ def set_tf_loglevel(level):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
     logging.getLogger('tensorflow').setLevel(level)
 
-
+'''
 def save_results(PARAMS, classes_to_monitor_ID, sub_field, name, technique, arr_readouts, plot=False):
 	print("saving experiments", name)
 	filenames = config_ND.load_file_names()
@@ -56,69 +53,27 @@ def save_results(PARAMS, classes_to_monitor_ID, sub_field, name, technique, arr_
 	if plot:
 		os.makedirs(img_folder_path, exist_ok=True)
 		metrics.plot_pos_neg_rate_stacked_bars(name, arr_readouts, img_folder_path+'all_images.pdf')
-
+'''
 
 def unison_shuffled_copies(a, b):
     assert len(a) == len(b)
     p = np.random.permutation(len(a))
-    return a[p], b[p]
-
-
-def get_params(technique):
-	# Default
-	PARAMS = {'use_alternative_monitor': False}# True = label -> act func; False = label -> act func if label == predicted
-	PARAMS.update({'OOD_approach': 'equality'})
-	PARAMS.update({'use_scaler': False})
-	PARAMS.update({'grid_search': False})
-
-	if 'sgd' == technique:
-		PARAMS.update({'use_scaler': True})
-		PARAMS.update({'grid_search': True})
-
-	elif 'random_forest' ==  technique:
-		PARAMS.update({'grid_search': True})
-
-	elif 'ocsvm' == technique:
-		PARAMS.update({'OOD_approach': 'outlier'})
-	
-	elif 'oob' in technique:
-		PARAMS.update({'arr_n_clusters': [3]})
-		PARAMS.update({'arr_n_components': [2]}) 
-		PARAMS.update({'tau': [0.0001]}) 
-		PARAMS.update({'OOD_approach': 'outside_of_box'})
-
-	elif 'knn' == technique:
-		PARAMS.update({'arr_n_clusters': [2, 3, 5, 10]})
-		PARAMS.update({'use_scaler': True})
-		
-	elif 'hdbscan' == technique:
-		PARAMS.update({'min_samples': [5, 10, 15]})  #min_samples 5, 10, 15
-	
-	return PARAMS
+    return a[p], b[p]	
 
 
 def start(sub_field, save_experiments, parallel_execution, verbose, repetitions, percentage_of_data, log_lvl=logging.FATAL):
-
-	dataset_names = ['GTSRB'] #'MNIST', 'GTSRB'
-	arr_classes_to_monitor_ID = [43] #10, 43
-
-	ood_dataset_name = 'BTSC'
-	ood_num_classes_to_monitor = 62
-
-	model_names = ['leNet'] # 'leNet', 'vgg16'
-
-	technique_names = ['oob_isomap', 'oob_pca'] #'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
-
+	exp_params = config.get_experiment_params(1)
 	# disabling tensorflow logs
 	set_tf_loglevel(log_lvl)
 	# re-enabling tensorflow logs
 	#set_tf_loglevel(logging.INFO)
 
 	if save_experiments:
-		neptune.init('raulsenaferreira/PhD') # saving experiments in the cloud (optional)
+		config.neptune_init() # saving experiments in the cloud (optional)
 
 	## loading experiments
-	for model_name, dataset_name, classes_to_monitor_ID in zip(model_names, dataset_names, arr_classes_to_monitor_ID):
+	for model_name, dataset_name, classes_to_monitor_ID in zip(exp_params['model_names'],\
+	 exp_params['dataset_names'], exp_params['arr_classes_to_monitor_ID']):
 		arr_monitors =  np.array([])
 		arr_readouts = []
 
@@ -150,10 +105,9 @@ def start(sub_field, save_experiments, parallel_execution, verbose, repetitions,
 		model = ModelBuilder(model_name)
 		model = load_model(model.models_folder+'_'+dataset_name+'.h5')
 
-		# loading monitors for Novelty Detection
-		for technique in technique_names:
+		for technique in exp_params['technique_names']:
 			
-			PARAMS = get_params(technique)	
+			PARAMS = config.get_technique_params(technique)	
 			
 			experiment = Experiment(model_name+'_'+technique)
 			#experiment.experiment_type = experiment_type_arg #'OOD' or 'ID'

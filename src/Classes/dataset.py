@@ -15,9 +15,10 @@ from tensorflow.keras.utils import to_categorical
 
 class Dataset:
 	"""docstring for Dataset"""
-	def __init__(self, dataset_name):
+	def __init__(self, dataset_name, root_dir='data'):
 		super(Dataset, self).__init__()
 		self.dataset_name = dataset_name
+		self.root_dir = root_dir
 		self.width = 28
 		self.height = 28
 		self.channels = 0
@@ -247,8 +248,8 @@ class Dataset:
 		elif self.dataset_name == 'GTSRB':
 			self.num_classes = 43
 			self.channels = 3
-			self.trainPath = os.path.join('data', 'GTS_dataset', "kaggle", "Train")
-			self.testPath = os.path.join('data', 'GTS_dataset', "kaggle")
+			self.trainPath = os.path.join(self.root_dir, 'GTS_dataset', "kaggle", "Train")
+			self.testPath = os.path.join(self.root_dir, 'GTS_dataset', "kaggle")
 			
 			if mode == 'train':	
 				X_train, X_valid, Y_train, Y_valid = self.load_GTRSB_dataset(onehotencoder=True)
@@ -274,8 +275,8 @@ class Dataset:
 		elif self.dataset_name == 'BTSC':
 			self.num_classes = 62
 			self.channels = 3
-			self.trainPath = os.path.join('data', 'BTSC', "Training")
-			self.testPath = os.path.join('data', 'BTSC', "Testing")
+			self.trainPath = os.path.join(self.root_dir, 'BTSC', "Training")
+			self.testPath = os.path.join(self.root_dir, 'BTSC', "Testing")
 			if mode == 'train':
 				X_train, X_valid, Y_train, Y_valid = self.load_BTSC_dataset(mode, onehotencoder=True)
 				data = X_train, Y_train, X_valid, Y_valid

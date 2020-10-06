@@ -1,96 +1,4 @@
-from src import model_config
-from src.Classes.model_builder import ModelBuilder
-from src.Classes.monitor import Monitor
-from src.Classes.experiment import Experiment
-
-
-
-def load_file_names():
-	index_file =  'index_mapping_results.csv'
-	acc_file_name = 'accuracies.csv'
-	cf_file_name = 'positive_negative_rates.csv'
-	time_file_name = 'time.csv'
-	mem_file_name = 'memory.csv'
-	f1_file_name = 'f1.csv'
-
-	return [index_file, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name]
-
-
-
-
-'''
-elif experiment_number == 2:
-	experiment = Experiment('DNN_OOB_NL')
-	
-	for monitor in monitors:
-		monitor.dim_reduc_method = load_var('e'+str(experiment_number)+'_d'+str(i+1)+'_dr')
-
-elif experiment_number == 3:
-	#Experiment 3: Same of 1 but using Ensemble of DNN
-	experiment = Experiment('ENSBL_OOB')
-	#models
-	dnn_mnist = ModelBuilder()
-	dnn_mnist.model_name = var_dict['e3_d1_md']
-	dnn_mnist.num_cnn = 3
-	dnn_gtsrb = ModelBuilder()
-	dnn_gtsrb.model_name = var_dict['e3_d2_md']
-	dnn_gtsrb.num_cnn = 5
-	modelsObj = [dnn_mnist, dnn_gtsrb]
-	#monitors
-	monitorObjMNIST = Monitor(var_dict['e3_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-	monitorObjMNIST.method = abstraction_box.find_point_box_ensemble
-	monitorObjMNIST.monitors_folder += var_dict['e3_folder'] + sep
-	monitorObjGTSRB = Monitor(var_dict['e3_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-	monitorObjGTSRB.method = abstraction_box.find_point_box_ensemble
-	monitorObjGTSRB.monitors_folder += var_dict['e3_folder'] + sep
-	monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-	#building the class experiment 3
-	experiment.models = modelsObj
-	experiment.monitors = monitorsObj
-	experiment.evaluator = en_dnn_oob_evaluator
-	experiment.tester = en_dnn_oob_tester
-
-	return experiment
-
-elif experiment_number == 4:
-	#Experiment 4: Ensemble of DNN with outside-of-box monitor and dimensionality reduction method
-	experiment = Experiment('ENSBL+OB+NL')
-	#using the same ML models from the Experiment 3
-	dnn_mnist = ModelBuilder()
-	dnn_mnist.model_name = var_dict['e4_d1_md']
-
-	dnn_gtsrb = ModelBuilder()
-	dnn_gtsrb.model_name = var_dict['e4_d2_md']
-	
-	modelsObj = [dnn_mnist, dnn_gtsrb]
-	#monitors
-	monitorObjMNIST = Monitor(var_dict['e4_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-	monitorObjMNIST.method = abstraction_box.find_point_box_ensemble
-	monitorObjMNIST.dim_reduc_method = var_dict['e4_d1_dr']
-	monitorObjMNIST.monitors_folder += var_dict['e4_folder'] + sep
-
-	monitorObjGTSRB = Monitor(var_dict['e4_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-	monitorObjGTSRB.method = abstraction_box.find_point_box_ensemble
-	monitorObjGTSRB.dim_reduc_method = var_dict['e4_d2_dr']
-	monitorObjGTSRB.monitors_folder += var_dict['e4_folder'] + sep
-
-	monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-	#building the class experiment 4
-	experiment.models = modelsObj
-	experiment.monitors = monitorsObj
-	experiment.evaluator = en_dnn_oob_evaluator
-	experiment.tester = en_dnn_oob_tester
-
-	return experiment
-
-	#building the class experiment
-	experiment.models = models
-	experiment.monitors = monitors
-	experiment.tester = dnn_oob_tester
-	experiment.evaluator = dnn_oob_evaluator
-
-	return experiment
-'''
+import neptune
 
 
 '''
@@ -103,17 +11,56 @@ elif experiment_number == 4:
 8 = using the derivative of activation functions instead of raw values
 '''
 
-def load_vars(experiment_type, key):
-	var_dict = {}
 
-	var_dict['validation_size'] = 0.3
-	
-	var_dict['model_names'] = ['leNet', 'leNet']#, 'leNet']	
-	var_dict['batch_numbers'] = [128, 10]
-	var_dict['epoch_numbers'] = [12, 32]
-	
-	# monitors
-	if experiment_type == 'novelty_detection':
-		var_dict['technique_names'] = ['oob', 'oob_isomap', 'oob_pca']#'oob_gradient'
+def neptune_init(threat='PhD'):
+	neptune.init('raulsenaferreira/{}'.format(threat))
 
-	return var_dict[key]
+
+def get_technique_params(technique):
+	# Default
+	PARAMS = {'use_alternative_monitor': False}# True = label -> act func; False = label -> act func if label == predicted
+	PARAMS.update({'OOD_approach': 'equality'})
+	PARAMS.update({'use_scaler': False})
+	PARAMS.update({'grid_search': False})
+
+	if 'sgd' == technique:
+		PARAMS.update({'use_scaler': True})
+		PARAMS.update({'grid_search': True})
+
+	elif 'random_forest' ==  technique:
+		PARAMS.update({'grid_search': True})
+
+	elif 'ocsvm' == technique:
+		PARAMS.update({'OOD_approach': 'outlier'})
+	
+	elif 'oob' in technique:
+		PARAMS.update({'arr_n_clusters': [3]})
+		PARAMS.update({'arr_n_components': [2]}) 
+		PARAMS.update({'tau': [0.0001]}) 
+		PARAMS.update({'OOD_approach': 'outside_of_box'})
+
+	elif 'knn' == technique:
+		PARAMS.update({'arr_n_clusters': [2, 3, 5, 10]})
+		PARAMS.update({'use_scaler': True})
+		
+	elif 'hdbscan' == technique:
+		PARAMS.update({'min_samples': [5, 10, 15]})  #min_samples 5, 10, 15
+	
+	return PARAMS
+
+
+def get_experiment_params(setting_id):
+	PARAMS = {}
+
+	if setting_id == 1:
+		PARAMS.update({'dataset_names': ['GTSRB']}) #'MNIST', 'GTSRB'
+		PARAMS.update({'arr_classes_to_monitor_ID': [43]}) #10, 43
+
+		PARAMS.update({'ood_dataset_name': 'BTSC'})
+		PARAMS.update({'ood_num_classes_to_monitor': 62})
+
+		PARAMS.update({'model_names': ['leNet']}) # 'leNet', 'vgg16'
+
+		PARAMS.update({'technique_names': ['oob_isomap', 'oob_pca']}) #'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	
+	return PARAMS
