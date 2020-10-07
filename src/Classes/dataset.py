@@ -33,13 +33,13 @@ class Dataset:
 		self.y = []
 
 	
-	def load_dataset(self, dataset_name, threat_name):
+	def load_dataset(self, dataset_path):
 
-		train_images = os.path.join(self.root_dir, dataset_name, threat_name, 'train-images-npy.gz')
-		train_labels = os.path.join(self.root_dir, dataset_name, threat_name, 'train-labels-npy.gz')
+		train_images = os.path.join(dataset_path, 'train-images-npy.gz')
+		train_labels = os.path.join(dataset_path, 'train-labels-npy.gz')
 		
-		test_images = os.path.join(self.root_dir, dataset_name, threat_name, 'test-images-npy.gz')
-		test_labels = os.path.join(self.root_dir, dataset_name, threat_name, 'test-labels-npy.gz')
+		test_images = os.path.join(dataset_path, 'test-images-npy.gz')
+		test_labels = os.path.join(dataset_path, 'test-labels-npy.gz')
 
 		f = gzip.GzipFile(train_images, "r")
 		x_train = np.load(f)

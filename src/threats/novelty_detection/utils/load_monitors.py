@@ -5,11 +5,15 @@ from src.threats.novelty_detection.methods import abstraction_box
 from sklearn.decomposition import PCA
 import pickle
 import numpy as np
+from pathlib import Path
 
 
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+#dir_path = os.path.dirname(os.path.realpath(__file__))
+dir_path = os.path.dirname(Path(__file__).parent)
 root_path = os.path.join(dir_path, 'bin', 'monitors')
+#dir_path = os.path.join('\\src', 'threats', 'novelty_detection')
+
 monitoring_characteristics = 'dnn_internals'
 
 

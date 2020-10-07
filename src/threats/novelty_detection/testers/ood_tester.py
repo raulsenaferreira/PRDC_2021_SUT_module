@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 
 def run(dataset, experiment, monitor):
     # special case when GTSRB + BTSC due to the intersection between some classes
-    monitor.map_dataset_classes = True if experiment.dataset.dataset_ID_name == 'GTSRB' and experiment.dataset.dataset_OOD_name == 'BTSC' else False
+    #monitor.map_dataset_classes = True if experiment.dataset.original_dataset_name == 'GTSRB' and experiment.dataset.dataset_OOD_name == 'BTSC' else False
+    monitor.map_dataset_classes = True if experiment.dataset.modification == 'gtsrb_btsc' else False
+
 
     X_test, y_test = dataset.X, dataset.y
     dataset_name = dataset.dataset_name

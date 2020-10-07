@@ -18,7 +18,7 @@ def glue_dataset_names(datasets, modifications):
 		data.update({d: []})
 
 		for m in modifications:
-			data[d].append(m)
+			data[d].append('{}_{}'.format(m[0], m[1]))
 
 	return data
 
@@ -59,24 +59,27 @@ def get_technique_params(technique):
 def get_experiment_params(setting_id):
 	PARAMS = {}
 	# directory of datasets
-	PARAMS.update({'root_dir': os.path.join('D:','phd_data_generation','data', 'modified')})
+	#root_dir = os.path.join('D:','phd_data_generation','data', 'modified')
+	root_dir = os.path.join('C:', '\\Users', 'rsenaferre', 'Desktop', 'GITHUB', 'phd_data_generation', 'data', 'modified')
+	PARAMS.update({'root_dir': root_dir})
 
 	if setting_id == 1:
 		# begin data_params
 		datasets = ['GTSRB'] # 'MNIST'
-		PARAMS.update({'arr_classes_to_monitor_ID': [43]}) # 10
+		PARAMS.update({'num_classes_to_monitor_ID': 43}) # 10
 
-		modifications = ['brightness_severity_1', 'brightness_severity_5']
+		#modifications = ['brightness_severity_1', 'brightness_severity_5']
+		modifications = [('gtsrb', 'btsc')]
 
 		PARAMS.update({'data': glue_dataset_names(datasets, modifications)})
 		
 		PARAMS.update({'ood_dataset_name': 'BTSC'})
-		PARAMS.update({'ood_num_classes_to_monitor': 62})
+		PARAMS.update({'num_classes_to_monitor_OOD': 62})
 		# end data_params
 
 		PARAMS.update({'model_names': ['leNet']}) # 'leNet', 'vgg16'
 
-		PARAMS.update({'technique_names': ['oob_isomap', 'oob_pca']}) #'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+		PARAMS.update({'technique_names': ['oob']}) #'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
 	
 	return PARAMS
 

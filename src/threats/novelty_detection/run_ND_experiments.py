@@ -17,7 +17,7 @@ from src.threats.novelty_detection import config
 from src import neptune_config as nptne
 from src.Classes.dataset import Dataset
 from keras.models import load_model
-from src.threats.novelty_detection import load_monitors
+from src.threats.novelty_detection.utils import load_monitors
 from sklearn import manifold
 import pickle
 import numpy as np
@@ -71,7 +71,7 @@ def start(sub_field, save_experiments, parallel_execution, verbose, repetitions,
 	## loading experiments
 	#for model_name, data, classes_to_monitor_ID in zip(exp_params['model_names'],\
 	# exp_params['data'], exp_params['arr_classes_to_monitor_ID']):
-	for original_dataset_name, arr_modifications in exp_params['data'].items():
+	for (original_dataset_name, arr_modifications), model_name in zip((exp_params['data'].items()), exp_params['model_names']):
 		arr_monitors =  np.array([])
 		arr_readouts = []
 
@@ -80,7 +80,7 @@ def start(sub_field, save_experiments, parallel_execution, verbose, repetitions,
 			dataset = Dataset(exp_params['root_dir'])
 			dataset.original_dataset_name = original_dataset_name
 			dataset.modification = modification
-			dataset_path = os.path.join(dataset.original_dataset_name, dataset.modification)
+			dataset_path = os.path.join(dataset.root_dir, sub_field, dataset.modification)
 
 			(x_train, y_train), (x_test, y_test) = dataset.load_dataset(dataset_path)
 			X, y = x_test, y_test
@@ -88,7 +88,7 @@ def start(sub_field, save_experiments, parallel_execution, verbose, repetitions,
 			# for one that wants speeding up tests using part of data
 			X_limit = int(len(X)*percentage_of_data)
 			y_limit = int(len(y)*percentage_of_data)
-			dataset.X, dataset.y = X[: X_limit], y[: y_limit]
+			dataset.X, dataset.y = X[ :X_limit], y[ :y_limit]
 
 			# loading model
 			model = ModelBuilder(model_name)
@@ -102,8 +102,8 @@ def start(sub_field, save_experiments, parallel_execution, verbose, repetitions,
 				#experiment.experiment_type = experiment_type_arg #'OOD' or 'ID'
 				experiment.sub_field = sub_field
 				experiment.model = model
-				experiment.classes_to_monitor_ID = classes_to_monitor_ID
-				experiment.classes_to_monitor_OOD = ood_num_classes_to_monitor
+				experiment.classes_to_monitor_ID = exp_params['num_classes_to_monitor_ID']
+				experiment.classes_to_monitor_OOD = exp_params['num_classes_to_monitor_OOD']
 				experiment.dataset = dataset
 				experiment.evaluator = ood_monitor_evaluator
 				experiment.tester = ood_tester
@@ -129,7 +129,7 @@ def start(sub_field, save_experiments, parallel_execution, verbose, repetitions,
 					experiment.tester = dnn_baseline_tester
 
 				elif 'oob' in technique:
-					monitors = load_monitors.load_box_based_monitors(dataset.original_dataset_name, technique, classes_to_monitor_ID, PARAMS)
+					monitors = load_monitors.load_box_based_monitors(dataset.original_dataset_name, technique, experiment.classes_to_monitor_ID, PARAMS)
 
 					## diferent evaluator and tester, if ensemble or standalone model
 					if 'ensemble' in model_name:
