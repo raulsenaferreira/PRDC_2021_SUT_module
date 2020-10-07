@@ -6,7 +6,7 @@ Experiments regarding my PhD
 
 2) python build_monitors.py novelty_detection 0 0 0
 
-3) python run_experiments.py novelty_detection 0 0 0 
+3) python run_experiments.py novelty_detection 0 0 0 100
 
 ## arguments for 'build_models'
 
@@ -22,7 +22,8 @@ parallel_execution", type=int, help="Parallelize experiments up to the number of
 
 verbose, type=int, help="Print the processing progress (1 for True or 0 for False)"
 
-### optional
 percentage_of_data, type=int, default=100, help="e.g.: 10 = testing with 10% of test data; 100 = testing with all test data")
+
+### optional
 
 repetitions, type=int, default=1, help="number of repetitions for each experiment")
