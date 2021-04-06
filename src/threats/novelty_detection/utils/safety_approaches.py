@@ -1,8 +1,13 @@
 import os
 import pickle
+from time import perf_counter as timer
+from src.utils import util
+from keras.losses import binary_crossentropy
+import keras.backend as K
+import numpy as np
+
 
 def is_pred_diff(yPred, intermediateValues, loaded_monitor):
-    
     yPred_by_monitor = loaded_monitor.predict(intermediateValues)
     #print(np.shape(yPred_by_monitor))
 
@@ -13,7 +18,6 @@ def is_pred_diff(yPred, intermediateValues, loaded_monitor):
 
 
 def is_pred_neg(yPred, intermediateValues, loaded_monitor):
-    
     yPred_by_monitor = loaded_monitor.predict(intermediateValues)
     #print(np.shape(yPred_by_monitor))
 
@@ -23,28 +27,19 @@ def is_pred_neg(yPred, intermediateValues, loaded_monitor):
     return False
 
 
-def map_btsc_gtsrb(y_gtsrb, y_btsc):
-    # BTSC and GTSRB have 18 classes in common
-    GTSRB_to_BTSC = {14:21, 22:0, 19:3, 20:4, 21:5, 25:10, 28:7, 26:11, 18:13,\
-    24:16, 11:17, 13:19, 17:22, 15:28, 4:32, 35:34, 36:36, 12:61}
-
-    try:
-        if GTSRB_to_BTSC[y_gtsrb]+43 == y_btsc:
-            return y_gtsrb
-    except:
-        return y_btsc
-
-    return y_btsc
-
-
-def safety_monitor_decision(readout, monitor, yPred, lbl, classes_to_monitor, intermediateValues,
+def safety_monitor_decision(readout, monitor, model, img, yPred, lbl, experiment, use_intermediateValues,
  scaler, loaded_monitor):
     
-    # if you want to scale act func values
-    if scaler != None:
-        intermediateValues = scaler.transform(intermediateValues)
-
+    classes_to_monitor = experiment.classes_to_monitor_ID
     raise_alarm = False
+
+    ini = timer() # SM time
+
+    if use_intermediateValues == True:
+        intermediateValues = util.get_activ_func(experiment.backend, model, img, monitor.layer_index)[0]
+        # if you want to scale act func values
+        if scaler != None:
+            intermediateValues = scaler.transform(intermediateValues)
 
     if monitor.OOD_approach == 'equality':
         # if monitor acceptance approach is based on two equal predictions
@@ -57,103 +52,91 @@ def safety_monitor_decision(readout, monitor, yPred, lbl, classes_to_monitor, in
         raise_alarm = is_pred_neg(yPred, intermediateValues, loaded_monitor)
 
     elif monitor.OOD_approach == 'outside_of_box':
-        raise_alarm = monitor.method(loaded_monitor[yPred], intermediateValues, yPred, monitor.monitors_folder, monitor.dim_reduc_method)
-
-    # just when GTSRB = ID and BTSC = OOD, otherwise comment the line below
-    if monitor.map_dataset_classes:
-        #print("mapping some classes between GTSRB and BTSC...")
-        lbl = map_btsc_gtsrb(yPred, lbl)
+        raise_alarm = monitor.method(loaded_monitor[yPred], intermediateValues, yPred, monitor)
     
-    # OOD label numbers starts after the ID label numbers
+    elif monitor.OOD_approach == 'temperature':
+        # keras version
+        #raise_alarm = loaded_monitor.detection(model, img, yPred, monitor.noiseMagnitude, monitor.temper, monitor.threshold)
+        # pytorch version
+        raise_alarm = loaded_monitor.detection(model, img, monitor.temper, monitor.noiseMagnitude, monitor.threshold, 'cuda:0')
+
+    elif monitor.OOD_approach == 'adversarial':
+        input_shape = np.shape(img) #(32, 32, 3)
+
+        path = os.path.join(monitor.monitors_folder, 'class_{}'.format(yPred), 'ALOCC_Model_{}.h5'.format(monitor.model_number))
+
+        monitor.method.adversarial_model.load_weights(path)
+            
+        #model_predicts = monitor.method.adversarial_model.predict(np.asarray([img]))
+        model_predicts = monitor.method.adversarial_model.predict(img)
+
+        input_image = img.reshape(input_shape)
+        reconstructed_image = model_predicts[0].reshape(input_shape)
+
+        y_true = K.variable(reconstructed_image)
+        y_pred = K.variable(input_image)
+        error = K.eval(binary_crossentropy(y_true, y_pred)).mean()
+
+        if monitor.threshold[yPred] < error:
+            raise_alarm = True
+
+    # ID images (OOD label numbers higher than the ID label numbers)
     if lbl < classes_to_monitor: 
-         
-        if raise_alarm: 
-            # wrong detection for OOD and correctly detection for missclassification       
+
+        # An ID image arrives in the stream, the SM raises the alarm and dismiss the ML classification
+        if raise_alarm:    
+            # false positive for OOD
+            readout.arr_detection_SM.append(1)
+            readout.arr_detection_true.append(0)
+            
             if yPred != lbl: 
-                # correctly detected a missclassification
-                try:
-                    readout.arr_true_positive_ID[lbl].append(yPred) # True positives for missclassification in ID
-                except:
-                    readout.arr_true_positive_ID.update({lbl: [yPred]})
-
-                readout.arr_pos_neg_ID_pred.append(1)
-                readout.arr_pos_neg_ID_true.append(1)
-
-                # incorrectly detected an ood
-                try:
-                    readout.arr_false_positive_OOD[lbl].append(yPred) # False positives for detection in OOD
-                except:
-                    readout.arr_false_positive_OOD.update({lbl: [yPred]})
+                # correct reaction (avoided a misclassification of ID data.)
+                readout.arr_reaction_SM.append(1)
+                readout.arr_reaction_true.append(1)
                 
-                readout.arr_pos_neg_OOD_pred.append(1)
-                readout.arr_pos_neg_OOD_true.append(0)
-                
-            # wrong detection for OOD and hindered a correct classification
             if yPred == lbl: 
-                try:
-                    readout.arr_false_positive_ID[lbl].append(yPred) #False positives for missclassification in ID
-                except:
-                    readout.arr_false_positive_ID.update({lbl: [yPred]})
-
-                readout.arr_pos_neg_ID_pred.append(1)
-                readout.arr_pos_neg_ID_true.append(0)
+                # incorrect reaction (intervention with no necessity)
+                readout.arr_reaction_SM.append(1)
+                readout.arr_reaction_true.append(0)
+        
+        # An ID image arrives in the stream, the SM does not raise the alarm, accepting the ML classification
         else:
-            # it is not OOD and the monitor missed a missclassification
-            if yPred != lbl:
-                try:
-                    readout.arr_false_negative_ID[lbl].append(yPred) #False negative for missclassification in ID
-                except:
-                    readout.arr_false_negative_ID.update({lbl: [yPred]})
-
-                readout.arr_pos_neg_ID_pred.append(0)
-                readout.arr_pos_neg_ID_true.append(1) 
-                        
-            # it is not OOD and not a missclassification and the monitor correctly did nothing
+            # True negative for OOD
+            readout.arr_detection_SM.append(0)
+            readout.arr_detection_true.append(0)
+            
+            if yPred != lbl: 
+                # incorrect reaction (it should intervene)
+                readout.arr_reaction_SM.append(0)
+                readout.arr_reaction_true.append(1)
+                
             if yPred == lbl: 
-                try:
-                    readout.arr_true_negative_ID[lbl].append(yPred) #True negatives for missclassification in ID
-                except:
-                    readout.arr_true_negative_ID.update({lbl: [yPred]})
+                # correct reaction (it correctly did not intervene)
+                readout.arr_reaction_SM.append(0)
+                readout.arr_reaction_true.append(0)
 
-                readout.arr_pos_neg_ID_pred.append(0)
-                readout.arr_pos_neg_ID_true.append(0)
-
-                # OOD
-                try:
-                    readout.arr_true_negative_OOD[lbl].append(yPred) # True negative for detection in OOD
-                except:
-                    readout.arr_true_negative_OOD.update({lbl: [yPred]})
-
-                readout.arr_pos_neg_OOD_pred.append(0)
-                readout.arr_pos_neg_OOD_true.append(0)
+    # OOD images
     else:
-        # it is OOD and the monitor correctly detected it
+        
+        # An OOD image arrives in the stream, the SM raises the alarm and dismiss the ML classification
         if raise_alarm:
-            try: 
-                readout.arr_true_positive_OOD[lbl].append(yPred) #True positives for OOD
-            except:
-                readout.arr_true_positive_OOD.update({lbl: [yPred]})
+            # True positive for OOD
+            readout.arr_detection_SM.append(1)
+            readout.arr_detection_true.append(1)
 
-            readout.arr_pos_neg_OOD_pred.append(1)
-            readout.arr_pos_neg_OOD_true.append(1)
+            # for novelty and outlier, it is always correct reaction (independently of the ground truth)
+            readout.arr_reaction_SM.append(1)
+            readout.arr_reaction_true.append(1)
 
-        # it is OOD and the monitor wrongly detected it
+        # An OOD image arrives in the stream, the SM does not raise the alarm, accepting the ML classification
         else: 
-            try:
-                readout.arr_false_negative_OOD[lbl].append(yPred) #False negatives for OOD
-            except:
-                readout.arr_false_negative_OOD.update({lbl: [yPred]})
+            # False negative for OOD
+            readout.arr_detection_SM.append(0)
+            readout.arr_detection_true.append(1)
 
-            readout.arr_pos_neg_OOD_pred.append(0)
-            readout.arr_pos_neg_OOD_true.append(1)
+            # for novelty and outlier, it is always incorrect reaction (it should intervene independently of the ground truth)
+            readout.arr_reaction_SM.append(0)
+            readout.arr_reaction_true.append(1)
 
-    return readout
-
-
-## true negative rate ID at 95% of true positive rate OOD = verifies how much the monitor avoided false alarms in ID data when it reached 95% of the achieved detection on OOD data.
-# It helps to understand if the monitor is capable of not interfering the performance of the classifier in known classes when trying to detect unknown classes. 
-
-## false positive rate ID at 95% of true positive rate OOD = verifies how much the monitor raised false alarms in ID data when it reached 95% of the achieved detection on OOD data.
-# It helps to understand if the monitor hinders the performance of the classifier in known classes when trying to detect unknown classes.
-
-## Correctly says that is in distribution while avoiding to say that the second is in distribution 
+    time_spent = timer() - ini
+    return readout, time_spent

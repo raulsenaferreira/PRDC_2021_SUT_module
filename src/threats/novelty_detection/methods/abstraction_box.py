@@ -7,6 +7,7 @@ from src.utils import util
 from matplotlib.path import Path
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
+from shapely import geometry, affinity
 
 
 
@@ -28,33 +29,22 @@ def make_boxes_by_cluster(dataByCluster):
 	return array_box_by_cluster
 
 
-def make_boxes(data):
-	arr_boxes = []
+def do_abstract(monitor, data, save):
+	weights_neuron = np.asarray(data)
 
-	for i in range(data.shape[1]):
-		min_i = np.amin(data[:,i])
-		max_i = np.amax(data[:,i])
+	#print("reducing data...", weights_neuron.shape)
 
-		arr_boxes.append([min_i, max_i])
-
-	return arr_boxes
-
-
-def make_abstraction(data, monitor, save):
-	data = np.asarray(data)
-	#print('data.shape', data.shape)
-	os.makedirs(monitor.monitors_folder, exist_ok=True)
-	
 	if monitor.dim_reduc_method==None:
 		#doing a projection by taking just the first and the last dimension of data
-		data = data[:,[0,-1]]
+		weights_neuron = weights_neuron[:,[0,-1]]
+
 	else:
 		#using a dimensionality reduction function
 		if monitor.technique == 'oob_pca_isomap':
-			pca_method = monitor.dim_reduc_method[0].fit(data)
-			data1 = pca_method.transform(data)
+			pca_method = monitor.dim_reduc_method[0].fit(weights_neuron)
+			data1 = pca_method.transform(weights_neuron)
 			isomap_method = monitor.dim_reduc_method[1].fit(data1)
-			data = isomap_method.transform(data1)
+			weights_neuron = isomap_method.transform(data1)
 
 			if save:
 				file_path = os.path.join(monitor.monitors_folder, monitor.dim_reduc_filename_prefix[0])
@@ -65,22 +55,46 @@ def make_abstraction(data, monitor, save):
 				pickle.dump(isomap_method, open(file_path, "wb"))
 
 		else:
-			method = monitor.dim_reduc_method.fit(data)
-			file_path = os.path.join(monitor.monitors_folder, monitor.dim_reduc_filename_prefix)
+			method = monitor.dim_reduc_method.fit(weights_neuron)
+			weights_neuron = method.transform(weights_neuron)
 
 			if save:
+				file_path = os.path.join(monitor.monitors_folder, monitor.dim_reduc_filename_prefix)
 				print("Saving trained dim reduc method in", file_path)
 				pickle.dump(method, open(file_path, "wb"))
-			else:
-				print("trained dim reduc will not be saved.")
 
-			data = method.transform(data)
+	#print("making boxes by cluster...", weights_neuron.shape)
 	
-	print("making boxes...", data.shape)
+	x1 = np.amin(weights_neuron[:,0])
+	x2 = np.amax(weights_neuron[:,0])
+	y1 = np.amin(weights_neuron[:,1])
+	y2 = np.amax(weights_neuron[:,1])
 
-	dataByCluster={}
+	rectangle = [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
+
+	return Polygon(rectangle)
+
+
+def do_abstract_by_cluster(monitor, dataByCluster, save):
+	arr_polygon = []
+
+	for cluster, weights_neuron in dataByCluster.items():
+		polygon = do_abstract(monitor, weights_neuron, save)
+		arr_polygon.append(polygon)
+		#abstract_box = geometry.box(x1, y1, x2, y2)
+		#arr_polygon.append(abstract_box)
+
+	return arr_polygon
+	
+
+def make_abstraction(monitor, save):
+	#data = monitor.arrWeights
+	data = np.asarray(monitor.arrWeights)
+	#print('data.shape', data.shape, data)
+	os.makedirs(monitor.monitors_folder, exist_ok=True)
 
 	if monitor.n_clusters > 0:
+		dataByCluster={}
 		clusters = KMeans(n_clusters=monitor.n_clusters).fit_predict(data)
 
 		for c, d in zip(clusters, data):
@@ -89,12 +103,13 @@ def make_abstraction(data, monitor, save):
 			except:
 				dataByCluster.update({c:[d]})
 
-		return make_boxes_by_cluster(dataByCluster)
+		return do_abstract_by_cluster(monitor, dataByCluster, save)
 
 	else:
-		return make_boxes(data)
+		return do_abstract(monitor, data, save)
+	
 
-
+'''
 def find_point(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_reduc_obj):
 	ok = 0
 	result = False
@@ -171,10 +186,11 @@ def find_point_2(boxes, intermediateValues, class_to_monitor, monitor_folder, di
 	#return result
 
 
-# most accurate version
-def check_outside_of_box(boxes, intermediateValues, class_to_monitor, monitor_folder, dim_reduc_obj, tau=0.0001):
+def check_outside_of_box(boxes, intermediateValues, class_to_monitor, monitor):
+	monitor_folder, dim_reduc_obj = monitor.monitors_folder, monitor.dim_reduc_method
+	tau = monitor.tau
+
 	is_outside_of_box = True
-	result = False
 	x,y = None, None
 	data = np.asarray(intermediateValues)
 
@@ -220,6 +236,54 @@ def check_outside_of_box(boxes, intermediateValues, class_to_monitor, monitor_fo
 	point = Point(x, y)
 
 	for polygon in arr_polygons:
+		if polygon.contains(point):
+			is_outside_of_box = False
+	
+	return is_outside_of_box
+'''
+
+
+# most accurate version
+def check_outside_of_box(boxes, intermediateValues, class_to_monitor, monitor):
+	monitor_folder, dim_reduc_obj = monitor.monitors_folder, monitor.dim_reduc_method
+
+	is_outside_of_box = True
+	x,y = None, None
+	data = np.asarray(intermediateValues)
+
+	if dim_reduc_obj!=None:
+		path = os.path.join(monitor_folder+str(class_to_monitor), 'trained_')
+
+		if type(dim_reduc_obj) == type([]):
+			# when the monitor is made by two consecutive dimensionality reduction methods
+			dim_reduc_obj_1 = pickle.load(open(path+dim_reduc_obj[0], "rb"))
+			intermediate_data = dim_reduc_obj_1.transform(data.reshape(1, -1))[0]
+
+			dim_reduc_obj_2 = pickle.load(open(path+dim_reduc_obj[1], "rb"))
+			data = dim_reduc_obj_2.transform(intermediate_data.reshape(1, -1))[0]
+
+		else:
+			dim_reduc_obj = pickle.load(open(path+dim_reduc_obj+'.p', "rb"))
+			data = dim_reduc_obj.transform(data.reshape(1, -1))[0] 
+			
+		x = data[0]
+		y = data[1]
+	else:
+		x = data[0]
+		y = data[-1]
+
+	point = Point(x, y)
+	#print(boxes)
+	if monitor.n_clusters > 0:
+		for polygon in boxes:
+			# enlarging boxes if necessary
+			polygon = affinity.scale(polygon, xfact=monitor.tau, yfact=monitor.tau, origin='center')
+
+			if polygon.contains(point):
+				is_outside_of_box = False
+	else:
+		polygon = affinity.scale(boxes, xfact=monitor.tau, yfact=monitor.tau, origin='center')
+
 		if polygon.contains(point):
 			is_outside_of_box = False
 	

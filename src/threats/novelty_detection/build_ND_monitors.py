@@ -3,12 +3,10 @@ import logging
 import numpy as np
 from src import model_config as model_cfg
 from src.Classes.model_builder import ModelBuilder
-from src.threats.novelty_detection import config as config_ND
 from pathos.multiprocessing import ProcessingPool as Pool
 from src.Classes.dataset import Dataset
 from src.threats.novelty_detection.utils import create_monitors
 from timeit import default_timer as timer
-from keras.models import load_model
 
 
 
@@ -24,15 +22,30 @@ def set_tf_loglevel(level):
 	logging.getLogger('tensorflow').setLevel(level)
 
 
-def build_monitors_by_class(root_path, parallel_execution, dataset_name, params, classes_to_monitor, model_file, X, y, save):
-	arr_monitors = []
+def build_monitors_by_class(root_path, parallel_execution, dataset_name, params, classes_to_monitor, model, X, y, save):
+	#arr_monitors = []
 
 	# Generate monitors for each class for a specific dataset
-	for class_to_monitor in range(classes_to_monitor):
+	'''for class_to_monitor in range(classes_to_monitor):
 		monitors = create_monitors.prepare_box_based_monitors(root_path, dataset_name, params, class_to_monitor)
 		arr_monitors.extend(monitors)
 		#arr_monitors = np.append(arr_monitors, monitors)
-	
+	'''
+	arr_monitors = {}
+	technique_names = params['technique_names']
+	arr_n_components = params['arr_n_components']
+	arr_n_clusters_oob = params['arr_n_clusters']
+
+	for technique_name in technique_names:
+		
+		monitors_by_class = {}
+		for class_to_monitor in range(classes_to_monitor):
+			monitor = create_monitors.prepare_box_based_monitors(root_path, dataset_name,\
+			 technique_name, arr_n_clusters_oob, arr_n_components, class_to_monitor)
+			monitors_by_class.update({class_to_monitor: monitor})
+
+		arr_monitors.update({technique_name: monitors_by_class})
+
 	#Parallelizing the experiments (optional): one experiment per Core
 	if parallel_execution:
 		cores = 6
@@ -43,17 +56,20 @@ def build_monitors_by_class(root_path, parallel_execution, dataset_name, params,
 		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in arr_monitors:
-			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model_file, X, y, save, params)) 
+			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model, X, y, save, params)) 
 		
 		for process in processes_pool:
 			_ = process.get(timeout=timeout)
 	else:
 		print("\nSerial execution.")
-		for monitor in arr_monitors:
-			_ = monitor.trainer.run(monitor, model_file, X, y, save, params)
+		#for monitor in arr_monitors:
+		#	_ = monitor.trainer.run(monitor, model, X, y, save, params)
+		for technique, monitors_by_class in arr_monitors.items():
+			train = monitors_by_class[0].trainer
+			_ = train.run(monitors_by_class, model, X, y, save, params)
 			
 
-def build_monitors_all_classes(root_path, parallel_execution, dataset_name, params, model_file, X, y, save):
+def build_monitors_all_classes(root_path, parallel_execution, dataset_name, params, model, X, y, save):
 	# Generate monitors for all classes for a specific dataset
 	arr_monitors = create_monitors.build_monitors(root_path, dataset_name, params)
 	
@@ -67,73 +83,77 @@ def build_monitors_all_classes(root_path, parallel_execution, dataset_name, para
 		print("\nParallel execution with {} cores. Max {} seconds to run each experiment:".format(cores, timeout))
 
 		for monitor in arr_monitors:
-			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model_file, X, y, save, PARAMS['use_alternative_monitor'])) 
+			processes_pool.append(pool.apipe(monitor.trainer.run, monitor, model, X, y, save, params)) 
 		
 		for process in processes_pool:
 			process.get(timeout=timeout)
 	else:
 		print("\nSerial execution.")
 		for monitor in arr_monitors:
-			monitor.trainer.run(monitor, model_file, X, y, save, PARAMS['use_alternative_monitor'])
+			monitor.trainer.run(monitor, model, X, y, save, params)
 
 
-
-#if __name__ == "__main__":
-def start(sub_field, save, parallel_execution, verbose, root_path, perc_of_data):
+def start(sub_field, DATA_PARAMS, MONITOR_PARAMS, save, parallel_execution, root_path, perc_of_data):
 	# disabling tensorflow logs
 	set_tf_loglevel(logging.FATAL)
 	# re-enabling tensorflow logs
 	#set_tf_loglevel(logging.INFO)
 
-	dataset_names = ['GTSRB']# 'MNIST', 'CIFAR-10'
-	validation_size = 0.3
-	model_names = ['leNet'] # 'leNet', 'vgg16', 'resnet'
-	
-	PARAMS = {
-	 #for oob variations
-	 'arr_n_components' : [2], #2, 3, 5, 10
-	 #for oob variations and knn
-	 'arr_n_clusters' : [3], # 2, 3, 5, 10
-	 #for ocsvm
-	 'min_samples': [5, 10, 15],  #min_samples 5, 10, 15
-	 #for random forest and linear classifiers
-	 'use_grid_search' : False, 
-	 #for knn and sgd classifiers
-	 'use_scaler': False,
-	 #all methods
-	 'use_alternative_monitor': False, # True = label -> act func -> save in the monitor; False = label -> act func if label == predicted -> save in the monitor
-	 'technique_names' : ['oob_isomap', 'oob_pca']} #'baseline', 'knn', 'random_forest', 'sgd', 'ocsvm', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+	dataset_folder = DATA_PARAMS['dataset_folder']
+	dataset_names = DATA_PARAMS['dataset_names']
+	num_classes_to_monitor = DATA_PARAMS['num_classes_to_monitor']
+	validation_size = DATA_PARAMS['validation_size']
 
-	num_classes_to_monitor = [43]# 10, 43
-	is_build_monitors_by_class = True #True just for OOB-based monitors
-	PARAMS.update({'verbose': verbose})
+	model_names = MONITOR_PARAMS['model_names']
+	is_build_monitors_by_class = MONITOR_PARAMS['is_build_monitors_by_class']
 	
 	for model_name, dataset_name, classes_to_monitor in zip(model_names, dataset_names, num_classes_to_monitor):
 		
-		#path to load the model
-		models_folder = os.path.join("src", "bin", "models")
-		model_file = os.path.join(models_folder, model_name+'_'+dataset_name+'.h5')
-		# loading model
-		model = load_model(model_file)
-
 		# loading dataset
 		dataset = Dataset(dataset_name)
 		dataset.validation_size = validation_size
+
+		MONITOR_PARAMS.update({'dataset_name': dataset_name})
+		MONITOR_PARAMS.update({'model_name': model_name})
 		
-		x_train, y_train, x_valid, y_valid = dataset.load_dataset(mode='train')
-		x_train, y_train = x_train[:int(len(x_train)*perc_of_data)], y_train[:int(len(y_train)*perc_of_data)]
-		x_valid, y_valid = x_valid[:int(len(x_valid)*perc_of_data)], y_valid[:int(len(y_valid)*perc_of_data)]
+		#building monitor with training (test data is excluded, of course)
+		path = os.path.join(dataset_folder, sub_field, dataset_name)
+		(x_train, y_train), (_, _) = dataset.load_dataset(path)
+		X, y = x_train[:int(len(x_train)*perc_of_data)], y_train[:int(len(y_train)*perc_of_data)]
 
-		#building monitor with training + validation data (test data is excluded, of course)
-		X = np.concatenate([x_train, x_valid], axis=0)	
-		y = np.vstack((y_train, y_valid))
+		#path to load the model
+		models_folder = os.path.join("src", "bin", "models", MONITOR_PARAMS['backend'])
+		model_file = os.path.join(models_folder, model_name+'_'+dataset_name)
+		
+		# loading model
+		if MONITOR_PARAMS['backend']=='tensorflow':
+			from tensorflow import keras
+			model = keras.models.load_model(model_file+'.h5')
+		
+		elif MONITOR_PARAMS['backend']=='keras':
+			from keras.models import load_model
+			model = load_model(model_file+'.h5')
 
+		elif MONITOR_PARAMS['backend']=='pytorch':
+			import torch
+			from src.Classes.ml_architectures.pytorch import pytorch_classifiers
+
+			if model_name == 'leNet':
+				net = pytorch_classifiers.DNN(classes_to_monitor, np.shape(X)[2], 1)
+			else:
+				net = None
+
+			net.load_state_dict(torch.load(model_file+'.pth'))
+			net.eval()
+			model = net
+
+				
 		start = timer()
 
 		if is_build_monitors_by_class:
-			build_monitors_by_class(root_path, parallel_execution, dataset_name, PARAMS, classes_to_monitor, model, X, y, save)
+			build_monitors_by_class(root_path, parallel_execution, dataset_name, MONITOR_PARAMS, classes_to_monitor, model, X, y, save)
 		else:
-			build_monitors_all_classes(root_path, parallel_execution, dataset_name, PARAMS, model, X, y, save)
+			build_monitors_all_classes(root_path, parallel_execution, dataset_name, MONITOR_PARAMS, model, X, y, save)
 		
 		dt = timer() - start
 		print("Monitors for {} built in {} minutes".format(dataset_name, dt/60))

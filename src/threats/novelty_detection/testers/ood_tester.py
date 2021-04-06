@@ -3,21 +3,21 @@ import numpy as np
 import pickle
 import psutil
 from src.utils import util
-from src.threats.novelty_detection.utils import safety_approaches
+from src.threats.novelty_detection.utils import safety_approaches as SA# use this for novelty detection only
+#from src.threats.novelty_detection.utils import safety_approaches_2 as SA
 from src.Classes.readout import Readout
 import matplotlib.pyplot as plt
+from time import perf_counter as timer
 
         
 
 def run(dataset, experiment, monitor):
-    # special case when GTSRB + BTSC due to the intersection between some classes
-    #monitor.map_dataset_classes = True if experiment.dataset.original_dataset_name == 'GTSRB' and experiment.dataset.dataset_OOD_name == 'BTSC' else False
-    monitor.map_dataset_classes = True if experiment.dataset.modification == 'gtsrb_btsc' else False
-
-
+    
     X_test, y_test = dataset.X, dataset.y
     dataset_name = dataset.dataset_name
-    arrPred = []
+    #print(len(y_test))
+    #print('ID:', len(np.where(y_test<43)[0]))
+    #print('OOD:', len(np.where(y_test>=43)[0]))
     loaded_monitor = {}
 
     readout = Readout()
@@ -26,22 +26,11 @@ def run(dataset, experiment, monitor):
     counter = 0
     loading_percentage = 0.1
     loaded = int(loading_percentage*len(y_test))
-
-    for class_to_monitor in range(experiment.classes_to_monitor_ID):
-        # ID
-        readout.arr_false_negative_ID.update({class_to_monitor: []})
-        readout.arr_true_negative_ID.update({class_to_monitor: []})
-        readout.arr_false_positive_ID.update({class_to_monitor: []})
-        readout.arr_true_positive_ID.update({class_to_monitor: []})
-
-    for class_OOD in range(experiment.classes_to_monitor_ID, experiment.classes_to_monitor_OOD + experiment.classes_to_monitor_ID):
-        # OOD
-        readout.arr_false_negative_OOD.update({class_OOD: []})
-        readout.arr_true_negative_OOD.update({class_OOD: []})
-        readout.arr_false_positive_OOD.update({class_OOD: []})
-        readout.arr_true_positive_OOD.update({class_OOD: []})
     
     model = experiment.model
+
+    arr_ml_time = []
+    arr_sm_time = []
 
     #memory
     process = psutil.Process(os.getpid())
@@ -57,6 +46,8 @@ def run(dataset, experiment, monitor):
         for c in range(experiment.classes_to_monitor_ID): 
             monitor_path = os.path.join(monitor.monitors_folder+str(c), monitor.filename)
             loaded_monitor.update({c: pickle.load(open(monitor_path, "rb"))})
+    elif monitor.OOD_approach == 'temperature' or monitor.OOD_approach == 'adversarial':
+        loaded_monitor = monitor.method
     else:
         monitor_path = os.path.join(monitor.monitors_folder, monitor.filename)
         loaded_monitor = pickle.load(open(monitor_path, "rb"))
@@ -66,14 +57,35 @@ def run(dataset, experiment, monitor):
             counter, loading_percentage = util.loading_info(counter, loaded, loading_percentage) #log
         
         img = np.asarray([img])
+
+        ini_ml = timer()
         yPred = np.argmax(model.predict(img))
-        arrPred.append(yPred)
+        end_ml = timer()
 
-        intermediateValues = util.get_activ_func(model, img, monitor.layer_index)[0]
+        # ML readout
+        readout.arr_classification_pred.append(yPred)
+        arr_ml_time.append(end_ml-ini_ml)
+
+        # SM readout
+        if monitor.OOD_approach == 'outside_of_box':
+            use_intermediateValues = True
         
-        readout = safety_approaches.safety_monitor_decision(readout, monitor, yPred, lbl, experiment.classes_to_monitor_ID,
-         intermediateValues, scaler, loaded_monitor)           
+        elif monitor.OOD_approach == 'temperature' or monitor.OOD_approach == 'adversarial':
+            use_intermediateValues = False
 
-    readout.memory = process.memory_info().rss / 1024 / 1024
+        readout, time_spent = SA.safety_monitor_decision(readout, monitor, model, img, yPred, lbl, experiment,
+         use_intermediateValues, scaler, loaded_monitor)
+        
+        arr_sm_time.append(time_spent)
+
+    # some complementaire general readout
+    readout.total_memory = process.memory_info().rss / 1024 / 1024
+
+    # some complementaire ML readout
+    readout.arr_classification_true = y_test
+    readout.ML_time = arr_ml_time
+
+    # some complementaire SM readout
+    readout.SM_time = arr_sm_time
     
-    return arrPred, y_test, readout
+    return readout

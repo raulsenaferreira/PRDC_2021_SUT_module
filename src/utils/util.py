@@ -4,7 +4,6 @@ import os
 import cv2
 import random
 import numpy as np
-from keras.models import Model
 import scipy
 import scipy.misc
 import imageio
@@ -32,7 +31,11 @@ def save_metrics_neptune(neptune, arr_title, arr_num):
 	return True
 
 
-def get_activ_func(model, image, layerIndex):
+def get_activ_func(backend, model, image, layerIndex):
+	if backend=='tensorflow':
+		from tensorflow.keras.models import Model
+	elif backend == 'keras':
+		from keras.models import Model
 	inter_output_model = Model(inputs = model.input, outputs = model.get_layer(index=layerIndex).output) #last layer: index 7 or name 'dense'
 	return inter_output_model.predict(image)
 

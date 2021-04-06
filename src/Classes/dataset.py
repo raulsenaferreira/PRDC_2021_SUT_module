@@ -1,28 +1,24 @@
 import os
-import keras
-from keras.datasets import mnist
-from keras.datasets import cifar10
 import numpy as np
-import pandas as pd
 from PIL import Image
 import gzip
-import cv2
-import skimage.data
-import skimage.transform
-import keras.backend as K
-from sklearn.model_selection import train_test_split
-from tensorflow.keras.utils import to_categorical
+import torch
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
+import torchvision.transforms.functional as TF
 
 
 class Dataset:
 	"""docstring for Dataset"""
-	def __init__(self, root_dir='data'):
+	def __init__(self, root_dir='data', transform=None):
 		super(Dataset, self).__init__()
 		self.dataset_name = ''
 		self.modification = ''
+		self.dataset_ID_name = ''
+		self.dataset_OOD_name = ''
 		self.root_dir = root_dir
-		self.width = 28
-		self.height = 28
+		self.width = 0
+		self.height = 0
 		self.channels = 0
 		self.testPath = ''
 		self.num_classes = 0
@@ -31,30 +27,46 @@ class Dataset:
 		self.validation_size = None
 		self.X = [[]]
 		self.y = []
+		self.transform = transform
+
+
+	def __getitem__(self, index):
+		image = self.X[index]
+		
+		# Just apply your transformations here
+		if self.transform is not None:
+			image = self.transform(image)
+		x = TF.to_tensor(image)
+		
+		return x, self.y[index]
+
+
+	def __len__(self):
+		return len(self.y)
 
 	
-	def load_dataset(self, dataset_path):
-
+	def load_dataset(self, dataset_path, mode='train'):
+		x_train, y_train, x_test, y_test = None, None, None, None
+		
 		train_images = os.path.join(dataset_path, 'train-images-npy.gz')
 		train_labels = os.path.join(dataset_path, 'train-labels-npy.gz')
-		
+	
 		test_images = os.path.join(dataset_path, 'test-images-npy.gz')
 		test_labels = os.path.join(dataset_path, 'test-labels-npy.gz')
 
-		f = gzip.GzipFile(train_images, "r")
-		x_train = np.load(f)
-		#x_train = np.frombuffer(x_train)#, dtype=i.dtype
-		#x_train = np.fromfile(f)
+		if mode == 'train' or mode == 'all':
+			f = gzip.GzipFile(train_images, "r")
+			x_train = np.load(f)
 		
-		f = gzip.GzipFile(train_labels, "r")
-		y_train = np.load(f)
+			f = gzip.GzipFile(train_labels, "r")
+			y_train = np.load(f)
 
-		f = gzip.GzipFile(test_images, "r")
-		x_test = np.load(f)
+		elif mode == 'test' or mode == 'all':
+			f = gzip.GzipFile(test_images, "r")
+			x_test = np.load(f)
 
-		f = gzip.GzipFile(test_labels, "r")
-		y_test = np.load(f)
-		
-		#print("load_drift_mnist: ", x_train.shape)
+			f = gzip.GzipFile(test_labels, "r")
+			y_test = np.load(f)
 
+		# all images are already normalized (values divided by 255.)
 		return (x_train, y_train), (x_test, y_test)

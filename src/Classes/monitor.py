@@ -13,3 +13,4 @@ class Monitor:
 		self.trainer = None
 		self.dim_reduc_method = None
 		self.monitors_folder = ''
+		self.arrWeights = []

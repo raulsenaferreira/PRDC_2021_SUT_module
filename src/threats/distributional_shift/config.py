@@ -1,209 +1,251 @@
-from src import model_config
-from src.Classes.monitor import Monitor
-from src.Classes.experiment import Experiment
-#from src.novelty_detection import dnn_oob_evaluator
-#from src.novelty_detection import dnn_oob_tester
-#from src.novelty_detection import en_dnn_oob_tester
-#from src.novelty_detection.utils import abstraction_box
-from src.MNIST_experiments import act_func_based_monitor
-from src.utils import util
+import os
+
+'''
+**OK** 1 = outside-of-box paper; 2 = outside-of-box using isomap instead of 2D projection;
+
+**testing** 3 = outside-of-box with ensemble of DNN; 4 = same of 3 but using isomap strategy;
+
+5 = same of 2 but using DBSCAN instead of KNN; 6 = same of 2 but clustering without dimension reduction;
+7 = same of 5 but clustering without dimension reduction; 
+8 = using the derivative of activation functions instead of raw values
+'''
 
 
-sep = util.get_separator()
+def glue_dataset_names(datasets, modifications):
+	data = {}
 
-def load_file_names():
-	experiment_type = 'novelty_detection'
-	compiled_img_name = experiment_type+sep+'all_images.pdf'
-	acc_file_name = experiment_type+sep+'accuracies.csv'
-	cf_file_name = experiment_type+sep+'positive_negative_rates.csv'
-	time_file_name = experiment_type+sep+'time.csv'
-	mem_file_name = experiment_type+sep+'memory.csv'
-	f1_file_name = experiment_type+sep+'f1.csv'
+	for d in datasets:
+		data.update({d: []})
 
-	return compiled_img_name, acc_file_name, cf_file_name, time_file_name, mem_file_name, f1_file_name
+		for m in modifications:
+			data[d].append('{}_{}'.format(m[0], m[1]))
+
+	return data
 
 
-def load_settings(monitor_acronym):
-	monitor = None
-	monitors_folder = load_var('monitors_folder')
-	if monitor_acronym == 'oob':
-		monitor = Monitor(load_var("e1_d1_mn"), load_var("classToMonitor"), load_var("layerToMonitor"))
-		monitor.method = abstraction_box.make_abstraction
-		monitor.trainer = act_func_based_monitor
-		monitor.monitors_folder = monitors_folder
+def get_technique_params(technique):
+	# Default
+	PARAMS = {'use_alternative_monitor': False}# True = label -> act func; False = label -> act func if label == predicted
+	PARAMS.update({'use_scaler': False})
+	PARAMS.update({'grid_search': False})
 
-	return monitor
+	if 'sgd' == technique:
+		PARAMS.update({'use_scaler': True})
+		PARAMS.update({'grid_search': True})
+		PARAMS.update({'OOD_approach': 'equality'})
 
+	elif 'random_forest' ==  technique:
+		PARAMS.update({'grid_search': True})
+		PARAMS.update({'OOD_approach': 'equality'})
 
-def load_experiment_settings(experiment_number):
-		
-	if experiment_number == 1:
-		#Experiment 1: DNN with outside-of-box monitor
-		experiment = Experiment('DNN+OB')
-
-		#models
-		dnn_mnist = model_config.load_model_settings(1)
-		dnn_gtsrb = model_config.load_model_settings(2)
-		modelsObj = [dnn_mnist, dnn_gtsrb]
-		
-		#monitors
-		monitorObjMNIST = Monitor(load_var_dict["e1_d1_mn"], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjMNIST.method = abstraction_box.find_point
-
-		monitorObjGTSRB = Monitor(load_var_dict["e1_d2_mn"], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjGTSRB.method = abstraction_box.find_point
-		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-		
-		#building the class experiment 1
-		experiment.models = modelsObj
-		experiment.monitors = monitorsObj
-		experiment.tester = dnn_oob_tester
-		experiment.evaluator = dnn_oob_evaluator
-
-		return experiment
-
-	elif experiment_number == 2:
-		#Experiment 2: DNN with outside-of-box monitor using non-linear dimensionality reduction
-		experiment = Experiment('DNN+OB+NL')
-		#using the same ML models from the Experiment 1
-		dnn_mnist = ModelBuilder()
-		dnn_mnist.model_name = load_var_dict["e2_d1_md"]
-		
-		dnn_gtsrb = ModelBuilder()
-		dnn_gtsrb.model_name = var_dict['e2_d2_md']
-
-		modelsObj = [dnn_mnist, dnn_gtsrb]
-		
-		#monitors
-		monitorObjMNIST = Monitor(var_dict['e2_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjMNIST.method = abstraction_box.find_point
-		monitorObjMNIST.dim_reduc_method = var_dict['e2_d1_dr']
-		monitorObjGTSRB = Monitor(var_dict['e2_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjGTSRB.method = abstraction_box.find_point
-		monitorObjGTSRB.dim_reduc_method = var_dict['e2_d2_dr']
-		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-		
-		#building the class experiment 2
-		experiment.models = modelsObj
-		experiment.monitors = monitorsObj
-		experiment.evaluator = dnn_oob_evaluator
-		experiment.tester = dnn_oob_tester
-
-		return experiment
-
-	elif experiment_number == 3:
-		#Experiment 3: Ensemble of DNN with outside-of-box monitor
-		experiment = Experiment('ENSBL+OB')
-		#models
-		dnn_mnist = ModelBuilder()
-		dnn_mnist.model_name = var_dict['e3_d1_md']
-		dnn_mnist.num_cnn = 3
-		dnn_gtsrb = ModelBuilder()
-		dnn_gtsrb.model_name = var_dict['e3_d2_md']
-		dnn_gtsrb.num_cnn = 5
-		modelsObj = [dnn_mnist, dnn_gtsrb]
-		#monitors
-		monitorObjMNIST = Monitor(var_dict['e3_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjMNIST.method = abstraction_box.find_point_box_ensemble
-		monitorObjMNIST.monitors_folder += var_dict['e3_folder'] + sep
-		monitorObjGTSRB = Monitor(var_dict['e3_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjGTSRB.method = abstraction_box.find_point_box_ensemble
-		monitorObjGTSRB.monitors_folder += var_dict['e3_folder'] + sep
-		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-		#building the class experiment 3
-		experiment.models = modelsObj
-		experiment.monitors = monitorsObj
-		experiment.evaluator = en_dnn_oob_evaluator
-		experiment.tester = en_dnn_oob_tester
-
-		return experiment
-
-	elif experiment_number == 4:
-		#Experiment 4: Ensemble of DNN with outside-of-box monitor and dimensionality reduction method
-		experiment = Experiment('ENSBL+OB+NL')
-		#using the same ML models from the Experiment 3
-		dnn_mnist = ModelBuilder()
-		dnn_mnist.model_name = var_dict['e4_d1_md']
-
-		dnn_gtsrb = ModelBuilder()
-		dnn_gtsrb.model_name = var_dict['e4_d2_md']
-		
-		modelsObj = [dnn_mnist, dnn_gtsrb]
-		#monitors
-		monitorObjMNIST = Monitor(var_dict['e4_d1_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjMNIST.method = abstraction_box.find_point_box_ensemble
-		monitorObjMNIST.dim_reduc_method = var_dict['e4_d1_dr']
-		monitorObjMNIST.monitors_folder += var_dict['e4_folder'] + sep
-
-		monitorObjGTSRB = Monitor(var_dict['e4_d2_mn'], load_var_dict["classToMonitor"], load_var_dict["layerToMonitor"])
-		monitorObjGTSRB.method = abstraction_box.find_point_box_ensemble
-		monitorObjGTSRB.dim_reduc_method = var_dict['e4_d2_dr']
-		monitorObjGTSRB.monitors_folder += var_dict['e4_folder'] + sep
-
-		monitorsObj = [monitorObjMNIST, monitorObjGTSRB]
-		#building the class experiment 4
-		experiment.models = modelsObj
-		experiment.monitors = monitorsObj
-		experiment.evaluator = en_dnn_oob_evaluator
-		experiment.tester = en_dnn_oob_tester
-
-		return experiment
-
-
-def load_var(key):
-	''' 
-	Change here the values of the variables if you want to change:
-	1) the DNN layer and/or class monitored by the runtime monitor 
-	2) the name of the generated files
-
-	Logic for global variable mapping (variables that are used for build model/monitor files and to rn tests)
-	e1 = Experiment 1 (order of the experiments in this code)
-	d1 = dataset 1 (MNIST = 1; GTSRB = 2; CIFAR-10 = 3 ...)
-	mn = monitor; md = model; dr = dimensionality reduction
-
-	Example for the monitor name for the experiment 1 + dataset 1 --> "e1_d1_mn"
-	'''
-	var_dict = {}
-	classToMonitor = 7
-	var_dict['classToMonitor'] = classToMonitor
-	layerToMonitor = -2
-	var_dict['layerToMonitor'] = layerToMonitor
-
-	var_dict['monitors_folder'] = "src"+sep+"novelty_detection"+sep+"bin"+sep+"monitors"+sep
-
-	var_dict['m1_d1_name'] = 'DNN_MNIST.h5'
-	var_dict['m1_d1_batch'] = 128
-	var_dict['m1_d1_epoch'] = 12
-	var_dict['m1_d1_name'] = 'DNN_GTRSB.h5'
-	var_dict['m1_d2_batch'] = 10
-	var_dict['m1_d2_epoch'] = 32
-	var_dict['m2_d1_name'] = 'DNN_ensemble_MNIST_'
-	var_dict['m2_d2_name'] = 'DNN_ensemble_GTRSB_'
-
-	var_dict['e1_d1_md'] = 'DNN_MNIST.h5'
-	var_dict['e1_d2_md'] = 'DNN_GTRSB.h5'
-	var_dict['e1_d1_mn'] = "outOfBox_MNIST_class_{}.p".format(classToMonitor)
-	var_dict['e1_d2_mn'] = "outOfBox_GTRSB_class_{}.p".format(classToMonitor)
+	elif 'ocsvm' == technique:
+		PARAMS.update({'OOD_approach': 'outlier'})
 	
-	var_dict['e2_d1_md'] = 'DNN_MNIST.h5'
-	var_dict['e2_d2_md'] = 'DNN_GTRSB.h5'
-	var_dict['e2_d1_mn'] = "outOfBox_isomap_MNIST_class_{}.p".format(classToMonitor)
-	var_dict['e2_d2_mn'] = "outOfBox_isomap_GTRSB_class_{}.p".format(classToMonitor)
-	var_dict['e2_d1_dr'] = 'isomap_MNIST_trained_class_{}.p'.format(classToMonitor)
-	var_dict['e2_d2_dr'] = 'isomap_GTSRB_trained_class_{}.p'.format(classToMonitor)
+	elif 'oob' in technique:
+		PARAMS.update({'arr_n_clusters': [3]})
+		PARAMS.update({'arr_n_components': [2]}) 
+		PARAMS.update({'tau': [0.01]}) # 0.0001, 0.01, 0.35
+		PARAMS.update({'OOD_approach': 'outside_of_box'})
 
-	var_dict['e3_d1_md'] = 'DNN_ensemble_MNIST_'
-	var_dict['e3_d2_md'] = 'DNN_ensemble_GTRSB_'
-	var_dict['e3_d1_mn'] = "outOfBox_MNIST_class_{}.p".format(classToMonitor)
-	var_dict['e3_d2_mn'] = "outOfBox_GTRSB_class_{}.p".format(classToMonitor)
-	var_dict['e3_folder'] = 'outOfBox_ensembleDNN'
+	elif 'knn' == technique:
+		PARAMS.update({'arr_n_clusters': [2]}) #, 3, 5, 10
+		PARAMS.update({'use_scaler': True})
+		PARAMS.update({'OOD_approach': 'equality'})
+		
+	elif 'hdbscan' == technique:
+		PARAMS.update({'min_samples': [5, 10, 15]})  #min_samples 5, 10, 15
+		PARAMS.update({'OOD_approach': 'equality'})
 
-	var_dict['e4_d1_md'] = 'DNN_ensemble_MNIST_'
-	var_dict['e4_d2_md'] = 'DNN_ensemble_GTRSB_'
-	var_dict['e4_d1_mn'] = "outOfBox_isomap_MNIST_class_{}.p".format(classToMonitor)
-	var_dict['e4_d2_mn'] = "outOfBox_isomap_GTRSB_class_{}.p".format(classToMonitor)
-	var_dict['e4_d1_dr'] = 'isomap_MNIST_trained_class_{}.p'.format(classToMonitor)
-	var_dict['e4_d2_dr'] = 'isomap_GTSRB_trained_class_{}.p'.format(classToMonitor)
-	var_dict['e4_folder'] = 'outOfBox_NL_ensembleDNN'
+	elif 'odin' == technique:
+		PARAMS.update({'noiseMagnitude': 0.0025}) # gtsrb = 0.0025; cifar-10 = 0.0014
+		PARAMS.update({'temper': 1000})
+		# it is the rouding value of the min confidence threshold rounded in 4 decimals (0.10069 = 0.1007) 
+		PARAMS.update({'threshold': 0.0237}) # gtsrb = 0.0237; cifar-10 = 0.1007
+		PARAMS.update({'OOD_approach': 'temperature'})
+	
+	return PARAMS
 
-	return var_dict[key]
+
+def get_experiment_params(setting_id):
+	'''
+	-- id_dataset_name:
+	'MNIST', 'GTSRB', 'BTSC', 'CIFAR-10'
+
+	-- num_classes_to_monitor_ID:
+	10, 43, 62, 10
+	
+	-- ood_dataset_name:
+	'BTSC', 'GTSRB', 'CIFAR-10'
+
+	-- num_classes_to_monitor_OOD:
+	62, 43, 10
+	
+	-- modifications:
+	('gtsrb', 'btsc'), ('cifar10', 'gtsrb'), ('gtsrb', 'cifar10')
+	
+	-- backend:
+	keras = gtsrb, mnist; tensorflow = cifar10; pytorch = odin
+	
+	-- model_names:
+	'leNet', 'vgg16'
+
+	-- technique_names: 
+	'baseline', 'knn', 'ocsvm', 'random_forest', 'sgd', 'hdbscan', 
+		'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap', odin
+	'''
+
+	PARAMS = {}
+
+	# directory of datasets
+	#root_dir = os.path.join('D:','\\backup_desktop_14-10-2020','GITHUB', 'phd_data_generation', 'data', 'modified')
+	root_dir = os.path.join('C:', '\\Users', 'rsenaferre', 'Desktop', 'GITHUB', 'phd_data_generation', 'data', 'benchmark_dataset')
+	PARAMS.update({'root_dir': root_dir})
+
+	if setting_id == 1:
+		# distributional shift (OOB) = GTSRB 
+
+		id_dataset_name = 'GTSRB'
+		PARAMS.update({'num_classes_to_monitor_ID': 43})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'GTSRB'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 43})
+		
+		PARAMS.update({'data': ['brightness_severity_1', 'contrast_severity_1', 'defocus_blur_severity_1',
+			'brightness_severity_5', 'contrast_severity_5', 'defocus_blur_severity_5',
+			'elastic_transform_severity_1', 'gaussian_blur_severity_1', 'glass_blur_severity_1',
+			'elastic_transform_severity_5', 'gaussian_blur_severity_5', 'glass_blur_severity_5',
+			'saturate_severity_1', 'zoom_blur_severity_1', 'saturate_severity_5', 'zoom_blur_severity_5']})
+		
+		PARAMS.update({'backend': 'keras'}) 
+
+		PARAMS.update({'model_names': 'leNet'})
+
+		PARAMS.update({'technique_names': ['oob', 'oob_isomap', 'oob_pca']}) 
+
+	elif setting_id == 2:
+		# distributional shift (OOB) = CIFAR-10 
+
+		id_dataset_name = 'CIFAR-10'
+		PARAMS.update({'num_classes_to_monitor_ID': 10})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'CIFAR-10'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 10})
+		
+		PARAMS.update({'data': ['brightness_severity_1', 'contrast_severity_1', 'defocus_blur_severity_1',
+			'brightness_severity_5', 'contrast_severity_5', 'defocus_blur_severity_5',
+			'elastic_transform_severity_1', 'gaussian_blur_severity_1', 'glass_blur_severity_1',
+			'elastic_transform_severity_5', 'gaussian_blur_severity_5', 'glass_blur_severity_5',
+			'saturate_severity_1', 'zoom_blur_severity_1', 'saturate_severity_5', 'zoom_blur_severity_5']})
+		
+		PARAMS.update({'backend': 'tensorflow'}) 
+
+		PARAMS.update({'model_names': ['leNet']})
+
+		PARAMS.update({'technique_names': ['oob', 'oob_isomap', 'oob_pca']}) 
+
+	elif setting_id == 3:
+		# distributional shift (ODIN) = GTSRB 
+
+		id_dataset_name = 'GTSRB'
+		PARAMS.update({'num_classes_to_monitor_ID': 43})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'GTSRB'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 43})
+		
+		PARAMS.update({'data': ['brightness_severity_1', 'contrast_severity_1', 'defocus_blur_severity_1',
+			'brightness_severity_5', 'contrast_severity_5', 'defocus_blur_severity_5',
+			'elastic_transform_severity_1', 'gaussian_blur_severity_1', 'glass_blur_severity_1',
+			'elastic_transform_severity_5', 'gaussian_blur_severity_5', 'glass_blur_severity_5',
+			'saturate_severity_1', 'zoom_blur_severity_1', 'saturate_severity_5', 'zoom_blur_severity_5']})
+		
+		PARAMS.update({'backend': 'pytorch'}) 
+
+		PARAMS.update({'model_names': 'leNet'})
+
+		PARAMS.update({'technique_names': ['odin']}) 
+
+	elif setting_id == 4:
+		# distributional shift (ODIN) = CIFAR-10 
+
+		id_dataset_name = 'CIFAR-10'
+		PARAMS.update({'num_classes_to_monitor_ID': 10})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'CIFAR-10'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 10})
+		
+		PARAMS.update({'data': ['brightness_severity_1', 'contrast_severity_1', 'defocus_blur_severity_1',
+			'brightness_severity_5', 'contrast_severity_5', 'defocus_blur_severity_5',
+			'elastic_transform_severity_1', 'gaussian_blur_severity_1', 'glass_blur_severity_1',
+			'elastic_transform_severity_5', 'gaussian_blur_severity_5', 'glass_blur_severity_5',
+			'saturate_severity_1', 'zoom_blur_severity_1', 'saturate_severity_5', 'zoom_blur_severity_5']})
+		
+		PARAMS.update({'backend': 'pytorch'}) 
+
+		PARAMS.update({'model_names': ['leNet']})
+
+		PARAMS.update({'technique_names': ['odin']}) 
+
+	return PARAMS
+
+
+
+
+def get_monitor_params(setting_id):
+
+	PARAMS = {}
+
+	if setting_id == 1:
+		#for oob variations
+		PARAMS.update({'is_build_monitors_by_class': True}) #True just for OOB-based monitors
+		PARAMS.update({'arr_n_components': 2}) # 2, 3, 5, 10
+		#for oob variations and knn
+		PARAMS.update({'arr_n_clusters': 3}) # 2, 3, 5, 10
+		#for ocsvm
+		PARAMS.update({'min_samples': [5, 10, 15]})
+		#for random forest and linear classifiers
+		PARAMS.update({'use_grid_search': False})
+		#for knn and sgd classifiers
+		PARAMS.update({'use_scaler': False}) 
+		#all methods
+		PARAMS.update({'use_alternative_monitor': False}) # True = label -> act func -> save in the monitor; False = label -> act func if label == predicted -> save in the monitor
+		PARAMS.update({'technique_names': ['oob', 'oob_isomap', 'oob_pca']}) #'baseline', 'knn', 'random_forest', 'sgd', 'ocsvm', 'oob', 'oob_isomap', 'oob_pca', 'oob_pca_isomap'
+		PARAMS.update({'backend': 'keras'})
+		PARAMS.update({'model_names': ['leNet']}) # 'leNet', 'vgg16', 'resnet' 
+
+	elif setting_id == 2:
+		PARAMS.update({'is_build_monitors_by_class': False})
+		PARAMS.update({'threshold': None})
+		PARAMS.update({'use_grid_search': False})
+		PARAMS.update({'use_scaler': False}) 
+
+		PARAMS.update({'magnitude': [0.0014, 0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]}) # based on paper 'generalized odin'
+		PARAMS.update({'temperature': 1000})
+		PARAMS.update({'use_alternative_monitor': False})
+		PARAMS.update({'technique_names': ['odin']})
+		PARAMS.update({'backend': 'pytorch'}) # for ODIN, using pytorch for now
+		PARAMS.update({'model_names': ['leNet']})
+		PARAMS.update({'use_gpu': True})
+
+	return PARAMS
+
+
+# reading from the desc.txt in data folder in the future
+def get_data_params(setting_id):
+	PARAMS = {}
+	# directory of datasets
+	#root_dir = os.path.join('D:','\\backup_desktop_14-10-2020','GITHUB', 'phd_data_generation', 'data', 'modified')
+	root_dir = os.path.join('C:', '\\Users', 'rsenaferre', 'Desktop', 'GITHUB', 'phd_data_generation', 'data', 'training_set')
+	PARAMS.update({'dataset_folder': root_dir})
+	#PARAMS.update({'dataset_names': ['GTSRB']}) # 'MNIST', 'GTSRB', 'CIFAR-10'
+	#PARAMS.update({'num_classes_to_monitor': [43]}) # 10, 43
+	PARAMS.update({'validation_size': 0.3})
+
+	return PARAMS
