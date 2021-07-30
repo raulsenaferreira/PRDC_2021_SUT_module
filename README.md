@@ -1,5 +1,4 @@
-# phd_experiments
-Experiments regarding my PhD
+# Experiments for the paper: Benchmarking Safety Monitors for ImageClassifiers with Machine Learning
 
 ## Usage
 1) python build_models.py lenet gtsrb keras 0 0 100
