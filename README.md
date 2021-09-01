@@ -1,4 +1,4 @@
-# Experiments for the paper: Benchmarking Safety Monitors for ImageClassifiers with Machine Learning
+# Experiments for the paper: Benchmarking Safety Monitors for Image Classifiers with Machine Learning
 
 ## Datasets
 The benchmark datasets applied to these experiments were generated with our data generation module, that can be found in another repository: https://github.com/raulsenaferreira/PRDC_2021_Data_profile_module
