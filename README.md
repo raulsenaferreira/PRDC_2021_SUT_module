@@ -11,6 +11,7 @@ The benchmark datasets applied to these experiments were generated with our data
 
 3) python run_experiments.py novelty_detection oob cifar10_gtsrb 1 0 0 100
 
+
 ## arguments for 'build_models'
 
 "architecture", help="Type of DNN (lenet, vgg16, resnet)"
@@ -41,3 +42,8 @@ parallel_execution", type=int, help="Parallelize experiments up to the number of
 verbose, type=int, help="Print the processing progress (1 for True or 0 for False)"
 
 percentage_of_data, type=int, default=100, help="e.g.: 10 = testing with 10% of test data; 100 = testing with all test data")
+
+
+## Evaluation and results visualization (optional)
+A module applied to generate tables and visualize results can be found in another repository:
+https://github.com/raulsenaferreira/PRDC_2021_Evaluation_module
