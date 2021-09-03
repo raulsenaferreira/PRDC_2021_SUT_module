@@ -66,7 +66,7 @@ def get_technique_params(technique):
 	return PARAMS
 
 
-def get_experiment_params(setting_id):
+def get_experiment_params(technique, dataset_name):
 	'''
 	-- id_dataset_name:
 	'MNIST', 'GTSRB', 'BTSC', 'CIFAR-10'
@@ -98,33 +98,50 @@ def get_experiment_params(setting_id):
 
 	# directory of datasets
 	#root_dir = os.path.join('D:','\\backup_desktop_14-10-2020','GITHUB', 'phd_data_generation', 'data', 'modified')
-	root_dir = os.path.join('C:', '\\Users', 'rsenaferre', 'Desktop', 'GITHUB', 'phd_data_generation', 'data', 'benchmark_dataset')
+	#root_dir = os.path.join('C:', '\\Users', 'rsenaferre', 'Desktop', 'GITHUB', 'phd_data_generation', 'data', 'benchmark_dataset')
+	root_dir = os.path.join('/home', 'rsenaferre', 'Bureau', 'backup_github_04_2021', 'phd_data_generation', 'data', 'benchmark_dataset')
+
 	PARAMS.update({'root_dir': root_dir})
+	PARAMS.update({'dataset_name': dataset_name})
 
-	if setting_id == 1:
-		# noise (OOB) = GTSRB
+	PARAMS.update({'model_names': 'leNet'})
+
+	##### NOISE EXPERIMENTS
+	PARAMS.update({'data_variant': ['gaussian_noise_severity_1', 'impulse_noise_severity_1', 'shot_noise_severity_1',
+			'gaussian_noise_severity_5', 'impulse_noise_severity_5', 'shot_noise_severity_5',
+			'spatter_severity_1', 'speckle_noise_severity_1', 'spatter_severity_5', 'speckle_noise_severity_5']})
+
+	PARAMS.update({'data': {'id':dataset_name, 'ood':dataset_name}})
+
+	### TECHNIQUES
+	if technique in 'oob':
+
+		if dataset_name == 'cifar10':
+			PARAMS.update({'backend': 'tensorflow'})
+		else:
+			PARAMS.update({'backend': 'keras'}) 
+
+		PARAMS.update({'arr_n_components': [2]}) 
+		
+		PARAMS.update({'OOD_approach': 'outside_of_box'})
+		PARAMS.update({'use_alternative_monitor': False})# True = label -> act func; False = label -> act func if label == predicted
+		PARAMS.update({'use_scaler': False})
+		PARAMS.update({'grid_search': False})
+
+		
+		### DATASETS
+	if dataset_name == 'gtsrb':
 
 		id_dataset_name = 'GTSRB'
 		PARAMS.update({'num_classes_to_monitor_ID': 43})
 		PARAMS.update({'id_dataset_name': id_dataset_name})
 		datasets = [id_dataset_name] 
 
-		PARAMS.update({'ood_dataset_name': 'GTSRB'})
+		PARAMS.update({'ood_dataset_name': '{}_with_'.format(id_dataset_name)})
 		PARAMS.update({'num_classes_to_monitor_OOD': 43})
 		
-		PARAMS.update({'data': ['gaussian_noise_severity_1', 'impulse_noise_severity_1', 'shot_noise_severity_1',
-			'gaussian_noise_severity_5', 'impulse_noise_severity_5', 'shot_noise_severity_5',
-			'spatter_severity_1', 'speckle_noise_severity_1', 'spatter_severity_5', 'speckle_noise_severity_5']})
-		
-		PARAMS.update({'backend': 'keras'}) 
 
-		PARAMS.update({'model_names': ['leNet']})
-
-		PARAMS.update({'technique_names': ['oob', 'oob_isomap', 'oob_pca']}) 
-
-	# noise
-	elif setting_id == 2:
-		# benchmark dataset
+	elif dataset_name == 'cifar10':
 
 		id_dataset_name = 'CIFAR-10'
 		PARAMS.update({'num_classes_to_monitor_ID': 10})
@@ -133,67 +150,13 @@ def get_experiment_params(setting_id):
 
 		PARAMS.update({'ood_dataset_name': 'CIFAR-10'})
 		PARAMS.update({'num_classes_to_monitor_OOD': 10})
-		
-		PARAMS.update({'data': ['gaussian_noise_severity_1', 'impulse_noise_severity_1', 'shot_noise_severity_1',
-			'gaussian_noise_severity_5', 'impulse_noise_severity_5', 'shot_noise_severity_5',
-			'spatter_severity_1', 'speckle_noise_severity_1', 'spatter_severity_5', 'speckle_noise_severity_5']})
-		
-		PARAMS.update({'backend': 'tensorflow'}) 
 
-		PARAMS.update({'model_names': ['leNet']})
-
-		PARAMS.update({'technique_names': ['oob', 'oob_isomap', 'oob_pca']}) 
-
-
-	# noise
-	elif setting_id == 3:
-		# benchmark dataset
-
-		id_dataset_name = 'GTSRB'
-		PARAMS.update({'num_classes_to_monitor_ID': 43})
-		PARAMS.update({'id_dataset_name': id_dataset_name})
-		datasets = [id_dataset_name] 
-
-		PARAMS.update({'ood_dataset_name': 'GTSRB'})
-		PARAMS.update({'num_classes_to_monitor_OOD': 43})
-		
-		PARAMS.update({'data': ['gaussian_noise_severity_1', 'impulse_noise_severity_1', 'shot_noise_severity_1',
-			'gaussian_noise_severity_5', 'impulse_noise_severity_5', 'shot_noise_severity_5',
-			'spatter_severity_1', 'speckle_noise_severity_1', 'spatter_severity_5', 'speckle_noise_severity_5']})
-		
-		PARAMS.update({'backend': 'pytorch'}) 
-
-		PARAMS.update({'model_names': ['leNet']})
-
-		PARAMS.update({'technique_names': ['odin']}) 
-
-	# noise
-	elif setting_id == 4:
-		# benchmark dataset
-
-		id_dataset_name = 'CIFAR-10'
-		PARAMS.update({'num_classes_to_monitor_ID': 10})
-		PARAMS.update({'id_dataset_name': id_dataset_name})
-		datasets = [id_dataset_name] 
-
-		PARAMS.update({'ood_dataset_name': 'CIFAR-10'})
-		PARAMS.update({'num_classes_to_monitor_OOD': 10})
-		
-		PARAMS.update({'data': ['gaussian_noise_severity_1', 'impulse_noise_severity_1', 'shot_noise_severity_1',
-			'gaussian_noise_severity_5', 'impulse_noise_severity_5', 'shot_noise_severity_5',
-			'spatter_severity_1', 'speckle_noise_severity_1', 'spatter_severity_5', 'speckle_noise_severity_5']})
-		
-		PARAMS.update({'backend': 'pytorch'}) 
-
-		PARAMS.update({'model_names': ['leNet']})
-
-		PARAMS.update({'technique_names': ['odin']})
 
 	return PARAMS
 
 
 
-
+'''
 def get_monitor_params(setting_id):
 
 	PARAMS = {}
@@ -245,3 +208,5 @@ def get_data_params(setting_id):
 	PARAMS.update({'validation_size': 0.3})
 
 	return PARAMS
+
+'''

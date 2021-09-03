@@ -3,8 +3,8 @@ import numpy as np
 import pickle
 import psutil
 from src.utils import util
-from src.threats.novelty_detection.utils import safety_approaches as SA# use this for novelty detection only
-#from src.threats.novelty_detection.utils import safety_approaches_2 as SA
+#from src.threats.novelty_detection.utils import safety_approaches as SA# use this for novelty detection only
+from src.threats.novelty_detection.utils import safety_approaches_2 as SA
 from src.Classes.readout import Readout
 import matplotlib.pyplot as plt
 from time import perf_counter as timer

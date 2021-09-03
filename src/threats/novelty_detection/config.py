@@ -51,7 +51,7 @@ def get_technique_params(technique):
 	return PARAMS
 
 
-def get_experiment_params(technique, dataset_name):
+def get_experiment_params(technique, dataset_name, threat):
 	'''
 	-- id_dataset_name:
 	'MNIST', 'GTSRB', 'BTSC', 'CIFAR-10'
@@ -83,17 +83,75 @@ def get_experiment_params(technique, dataset_name):
 
 	# directory of datasets
 	#root_dir = os.path.join('D:','\\backup_desktop_14-10-2020','GITHUB', 'phd_data_generation', 'data', 'modified')
-	root_dir = os.path.join('C:', '\\Users', 'rsenaferre', 'Desktop', 'GITHUB', 'phd_data_generation', 'data', 'benchmark_dataset')
+	#root_dir = os.path.join('C:', '\\Users', 'rsenaferre', 'Desktop', 'GITHUB', 'phd_data_generation', 'data', 'benchmark_dataset')
+	root_dir = os.path.join('/home', 'rsenaferre', 'Bureau', 'backup_github_04_2021', 'phd_data_generation', 'data', 'benchmark_dataset')
 	PARAMS.update({'root_dir': root_dir})
 	PARAMS.update({'dataset_name': dataset_name})
 
 	PARAMS.update({'model_names': 'leNet'})
 
-	##### NOVELTY DETECTION EXPERIMENTS
+
+	## datasets
+	if dataset_name == 'gtsrb_btsc':
+		# novelty detection (OOB) = GTSRB + BTSC
+		PARAMS.update({'data': {'id':'gtsrb', 'ood':'btsc'}})
+		id_dataset_name = 'GTSRB'
+		PARAMS.update({'num_classes_to_monitor_ID': 43})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'BTSC'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 62})
+
+	elif dataset_name == 'gtsrb_cifar10':
+		# novelty detection (OOB) = GTSRB + CIFAR-10 
+		PARAMS.update({'data': {'id':'gtsrb', 'ood':'cifar10'}})
+		id_dataset_name = 'GTSRB'
+		PARAMS.update({'num_classes_to_monitor_ID': 43})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'CIFAR-10'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 10})
+
+	elif dataset_name == 'cifar10_gtsrb':
+		# novelty detection (OOB) = CIFAR-10 + GTSRB 
+		PARAMS.update({'data': {'id':'cifar10', 'ood':'gtsrb'}})
+		
+		id_dataset_name = 'CIFAR-10'
+		PARAMS.update({'num_classes_to_monitor_ID': 10})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'GTSRB'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 43})
+
+	elif dataset_name == 'gtsrb':
+		
+		PARAMS.update({'data': {'id':dataset_name, 'ood':dataset_name}})
+		id_dataset_name = 'GTSRB'
+		PARAMS.update({'num_classes_to_monitor_ID': 43})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'GTSRB'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 43})
+
+	elif dataset_name == 'cifar10':
+		 
+		PARAMS.update({'data': {'id':dataset_name, 'ood':dataset_name}})
+		id_dataset_name = 'CIFAR-10'
+		PARAMS.update({'num_classes_to_monitor_ID': 10})
+		PARAMS.update({'id_dataset_name': id_dataset_name})
+		datasets = [id_dataset_name] 
+
+		PARAMS.update({'ood_dataset_name': 'CIFAR-10'})
+		PARAMS.update({'num_classes_to_monitor_OOD': 10})
+
 	### TECHNIQUES
 	if technique in 'oob':
 
-		if dataset_name == 'cifar10_gtsrb':
+		if dataset_name == 'cifar10_gtsrb' or dataset_name == 'cifar10':
 			PARAMS.update({'backend': 'tensorflow'})
 		else:
 			PARAMS.update({'backend': 'keras'}) 
@@ -126,41 +184,34 @@ def get_experiment_params(technique, dataset_name):
 		PARAMS.update({'use_scaler': False})
 		PARAMS.update({'grid_search': False})
 
-	### DATASETS
-	if dataset_name == 'gtsrb_btsc':
-		# novelty detection (OOB) = GTSRB + BTSC
-		PARAMS.update({'data': {'id':'gtsrb', 'ood':'btsc'}})
-		id_dataset_name = 'GTSRB'
-		PARAMS.update({'num_classes_to_monitor_ID': 43})
-		PARAMS.update({'id_dataset_name': id_dataset_name})
-		datasets = [id_dataset_name] 
+	##### NOVELTY CLASS EXPERIMENTS
+	if threat == 'novelty_detection':
+		PARAMS.update({'data_variant': None}) #there is no dataset variants for novelty detection
 
-		PARAMS.update({'ood_dataset_name': 'BTSC'})
-		PARAMS.update({'num_classes_to_monitor_OOD': 62})
-	
-	elif dataset_name == 'gtsrb_cifar10':
-		# novelty detection (OOB) = GTSRB + CIFAR-10 
-		PARAMS.update({'data': {'id':'gtsrb', 'ood':'cifar10'}})
-		id_dataset_name = 'GTSRB'
-		PARAMS.update({'num_classes_to_monitor_ID': 43})
-		PARAMS.update({'id_dataset_name': id_dataset_name})
-		datasets = [id_dataset_name] 
+	##### NOISE EXPERIMENTS
+	elif threat == 'noise':
+		PARAMS.update({'data_variant': [#'gaussian_noise_severity_2', 'gaussian_noise_severity_5', 'impulse_noise_severity_2', 'impulse_noise_severity_5', 
+			#'shot_noise_severity_2', 'shot_noise_severity_5', 'spatter_severity_2', 'spatter_severity_5', 'speckle_noise_severity_2', 'speckle_noise_severity_5'#,
+			'defocus_blur_severity_2', 'defocus_blur_severity_5', 'elastic_transform_severity_2', 'elastic_transform_severity_5',
+			'glass_blur_severity_2', 'glass_blur_severity_5', 'zoom_blur_severity_2', 'zoom_blur_severity_5', 'gaussian_blur_severity_2', 'gaussian_blur_severity_5'
+			]})
 
-		PARAMS.update({'ood_dataset_name': 'CIFAR-10'})
-		PARAMS.update({'num_classes_to_monitor_OOD': 10})
+	##### DISTRIBUTIONAL SHIFT EXPERIMENTS
+	elif threat == 'distributional_shift':
+		PARAMS.update({'data_variant': [
+			'snow_severity_2', 'fog_severity_2', 'brightness_severity_2', 'contrast_severity_2', 'saturate_severity_2', 
+			'rotated', 'snow_severity_5', 'fog_severity_5', 'brightness_severity_5', 'contrast_severity_5', 'saturate_severity_5'
+			]})	
 
-	elif dataset_name == 'cifar10_gtsrb':
-		# novelty detection (OOB) = CIFAR-10 + GTSRB 
-		PARAMS.update({'data': {'id':'cifar10', 'ood':'gtsrb'}})
-		
-		id_dataset_name = 'CIFAR-10'
-		PARAMS.update({'num_classes_to_monitor_ID': 10})
-		PARAMS.update({'id_dataset_name': id_dataset_name})
-		datasets = [id_dataset_name] 
+	##### ANOMALY EXPERIMENTS
+	elif threat == 'anomaly_detection':
+		PARAMS.update({'data_variant': ['pixel_trap_severity_1', 'row_add_logic_severity_1', 'shifted_pixel_severity_1',
+			'pixel_trap_severity_3', 'row_add_logic_severity_3', 'shifted_pixel_severity_3'
+			]})
 
-		PARAMS.update({'ood_dataset_name': 'GTSRB'})
-		PARAMS.update({'num_classes_to_monitor_OOD': 43})
-
+	##### ADVERSARIAL ATTACKS EXPERIMENTS
+	elif threat == 'adversarial_attack':
+		PARAMS.update({'data_variant': ['FGSM']})
 
 	return PARAMS
 

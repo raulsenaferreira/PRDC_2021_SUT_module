@@ -10,7 +10,6 @@ from src.utils import metrics
 from src.utils import util
 from pathos.multiprocessing import ProcessingPool as Pool
 from src import neptune_config as nptne
-from src.Classes.dataset import Dataset
 from src.threats.novelty_detection.utils import load_monitors
 from sklearn import manifold
 import numpy as np
@@ -53,41 +52,23 @@ def save_results(PARAMS, classes_to_monitor_ID, sub_field, name, technique, arr_
 '''	
 
 
-def start(exp_params, save_experiments, parallel_execution, verbose, repetitions, percentage_of_data, log_lvl=logging.FATAL):
+def start(exp_params, save_experiments, parallel_execution, verbose, repetitions, dataset, log_lvl=logging.FATAL):
+	arr_monitors =  np.array([])
+	arr_readouts = []
+
 	# disabling tensorflow logs
 	set_tf_loglevel(log_lvl)
 	# re-enabling tensorflow logs
 	#set_tf_loglevel(logging.INFO)
+
 	sub_field = exp_params['sub_field']
 	if save_experiments:
 		nptne.neptune_init(sub_field) # saving experiments in the cloud (optional)
 
-	## loading experiments
+	# loading model
 	#for data, model_name in zip(exp_params['data'], exp_params['model_names']):
 	model_name = exp_params['model_names']
-	data = exp_params['data']
-	original_dataset_name, modification = data['id'], data['ood']
-	arr_monitors =  np.array([])
-	arr_readouts = []
 
-	#for modification in arr_modifications:
-	# loading dataset
-	dataset = Dataset(exp_params['root_dir'])
-	dataset.original_dataset_name = original_dataset_name
-	dataset.modification = modification
-	dataset.dataset_ID_name = exp_params['id_dataset_name']
-	dataset.dataset_OOD_name = exp_params['ood_dataset_name']
-	dataset_path = os.path.join(dataset.root_dir, sub_field, exp_params['dataset_name'])
-	print(dataset_path)
-	(_, _), (x_test, y_test) = dataset.load_dataset(dataset_path, 'test')
-	X, y = x_test, y_test
-	
-	# for one that wants speeding up tests using part of data
-	X_limit = int(len(X)*percentage_of_data)
-	y_limit = int(len(y)*percentage_of_data)
-	dataset.X, dataset.y = X[ :X_limit], y[ :y_limit]
-
-	# loading model
 	backend = exp_params['backend']
 	models_folder = os.path.join("src", "bin", "models", backend)
 	if backend == 'tensorflow':

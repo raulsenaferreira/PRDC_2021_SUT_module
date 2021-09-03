@@ -2,6 +2,9 @@ import os
 import pickle
 from time import perf_counter as timer
 from src.utils import util
+from keras.losses import binary_crossentropy
+import keras.backend as K
+import numpy as np
 
 
 def is_pred_diff(yPred, intermediateValues, loaded_monitor):
@@ -24,30 +27,11 @@ def is_pred_neg(yPred, intermediateValues, loaded_monitor):
     return False
 
 
-def map_btsc_gtsrb(y_gtsrb, y_btsc):
-    # BTSC and GTSRB have 18 classes in common
-    GTSRB_to_BTSC = {14:21, 22:0, 19:3, 20:4, 21:5, 25:10, 28:7, 26:11, 18:13,\
-    24:16, 11:17, 13:19, 17:22, 15:28, 4:32, 35:34, 36:36, 12:61}
-
-    try:
-        if GTSRB_to_BTSC[y_gtsrb]+43 == y_btsc:
-            return y_gtsrb
-    except:
-        return y_btsc
-
-    return y_btsc
-
-
 def safety_monitor_decision(readout, monitor, model, img, yPred, lbl, experiment, use_intermediateValues,
  scaler, loaded_monitor):
     
     classes_to_monitor = experiment.classes_to_monitor_ID
     raise_alarm = False
-
-    # just when GTSRB = ID and BTSC = OOD
-    if monitor.map_dataset_classes:
-        #print('doing mapping between gtsrb and btsc ...')
-        lbl = map_btsc_gtsrb(yPred, lbl)
 
     ini = timer() # SM time
 
@@ -75,6 +59,26 @@ def safety_monitor_decision(readout, monitor, model, img, yPred, lbl, experiment
         #raise_alarm = loaded_monitor.detection(model, img, yPred, monitor.noiseMagnitude, monitor.temper, monitor.threshold)
         # pytorch version
         raise_alarm = loaded_monitor.detection(model, img, monitor.temper, monitor.noiseMagnitude, monitor.threshold, 'cuda:0')
+
+    elif monitor.OOD_approach == 'adversarial':
+        input_shape = np.shape(img) #(32, 32, 3)
+
+        path = os.path.join(monitor.monitors_folder, 'class_{}'.format(yPred), 'ALOCC_Model_{}.h5'.format(monitor.model_number))
+
+        monitor.method.adversarial_model.load_weights(path)
+            
+        #model_predicts = monitor.method.adversarial_model.predict(np.asarray([img]))
+        model_predicts = monitor.method.adversarial_model.predict(img)
+
+        input_image = img.reshape(input_shape)
+        reconstructed_image = model_predicts[0].reshape(input_shape)
+
+        y_true = K.variable(reconstructed_image)
+        y_pred = K.variable(input_image)
+        error = K.eval(binary_crossentropy(y_true, y_pred)).mean()
+
+        if monitor.threshold[yPred] < error:
+            raise_alarm = True
 
     # ID images (OOD label numbers higher than the ID label numbers)
     if lbl < classes_to_monitor: 

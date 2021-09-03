@@ -13,13 +13,15 @@ from skimage.filters import gaussian
 from keras.preprocessing.image import ImageDataGenerator
 
 
-def save_artifact_neptune(neptune, artifact_name, data):
+def save_artifact_neptune(neptune, artifact_name, data, remove_temp_files=True):
 	tmp_path = os.path.join('results', 'temp')
 	os.makedirs(tmp_path, exist_ok=True)
 	tmp_path = os.path.join(tmp_path, artifact_name)
 	np.save(tmp_path, data)
 	neptune.log_artifact(tmp_path)
-	os.remove(tmp_path)
+
+	if remove_temp_files:
+		os.remove(tmp_path)
 
 	return True
 
