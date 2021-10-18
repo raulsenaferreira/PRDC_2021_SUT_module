@@ -1,5 +1,15 @@
 # Experiments for the paper: Benchmarking Safety Monitors for Image Classifiers with Machine Learning
 
+## If you use this repository or part of it please consider to cite the respective paper
+```
+@article{ferreira2021benchmarking,
+  title={Benchmarking Safety Monitors for Image Classifiers with Machine Learning},
+  author={Ferreira, Raul Sena and Arlat, Jean and Guiochet, J{\'e}r{\'e}mie and Waeselynck, H{\'e}l{\`e}ne},
+  journal={26th IEEE Pacific Rim International Symposium on Dependable Computing (PRDC 2021), Perth, Australia},
+  year={2021}
+}
+```
+
 ## Datasets
 The benchmark datasets applied to these experiments were generated with our data generation module, that can be found in another repository: https://github.com/raulsenaferreira/PRDC_2021_Data_profile_module
 
